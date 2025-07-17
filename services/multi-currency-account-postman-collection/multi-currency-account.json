@@ -1,0 +1,396 @@
+{
+  "name": "multi-currency-account",
+  "version": "1.0.0",
+  "baseUrl": "",
+  "authentication": {
+    "type": "bearer",
+    "config": {
+      "inferred": true
+    }
+  },
+  "endpoints": [
+    {
+      "name": "Verify user",
+      "path": "/{{host}}/v1/simulation/verify-profile",
+      "method": "POST",
+      "description": "This endpoint verifies the user's profiles. The webhook event profiles#verification-state-change will be triggered which can help to test the integration.\n\nHaving a verified user is a requirement for MCA setup, otherwise account details will not be issued.",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{access-token}}"
+        }
+      }
+    },
+    {
+      "name": "Balance topup",
+      "path": "/{{host}}/v1/simulation/balance/topup",
+      "method": "POST",
+      "description": "Simulates a topup so a balance can be used to fund transfers.",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"profileId\": {{profile-id}},\n    \"balanceId\": 6,\n    \"currency\": \"EUR\",\n    \"amount\": 100\n}",
+          "contentType": "text/plain"
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{access-token}}"
+        }
+      }
+    },
+    {
+      "name": "0. Verification",
+      "path": "/{{host}}/v3/profiles/{{profile-id}}/verification-status/multi-currency-account?currencies=GBP,USD",
+      "method": "POST",
+      "description": "It creates a verification check which will tell you if the given profile is verified up to the level required to open a balance and create account details.\n\nThe recommendation is to call this API first before trying to open a balance or create account details.\n\n#### Query params\n\n| Field | Description | Format | Required |\n|-|-|-|-|\n| currencies | balance currencies (ISO 4217 Alphabetic Code) | list | true |\n\n| Field | Description | Format |\n|-|-|-|\n| request_id | request identifier (it will be the same if the same request is repeated) | uuid string |\n| current_status | profile verification status | text [verified / not_verified] |\n| currencies | balance currencies sent in the request | list |",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          },
+          {
+            "name": "profile-id",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: profile-id"
+          }
+        ],
+        "query": [
+          {
+            "name": "currencies",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "GBP,USD"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{access-token}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "1. Open Balance (V3)",
+      "path": "/{{host}}/v3/profiles/{{profile-id}}/balances",
+      "method": "POST",
+      "description": "Opens a balance for the specified profile and currency. If the balance already exists, return the existing one.\n\n#### Request Body\n\n| Field | Description | Format | Required |\n|-|-|-|-|\n| currency | balance currency (ISO 4217 Alphabetic Code) | text | true |\n| type | use STANDARD | text | true |\n| name | balance name | text | false |\n\n#### Response Body\n\n| Field | Description | Format |\n|-|-|-|\n| id | balance id | integer |\n| currency | balance currency (ISO 4217 Alphabetic Code) | text |\n| type | balance type (standard, savings) | text |\n| name | balance name | text |\n| icon | emoji string | text |\n| amount.value | Available balance value that can be used to fund transfers | decimal |\n| amount.currency | balance currency (ISO 4217 Alphabetic Code) | text |\n| reservedAmount.value | IGNORE |  |\n| reservedAmount.currency | IGNORE |  |\n| creationTime | date when balance was created | timestamp |\n| modificationTime | date when balance was last modified | timestamp |\n| visible | if balance is visible for the user or not | boolean |",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          },
+          {
+            "name": "profile-id",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: profile-id"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{access-token}}",
+            "description": "Your access token",
+            "required": true
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "X-idempotence-uuid",
+            "value": "{{$randomUUID}}",
+            "description": "Unique identifier assigned by you. Used for idempotency check purposes. Should your call fail for technical reasons then you can use the same value again for making a retry call.",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"currency\": \"EUR\",\n    \"type\": \"STANDARD\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "currency": "EUR",
+            "type": "STANDARD"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "2. Get balances (V3)",
+      "path": "/{{host}}/v3/profiles/{{profile-id}}/balances?types=STANDARD",
+      "method": "GET",
+      "description": "Returns all opened balances for the specified profile.\n\n#### Response Body\n\n| Field | Description | Format |\n|-|-|-|\n| id | balance id | integer |\n| currency | balance currency (ISO 4217 Alphabetic Code) | text |\n| type | balance type (standard, savings) | text |\n| name | balance name | text |\n| icon | emoji string | text |\n| amount.value | Available balance value that can be used to fund transfers | decimal |\n| amount.currency | balance currency (ISO 4217 Alphabetic Code) | text |\n| reservedAmount.value | IGNORE |  |\n| reservedAmount.currency | IGNORE |  |\n| creationTime | date when balance was created | timestamp |\n| modificationTime | date when balance was last modified | timestamp |\n| visible | if balance is visible for the user or not | boolean |",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          },
+          {
+            "name": "profile-id",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: profile-id"
+          }
+        ],
+        "query": [
+          {
+            "name": "types",
+            "description": "Use STANDARD",
+            "required": true,
+            "type": "string",
+            "default": "STANDARD"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{access-token}}",
+            "description": "Your access token",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "2.1 Get balance by id (V3)",
+      "path": "/{{host}}/v3/profiles/{{profile-id}}/balances/{{balance-id}}",
+      "method": "GET",
+      "description": "Returns the specified balance id.\n\n#### Response Body\n\n| Field | Description | Format |\n|-|-|-|\n| id | balance id | integer |\n| currency | balance currency (ISO 4217 Alphabetic Code) | text |\n| type | balance type (standard, savings) | text |\n| name | balance name | text |\n| icon | emoji string | text |\n| amount.value | Available balance value that can be used to fund transfers | decimal |\n| amount.currency | balance currency (ISO 4217 Alphabetic Code) | text |\n| reservedAmount.value | IGNORE |  |\n| reservedAmount.currency | IGNORE |  |\n| creationTime | date when balance was created | timestamp |\n| modificationTime | date when balance was last modified | timestamp |\n| visible | if balance is visible for the user or not | boolean |",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          },
+          {
+            "name": "profile-id",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: profile-id"
+          },
+          {
+            "name": "balance-id",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: balance-id"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{access-token}}",
+            "description": "Your access token",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "3. Create account details order",
+      "path": "/{{host}}/v1/profiles/{{profile-id}}/account-details-orders",
+      "method": "POST",
+      "description": "To issue account details, an order needs to be created. This endpoint creates the order and needs to be called after the balance is created for the same currency (1. Create Balance).\n\nAn order has a set of requirements which needs to be fulfilled before the account details are issued. When the order reaches the status `DONE` that means the details are issued and can be retrieved using (5. Get account details).\n\nEach requirement has its own status, which can be one of the following:\n\n`PENDING_USER`: Some user action is pending.  \n`PENDING_TW`: Some Wise action is pending.  \n`DONE`: Requirement is fulfilled.  \n\nThe requirements that are more common are:  \n\n`VERIFICATION` : User needs to be verified before account details are issued.  \n`TOP_UP`: A fee will be charged and needs to be paid, using one of Wise apps/web.  \n\n\n#### Request Body\n\n| Field | Description | Format | Required |\n|-|-|-|-|\n| currency | balance currency (ISO 4217 Alphabetic Code) | text | true |\n\n#### Response Body\n\n| Field | Description | Format |\n|-|-|-|\n| status | One of: `PENDING_USER`, `PENDING_TW`, `DONE` representing the current order status | text |\n| currency | currency (ISO 4217 Alphabetic Code) | text |\n| requirements.type | One of: `VERIFICATION`, `TOP_UP` | text |\n| requirement.status | One of: `PENDING_USER`, `PENDING_TW`, `DONE` representing the current requirement status | text |",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          },
+          {
+            "name": "profile-id",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: profile-id"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{access-token}}",
+            "description": "Your access token",
+            "required": true
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"currency\": \"EUR\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "currency": "EUR"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "3.1 Get account details orders",
+      "path": "/{{host}}/v1/profiles/{{profile-id}}/account-details-orders",
+      "method": "GET",
+      "description": "Return a list with all account detail orders created for the profile.\n\nAn order has a set of requirements which needs to be fulfilled before the account details are issued. When the order reaches the status `DONE` that means the details are issued and can be retrieved using (5. Get account details).\n\nEach requirement has its own status, which can be one of the following:\n\n`PENDING_USER`: Some user action is pending.  \n`PENDING_TW`: Some Wise action is pending.  \n`DONE`: Requirement is fulfilled.  \n\nThe requirements that are more common are:  \n\n`VERIFICATION` : User needs to be verified before account details are issued.  \n`TOP_UP`: A fee will be charged and needs to be paid, using one of Wise apps/web.  \n\n\n#### Request Body\n\n| Field | Description | Format | Required |\n|-|-|-|-|\n| currency | balance currency (ISO 4217 Alphabetic Code) | text | true |\n\n#### Response Body\n\n| Field | Description | Format |\n|-|-|-|\n| status | One of: `PENDING_USER`, `PENDING_TW`, `DONE` representing the current order status | text |\n| currency | currency (ISO 4217 Alphabetic Code) | text |\n| requirements.type | One of: `VERIFICATION`, `TOP_UP` | text |\n| requirement.status | One of: `PENDING_USER`, `PENDING_TW`, `DONE` representing the current requirement status | text |",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          },
+          {
+            "name": "profile-id",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: profile-id"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{access-token}}",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "4. Get account details",
+      "path": "/{{host}}/v1/profiles/{{profile-id}}/account-details",
+      "method": "GET",
+      "description": "Returns a list with all `AVAILABLE` and `ACTIVE` account details for the given profile. Account receive options can also include local and international details to receive money on the currency balance.\n\n### Important fields for integration\n\n#### status (text)\n`AVAILABLE`: The account details are available for the given profile but still does not exist   \n`ACTIVE`: The account details are available and active for the given profile\n\n#### deprecated (boolean)\n**!Important**  \nWhen `true` means another account details were issued for the same currency and the deprecated one should not be used anymore. Both will work during the deprecation time, but users should be informed and start using the new account details.\n\n#### receiveOptions (array)\nThis array will contain the available receive options for the given currency.\n`LOCAL`: local bank details to receive money in the account currency\n`INTERNATIONAL`: SWIFT bank details to receive money internationally in the account currency.\n\n#### receiveOptions.details (array)\nReturns all the details that needs to be displayed to users so they can make transfers to this account. This array will vary from currency to currency as each one has its own requirements.\nFor example:\nEUR will return `ACCOUNT_HOLDER`, `SWIFT_CODE`, `IBAN` and `ADDRESS` whereas GBP will return `ACCOUNT_HOLDER`, `BANK_CODE`, `ACCOUNT_NUMBER`, `IBAN` and `ADDRESS`.\n\nEach element in this array will contain the following attributes:\n\n`type`: String informing the account detail type  \n`title`: Title do be displayed to the user  \n`body`: Value to be displayed to the user  \n`description`: If present, it can be used to display a tooltip / popup hint  \n`hidden`: If the field should be displayed or not  \n\nHere an example how Wise.com display the GBP `receiveOptions.details` for local payments:\n\n![image](https://user-images.githubusercontent.com/72070035/121918884-5dc03780-cd2e-11eb-97dd-ec85a20ac39c.png)",
+      "parameters": {
+        "path": [
+          {
+            "name": "host",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: host"
+          },
+          {
+            "name": "profile-id",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: profile-id"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{access-token}}",
+            "description": "Your access token",
+            "required": true
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    }
+  ],
+  "webhooks": [],
+  "dependencies": [],
+  "capabilities": [],
+  "metadata": {
+    "description": "The Wise multi-currency account (MCA) enables users to hold, convert, and fund transfers (single or batches) with balances in up to 56 currencies.\n\nThe MCA is composed of:  \n\n**Balance**: Where your money in each currency is held.  \n**Account Details**: The local or international bank details can be used to receive money to a balance.  \n\nWith sufficient funds in the balance, transfers can then be funded over the API.\nThis documentation explains how to use the MCA APIs to create a balance and account details.\n\n### Creating balance and account details flow\n\nTo create an account in one of the available currencies, some steps needs to be follwed:\n\n- Check if user is verified\n- Open balance  \n- Order account details  \n- Get account details  \n- Get balance (after making a deposit to the account)  \n\n![image](https://user-images.githubusercontent.com/72070035/129573973-5ab8ec16-cf48-4f3f-bf36-8b1c8f583cb3.png)\n\n##### Verification\n\nThe user needs to be verified before using account details. To check the current status, there's an API for verification (#0). A first check using this API is recommended, and in case the user is still in status `not_verified` the integration should wait for a webhook notification of type `profiles#verification-state-change`. Every time a verification changes internally this event is emitted, and even though it contains a current status in it's payload, this is valid for other types of verification, not MCA. So use this trigger to call the API again and check the latest status for the user.\n\nAfter the status (verified) is reached, the flow can continue.\n\n##### Get account details\n\nOrdering account details is an async process, which internally will be put on hold (`available` status instead of `active`) if verification is pending. But as we advised to check for verification in the first step, nothing should block the retrieve of the account details, which to be used need to be in status `active`",
+    "postmanId": "4cd16941-7252-467c-bed9-cd4c6516b263",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "exporterId": "43116137",
+    "variables": {}
+  }
+}

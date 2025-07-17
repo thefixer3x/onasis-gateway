@@ -1,0 +1,32 @@
+# Deployment
+.vercel
+.netlify
+
+# Dependencies
+node_modules/
+bun.lockb
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Build
+dist/
+build/
+
+# IDE
+.vscode/
+.DS_Store
+
+# Generated
+src/adapters/generated/
+postman-collections/
+
+# Temporary
+temp/
+tmp/

@@ -1,0 +1,37 @@
+{
+  "name": "api-warehouse-gateway",
+  "version": "1.0.0",
+  "description": "REST API Gateway for API Service Warehouse",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest",
+    "build": "npm run test"
+  },
+  "keywords": [
+    "api",
+    "gateway",
+    "microservices",
+    "proxy",
+    "integration"
+  ],
+  "author": "API Integration Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "express-rate-limit": "^7.1.5",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

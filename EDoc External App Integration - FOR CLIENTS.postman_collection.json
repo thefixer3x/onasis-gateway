@@ -1,0 +1,749 @@
+{
+	"info": {
+		"_postman_id": "1ffabc81-8316-45ca-ae94-8eb9456d7ead",
+		"name": "EDoc External App Integration - FOR CLIENTS",
+		"description": "# 📄 EDoc APIs\n\nThe EDoc provides API endpoints that enable you to manage fetch the user transaction informations\n\n## **Getting started guide**\n\nTo start using the EDoc API, you need to -\n\n- You must get a valid client credentials to send requests to the API endpoints. You can get your credentials by contacting [info@e-doconline.ng](https://)\n    \n- The API has [rate and usage limits](https://).\n    \n- The API only responds to HTTPS-secured communications. Any requests sent via HTTP return an HTTP 301 redirect to the corresponding HTTPS resources.\n    \n- The API returns request responses in JSON format.\n    \n\n## Authentication\n\nThe EDoc API uses Bearer Token which needs to be passed as Authorization Header along with the client id.\n\nStartFragmentAuthorization headers should be in the following format:\n\n`Authorization: Bearer CLIENT_SECRET`\n\n`client-id: CLIENT_ID`\n\nIf an Authorization header or client id is missing, malformed, or invalid, you will receive an HTTP 401 Unauthorized response code.\n\n## Intergration Approaches\n\nEDoc currently offer Integration using Popup (Javascript SDK).\n\n##### Verficiation using POP Up (Javascript SDK)\n\n###### Step1 : Initialize Consent\n\nFirst step for any of the approach will be to initialize consent (from backend). This will give you the unique consent id. which needs to be passed to the frontend for further use.\n\n###### Step2 : SDK Integration\n\nFor POPUp Integration. Please paste the below code on your web page's head section.\n\n``` html\n<head>\n...\n<script src=\"https://e-doconline.ng/external/eDocSDK.js\">\n</script>\n....\n</head>\n\n ```\n\nAfter that you can call our Javascript SDK to open a authentication window where user can compelete the Journey.\n\n``` bash\nvar handler = EDoc.setup({\n    key: 'YOUR_PUBLIC_KEY', // Replace with your public key\n    consent_id: 'YOUR_CONSENT_ID', // Replace with conesnt id received from backend\n    onSuccess: function(response) {\n      //this happens after the payment is completed successfully\n      console.log('EDoc Response',response);\n      // Make an AJAX call to your server with the reference to verify the transaction\n    },\n    onError: function(error) {\n       console.log('EDoc Error',error);\n    },\n    onClose: function() {\n      alert('Transaction was not completed, window closed.');\n    },\n  });\n  handler.openWindow();\n\n ```\n\n> **Note:** In case of successful verification, Transaction information will also be sent via Webhook \n  \n\n###### Step 3 : Call the Dashboard API to get the Data\n\nOn completion of popup journey, You will get the response in onSuccess call back. After that you can call the Dashboard API (from Backend) to get the to get the summary of the transactions\n\nHaving doubts? Please visit our [demo page](https://preprod.connect.e-doconline.ng/external-demo) to see this journey in action.\n\n> **Note:** In case of successful verification, Transaction information will be sent via Webhook \n  \n\n## Rate and usage limits\n\nAPI access rate limits apply at a per-API key basis in unit time. The limit is 300 requests per minute. Also, depending on your plan, you may have usage limits. If you exceed either limit, your request will return an HTTP 429 Too Many Requests status code.\n\nEach API response returns the following set of headers to help you identify your use status:\n\n| Header | Description |\n| --- | --- |\n| `X-RateLimit-Limit` | The maximum number of requests that the consumer is permitted to make per minute. |\n| `X-RateLimit-Remaining` | The number of requests remaining in the current rate limit window. |\n| `X-RateLimit-Reset` | The time at which the current rate limit window resets in UTC epoch seconds. |\n\n### 503 response\n\nAn HTTP `503` response from our servers indicates there is an unexpected spike in API access traffic. The server is usually operational within the next five minutes. If the outage persists or you receive any other form of an HTTP `5XX` error, [contact support](https://e-doconline.ng).\n\n### Environments\n\n**Sandbox URL:** [https://preprod.connect.e-doconline.ng](https://)\n\n**Production URL:** [https://connect.e-doconline.ng](https://)\n\n### **Need some help?**\n\nIn case you have questions please share your queries on [info@e-doconline.ng](https://).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "43116137"
+	},
+	"item": [
+		{
+			"name": "Consent",
+			"item": [
+				{
+					"name": "Fetch User Consents",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{CLIENT_APP_SECRET}}"
+							}
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "client-id",
+								"value": "{{CLIENT_APP_ID}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{eDocAPIBaseUrl}}/api/v1/external/consent/byUser?email=pathik_demo@edoc.ng",
+							"host": [
+								"{{eDocAPIBaseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"external",
+								"consent",
+								"byUser"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "pathik_demo@edoc.ng"
+								}
+							]
+						},
+						"description": "This API helps to fetch details of all the existing consents available for a given User (Email)."
+					},
+					"response": [
+						{
+							"name": "Fetch Consent",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "client-id",
+										"value": "{{CLIENT_APP_ID}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{eDocAPIBaseUrl}}/api/v1/external/consent/:id",
+									"host": [
+										"{{eDocAPIBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"external",
+										"consent",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "f2944136-4894-43bc-83d0-c76860059377"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "X-DNS-Prefetch-Control",
+									"value": "off"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=15552000; includeSubDomains"
+								},
+								{
+									"key": "X-Download-Options",
+									"value": "noopen"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "1; mode=block"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "370"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"172-sHxTxSCsMApJ89zqIpQxhIWwBTw\""
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 16 Oct 2023 05:40:18 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"codes\": 200,\n    \"data\": {\n        \"consentId\": \"f2944136-4894-43bc-83d0-c76860059377\",\n        \"consentStatus\": \"Active\",\n        \"bankId\": 1,\n        \"bankName\": \"Wema Bank\",\n        \"accountNumber\": \"1234567890\",\n        \"products\": [\n            {\n                \"code\": \"affordability_full\",\n                \"name\": \"Credit Risk Assessment\"\n            }\n        ],\n        \"consentPrice\": 0,\n        \"startDate\": \"2023-07-16T03:11:52.739Z\",\n        \"endDate\": \"2023-10-16T03:11:56.754Z\"\n    },\n    \"message\": \"Consent fetched successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Initialize Consent",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{CLIENT_APP_SECRET}}"
+							}
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "client-id",
+								"value": "{{CLIENT_APP_ID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"pathik_demo@edoc.ng\",\r\n    \"redirection_url\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{eDocAPIBaseUrl}}/api/v1/external/consent/initialize",
+						"description": "Initialize a consent from your backend.\n\nYou will receive a consent id in the response of this request. Using this consent id we need to perform the verification in order to get the transaction data.\n\nFor verification you can use any of the 3 Methods provided by EDoc.\n\n1. Verficiation using Javascript SDK.\n    \n2. Verficiation using Backend API\n    \n3. Verficiation using EDoc Redirection"
+					},
+					"response": [
+						{
+							"name": "200 - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "client-id",
+										"value": "{{CLIENT_APP_ID}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"john_doe@edoc.ng\",\r\n    \"redirection_url\": \"\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": "{{eDocAPIBaseUrl}}/api/v1/external/consent/initialize"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "X-DNS-Prefetch-Control",
+									"value": "off"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=15552000; includeSubDomains"
+								},
+								{
+									"key": "X-Download-Options",
+									"value": "noopen"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "1; mode=block"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "119"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"77-C9WEDdlED8B0ua35CIOyxnKbKOg\""
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 15 Oct 2023 08:16:58 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"codes\": 200,\n    \"data\": {\n        \"consentId\": \"0cbe1640-b46c-4dd0-891c-1e5fe5c6cbe9\",\n        \"consentStatus\": \"Created\"\n    },\n    \"message\": \"Success\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Fetch Consent",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{CLIENT_APP_SECRET}}"
+							}
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "client-id",
+								"value": "{{CLIENT_APP_ID}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{eDocAPIBaseUrl}}/api/v1/external/consent/:id",
+							"host": [
+								"{{eDocAPIBaseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"external",
+								"consent",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ba87b4bb-a2e9-45d6-b883-8474e5e62f42"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Fetch Consent",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "client-id",
+										"value": "{{CLIENT_APP_ID}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{eDocAPIBaseUrl}}/api/v1/external/consent/:id",
+									"host": [
+										"{{eDocAPIBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"external",
+										"consent",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "f2944136-4894-43bc-83d0-c76860059377"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "X-DNS-Prefetch-Control",
+									"value": "off"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=15552000; includeSubDomains"
+								},
+								{
+									"key": "X-Download-Options",
+									"value": "noopen"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "1; mode=block"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "370"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"172-sHxTxSCsMApJ89zqIpQxhIWwBTw\""
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 16 Oct 2023 05:40:18 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"codes\": 200,\n    \"data\": {\n        \"consentId\": \"f2944136-4894-43bc-83d0-c76860059377\",\n        \"consentStatus\": \"Active\",\n        \"bankId\": 1,\n        \"bankName\": \"Wema Bank\",\n        \"accountNumber\": \"1234567890\",\n        \"products\": [\n            {\n                \"code\": \"affordability_full\",\n                \"name\": \"Credit Risk Assessment\"\n            }\n        ],\n        \"consentPrice\": 0,\n        \"startDate\": \"2023-07-16T03:11:52.739Z\",\n        \"endDate\": \"2023-10-16T03:11:56.754Z\"\n    },\n    \"message\": \"Consent fetched successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Consent",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{CLIENT_APP_SECRET}}"
+							}
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "client-id",
+								"value": "{{CLIENT_APP_ID}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{eDocAPIBaseUrl}}/api/v1/external/consent/:id",
+							"host": [
+								"{{eDocAPIBaseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"external",
+								"consent",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "f2944136-4894-43bc-83d0-c76860059377"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Delete Consent",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "client-id",
+										"value": "{{CLIENT_APP_ID}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{eDocAPIBaseUrl}}/api/v1/external/consent/:id",
+									"host": [
+										"{{eDocAPIBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"external",
+										"consent",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "f2944136-4894-43bc-83d0-c76860059377"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "X-DNS-Prefetch-Control",
+									"value": "off"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=15552000; includeSubDomains"
+								},
+								{
+									"key": "X-Download-Options",
+									"value": "noopen"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "1; mode=block"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "54"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"36-vsjeyh1OeFbGISTROkE9avk0UcM\""
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 16 Oct 2023 03:25:41 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"codes\": 200,\n    \"message\": \"Consent deleted successfully\"\n}"
+						}
+					]
+				}
+			],
+			"description": "The Consent API allows you to create and manage the user consents"
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{CLIENT_APP_SECRET}}"
+							}
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "client-id",
+								"value": "{{CLIENT_APP_ID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{eDocAPIBaseUrl}}/api/v1/external/consent/:consentId/dashboard",
+							"host": [
+								"{{eDocAPIBaseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"external",
+								"consent",
+								":consentId",
+								"dashboard"
+							],
+							"variable": [
+								{
+									"key": "consentId",
+									"value": "95dd1b1d-872f-432c-867c-947ac63d567e"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "200- Dashboard",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "client-id",
+										"value": "{{CLIENT_APP_ID}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{eDocAPIBaseUrl}}/api/v1/external/consent/:consentId/dashboard",
+									"host": [
+										"{{eDocAPIBaseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"external",
+										"consent",
+										":consentId",
+										"dashboard"
+									],
+									"variable": [
+										{
+											"key": "consentId",
+											"value": "6af215cf-b79d-4933-b061-c9338df71e3c"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 03 Nov 2023 14:18:44 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "284"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "X-DNS-Prefetch-Control",
+									"value": "off"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=15724800; includeSubDomains"
+								},
+								{
+									"key": "X-Download-Options",
+									"value": "noopen"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "1; mode=block"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"11c-h/vRRV+sgQeQJ/6DlV7hP/RZtJw\""
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"codes\": 200,\n    \"data\": {\n        \"monthlyIncome\": 0,\n        \"monthlyExpense\": 0,\n        \"inflows\": [\n            {\n                \"category\": \"Inbound transfer\",\n                \"value\": 290000\n            }\n        ],\n        \"outflows\": [\n            {\n                \"category\": \"Bank charges\",\n                \"value\": 258\n            },\n            {\n                \"category\": \"Outgoing payment\",\n                \"value\": 8000\n            },\n            {\n                \"category\": \"Outbound transfer\",\n                \"value\": 325000\n            }\n        ]\n    },\n    \"message\": \"Success\"\n}"
+						}
+					]
+				}
+			],
+			"description": "The Dashboard API allows you to fetch the categorization of the transaction data provided for the given context."
+		},
+		{
+			"name": "Webhook",
+			"item": [
+				{
+					"name": "Sample Request",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-signature",
+								"value": "<SIGNATURE_SIGNED>",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"event\": \"consent.transactions\",\r\n    \"data\": {\r\n        \"consentId\": \"b4fa2d6e-44ff-4732-b67a-dd4774ad345f\",\r\n        \"consentStatus\": \"Active\",\r\n        \"balance\": 57157.7,\r\n        \"transactions\": [\r\n            {\r\n                \"creditType\": \"Debit\",\r\n                \"amount\": 20,\r\n                \"currency\": \"\",\r\n                \"transactionReference\": \"\",\r\n                \"transactionDate\": \"2023-10-17T07:42:48.114Z\",\r\n                \"transactionInformation\": \"SMS Alert Charges for MAY 25 to JUN 24, 2023\"\r\n            },\r\n            {\r\n                \"creditType\": \"Credit\",\r\n                \"amount\": 250000,\r\n                \"currency\": \"\",\r\n                \"transactionReference\": \"000001230601164553224122114915\",\r\n                \"transactionDate\": \"2023-09-30T07:42:48.114Z\",\r\n                \"transactionInformation\": \"NIP:OLUBUKOLA OGUNDIPE-Transfer from OLUBUKOLA OG\"\r\n            }\r\n        ]\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "<YOUR_WEBHOOK_URL>"
+					},
+					"response": []
+				}
+			],
+			"description": "Webhooks allow you to set up a notification system that can be used to receive updates on certain requests made to the EDoc API.\n\nA webhook URL is simply a `POST` endpoint that a resource server sends updates to. The URL needs to parse a JSON request and return a `200 OK`\n\n> **Note:** We recommend that you use webhook to get transactions over using callbacks or polling. With callbacks, we don't have control over what happens on the customer's end. Neither do you. Callbacks can fail if the network connection on a customer's device fails or is weak or if the device goes off after consent verification. \n  \n\n## Verify event origin\n\nSince your webhook URL is publicly available, you need to verify that events originate from EDoc and not a bad actor. For that you need to do Signature validation\n\n### Signature validation\n\nEvents sent from EDoc carry the `x-signature header`. The value of this header is a `HMAC SHA512` signature of the event payload signed using your secret key. Verifying the header signature should be done before processing the event:\n\n``` javascript\nconst crypto = require('crypto');\nconst secret = process.env.EDOC_SECRET_KEY;\n// Using Express\napp.post(\"/my/webhook/url\", function(req, res) {\n    //validate event\n    const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');\n    if (hash == req.headers['x-signature']) {\n    // Retrieve the request's body\n    const event = req.body;\n    // Do something with event  \n    }\n    res.send(200);\n});\n\n ```\n\n###### Webhook Events & Data\n\nRight now, We are only supporting 1 event. \"**consent.transactions**\". Here is the sample data for the event.\n\n``` json\n{\n    \"event\": \"consent.transactions\",\n    \"data\": {\n        \"consentId\": \"b4fa2d6e-44ff-4732-b67a-dd4774ad345f\",\n        \"consentStatus\": \"Active\",\n        \"balance\": 57157.7,\n        \"transactions\": [{\n                \"creditType\": \"Debit\",\n                \"amount\": 20,\n                \"currency\": \"\",\n                \"transactionReference\": \"\",\n                \"transactionDate\": \"2023-10-17T07:42:48.114Z\",\n                \"transactionInformation\": \"SMS Alert Charges for MAY 25 to JUN 24, 2023\"\n            }, {\n                \"creditType\": \"Credit\",\n                \"amount\": 250000,\n                \"currency\": \"\",\n                \"transactionReference\": \"000001230601164553224122114915\",\n                \"transactionDate\": \"2023-09-30T07:42:48.114Z\",\n                \"transactionInformation\": \"NIP:OLUBUKOLA OGUNDIPE-Transfer from OLUBUKOLA OG\"\n            }\n        ]\n    }\n}\n\n ```"
+		},
+		{
+			"name": "Test Consent",
+			"item": [],
+			"description": "You can use the following test details to test with different banks.\n\n**Wema**\n\n> Account Number: 1002004000  \nVerification Type: Mobile App \n  \n\n**Heritage**\n\n> Account Number: 2002002001  \nVerification Type: OTP  \nTest OTP: 000000 \n  \n\n**Polaris**\n\n> Account Number:  \nVerification Type: OTP  \nTest OTP: 000000"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "eDocAPIBaseUrl",
+			"value": "https://preprod.connect.e-doconline.ng"
+		},
+		{
+			"key": "accessToken",
+			"value": ""
+		}
+	]
+}

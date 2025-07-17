@@ -1,0 +1,1711 @@
+{
+  "name": "business-api",
+  "version": "1.0.0",
+  "baseUrl": "",
+  "authentication": {
+    "type": "bearer",
+    "config": {
+      "token": "{{access_token}}"
+    }
+  },
+  "endpoints": [
+    {
+      "name": "Create Token",
+      "path": "/{{url}}/api/1.0/auth/token",
+      "method": "POST",
+      "description": "Endpoint used to exchange authorization code for access token.\n\n[Documentation](https://developer.revolut.com/docs/manage-accounts/get-started/make-your-first-api-request#4-exchange-authorization-code-for-access-token)",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/x-www-form-urlencoded",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "urlencoded",
+          "description": "",
+          "fields": [
+            {
+              "name": "grant_type",
+              "value": "authorization_code",
+              "description": "The OAuth grant type. In case of first token obtention, should be `authorization_code`."
+            },
+            {
+              "name": "code",
+              "value": "",
+              "description": "The authorization code obtained from the redirect URI after successful user consent. "
+            },
+            {
+              "name": "client_assertion_type",
+              "value": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+              "description": "Client assertion type. Fixed value. "
+            },
+            {
+              "name": "client_assertion",
+              "value": "{{jwt}}",
+              "description": "JWT token generated for authenticating the request. See [documentation](https://developer.revolut.com/docs/manage-accounts/get-started/make-your-first-api-request#2-generate-a-client-assertion)"
+            }
+          ]
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Refresh Token",
+      "path": "/{{url}}/api/1.0/auth/token",
+      "method": "POST",
+      "description": "When the `access_token` expires, you will need to request a new one using this endpoint.\n\n[Documentation](https://developer.revolut.com/docs/manage-accounts/get-started/make-your-first-api-request#refresh-access-token)",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/x-www-form-urlencoded",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "urlencoded",
+          "description": "",
+          "fields": [
+            {
+              "name": "grant_type",
+              "value": "refresh_token",
+              "description": "The OAuth grant type. In case of needing to refresh token, should be `refresh_token`."
+            },
+            {
+              "name": "refresh_token",
+              "value": "{{refresh_token}}",
+              "description": "Refresh token obtained in the response of the first access token creation."
+            },
+            {
+              "name": "client_assertion_type",
+              "value": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+              "description": "Client assertion type. Fixed value. "
+            },
+            {
+              "name": "client_assertion",
+              "value": "{{jwt}}",
+              "description": "JWT token generated for authenticating the request. See [documentation](https://developer.revolut.com/docs/manage-accounts/get-started/make-your-first-api-request#2-generate-a-client-assertion)"
+            }
+          ]
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve all accounts ",
+      "path": "/{{url}}/api/1.0/accounts",
+      "method": "GET",
+      "description": "Get a list of all your accounts.\n\n[API Reference](https://developer.revolut.com/docs/api-reference/business#tag/Accounts/operation/getAccounts)",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve an account",
+      "path": "/{{url}}/api/1.0/accounts/:id",
+      "method": "GET",
+      "description": "Get the information about a specific account by ID.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve account's bank detail",
+      "path": "/{{url}}/api/1.0/accounts/:id/bank-details",
+      "method": "GET",
+      "description": "Get all the bank details of a specific account.\n\n[API Reference](https://developer.revolut.com/docs/api-reference/business#tag/Accounts/operation/getAccountDetails)",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a list of cards",
+      "path": "/{{url}}/api/1.0/cards",
+      "method": "GET",
+      "description": "Get the list of all cards in your organisation.\n\nThe results are paginated and sorted by the `created_at` date in reverse chronological order.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "created_before",
+            "description": "Retrieves cards with created_at < created_before. The default value is the current date and time at which you are calling the endpoint.\n\nProvided in ISO 8601 format.",
+            "required": false,
+            "type": "date",
+            "default": "2023-09-11T15:10:53.570554Z"
+          },
+          {
+            "name": "limit",
+            "description": "The maximum number of cards returned per page.\n\nTo get to the next page, make a new request and use the created_at date of the last card returned in the previous response as the value for created_before.",
+            "required": false,
+            "type": "number",
+            "default": "10"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a card",
+      "path": "/{{url}}/api/1.0/cards",
+      "method": "POST",
+      "description": "Create a new card for an existing member of your Revolut Business [team](https://developer.revolut.com/docs/business/team-members).\n\nWhen using the API, you can create only virtual cards. To create a physical card, use the [Revolut Business app](https://business.revolut.com/signin).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"request_id\": \"7a10f3eb-fe56-4699-9bd0-044a63508828\",\n    \"virtual\": true,\n    \"holder_id\": \"173ab846-de2a-1234-5678-160bd2e660e6\",\n    \"label\": \"Kirby Janette\",\n    \"accounts\": [\n        \"75aa436d-2a04-4ab9-af14-ed0955769b8c\"\n    ],\n    \"categories\": [\n        \"groceries\",\n        \"restaurants\"\n    ],\n    \"spending_limits\": {\n        \"single\": {\n            \"amount\": 200.22,\n            \"currency\": \"GBP\"\n        },\n        \"week\": {\n            \"amount\": 200.44,\n            \"currency\": \"GBP\"\n        }\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "request_id": "7a10f3eb-fe56-4699-9bd0-044a63508828",
+            "virtual": true,
+            "holder_id": "173ab846-de2a-1234-5678-160bd2e660e6",
+            "label": "Kirby Janette",
+            "accounts": [
+              "75aa436d-2a04-4ab9-af14-ed0955769b8c"
+            ],
+            "categories": [
+              "groceries",
+              "restaurants"
+            ],
+            "spending_limits": {
+              "single": {
+                "amount": 200.22,
+                "currency": "GBP"
+              },
+              "week": {
+                "amount": 200.44,
+                "currency": "GBP"
+              }
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve card details",
+      "path": "/{{url}}/api/1.0/cards/:card_id",
+      "method": "GET",
+      "description": "Get the details of a specific card, based on its ID.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update card details",
+      "path": "/{{url}}/api/1.0/cards/:card_id",
+      "method": "PATCH",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"label\": \"New label\",\n    \"categories\": [\n        \"services\",\n        \"shopping\",\n        \"furniture\"\n    ],\n    \"spending_limits\": {\n        \"single\": {\n            \"amount\": 200.22,\n            \"currency\": \"GBP\"\n        },\n        \"week\": {\n            \"amount\": 200.44,\n            \"currency\": \"GBP\"\n        }\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "label": "New label",
+            "categories": [
+              "services",
+              "shopping",
+              "furniture"
+            ],
+            "spending_limits": {
+              "single": {
+                "amount": 200.22,
+                "currency": "GBP"
+              },
+              "week": {
+                "amount": 200.44,
+                "currency": "GBP"
+              }
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Terminate a card",
+      "path": "/{{url}}/api/1.0/cards/:card_id",
+      "method": "DELETE",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Freeze a card",
+      "path": "/{{url}}/api/1.0/cards/:card_id/freeze",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Unfreeze a card",
+      "path": "/{{url}}/api/1.0/cards/:card_id/unfreeze",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve sensitive card details",
+      "path": "/{{url}}/api/1.0/cards/:card_id/sensitive-details",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve counterparties",
+      "path": "/{{url}}/api/1.0/counterparties",
+      "method": "GET",
+      "description": "Get all the counterparties that you have created, or use the query parameters to filter the results.\n\nThe counterparties are sorted by the `created_at` date in reverse chronological order.\n\nThe returned counterparties are **paginated**. The maximum number of counterparties returned per page is specified by the `limit` parameter. To get to the next page, make a new request and use the `created_at` date of the last counterparty returned in the previous response.\n\nFor more information, see the guides: [Retrieve counterparties](https://developer.revolut.com/docs/guides/manage-accounts/counterparties/retrieve-counterparties).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "name",
+            "description": "The name of the counterparty to retrieve. It does not need to be an exact match, partial match is also supported.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "account_no",
+            "description": "The exact account number of the counterparty to retrieve.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "sort_code",
+            "description": "The exact sort code of the counterparty to retrieve. Only allowed in combination with the account_no parameter.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "iban",
+            "description": "The exact IBAN of the counterparty to retrieve.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "bic",
+            "description": "The exact BIC of the counterparty to retrieve. Only allowed in combination with the iban parameter.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "created_before",
+            "description": "Used for pagination, retrieves counterparties created before the given date in ISO 8601 format.",
+            "required": false,
+            "type": "date",
+            "default": "2023-03-09T15:32:03.325749Z"
+          },
+          {
+            "name": "limit",
+            "description": "Used for pagination, sets the number of results to return per page.",
+            "required": false,
+            "type": "number",
+            "default": "10"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a counterparty",
+      "path": "/{{url}}/api/1.0/counterparty/:counterparty_id",
+      "method": "GET",
+      "description": "Get the information about a specific counterparty by ID.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a counterparty",
+      "path": "/{{url}}/api/1.0/counterparty/:counterparty_id",
+      "method": "DELETE",
+      "description": "Delete a counterparty with the given ID. When a counterparty is deleted, you cannot make any payments to the counterparty.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a counterparty",
+      "path": "/{{url}}/api/1.0/counterparty",
+      "method": "POST",
+      "description": "Create a new counterparty to transact with.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"individual_name\": {\n        \"first_name\": \"John\",\n        \"last_name\": \"Smith\"\n    },\n    \"bank_country\": \"GB\",\n    \"currency\": \"GBP\",\n    \"sort_code\": \"12-34-56\",\n    \"account_no\": \"12345678\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "individual_name": {
+              "first_name": "John",
+              "last_name": "Smith"
+            },
+            "bank_country": "GB",
+            "currency": "GBP",
+            "sort_code": "12-34-56",
+            "account_no": "12345678"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Validate an account name (CoP)",
+      "path": "/{{url}}/api/1.0/account-name-validation",
+      "method": "POST",
+      "description": "Use Confirmation of Payee (CoP) to validate a UK counterparty's account name against their account number and sort code when [adding a counterparty](https://developer.revolut.com/docs/business/add-counterparty) or [making a transfer](https://developer.revolut.com/docs/business/create-payment) to a new or existing counterparty.\n\nFor more details, see the guides: [Validate an account name (CoP)](https://developer.revolut.com/docs/guides/manage-accounts/counterparties/confirmation-of-payee).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"sort_code\": \"54-01-05\",\n    \"account_no\": \"12345678\",\n    \"individual_name\": {\n        \"first_name\": \"John\",\n        \"last_name\": \"Smith\"\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "sort_code": "54-01-05",
+            "account_no": "12345678",
+            "individual_name": {
+              "first_name": "John",
+              "last_name": "Smith"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve all expenses",
+      "path": "/{{url}}/api/1.0/expenses",
+      "method": "GET",
+      "description": "Get all your expenses, or use the query parameters to filter the results.\n\nThe expenses are sorted by the `expense_date` value in reverse chronological order, and they're **paginated**. The maximum number of expenses returned per page is specified by the `count` parameter. To get the next page of results, make a new request and use the `expense_date` value from the last item of the previous page as the value for the `to` parameter.\n\n[API Reference](https://developer.revolut.com/docs/business/get-expenses)",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "from",
+            "description": "The date and time to retrieve the expenses from, including this date-time. Corresponds to the value of expense_date. Provided in ISO 8601 format.\n\nUsed also for pagination. To get back to the previous page of results, make a new request and use the expense_date value from the first item of the current page as the value for the from parameter.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "to",
+            "description": "The date and time to retrieve the expenses to, excluding this date-time. Corresponds to the value of expense_date. Provided in ISO 8601 format. The default value is the date and time at which you're calling the endpoint.\n\nUsed also for pagination. To get back to the next page of results, make a new request and use the expense_date value from the last item of the previous (current) page as the value for the to parameter.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "count",
+            "description": "The maximum number of the expenses to retrieve per page. To get the next page of results, make a new request and use the expense_date value from the last item of the previous page as the value for the to parameter.",
+            "required": false,
+            "type": "number",
+            "default": "100"
+          },
+          {
+            "name": "state",
+            "description": "Possible values: [missing_info, awaiting_review, reverted, refund_requested, refunded, approved, rejected]\n\nRetrieves the expenses in the specified state.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "transaction_type",
+            "description": "Possible values: [atm, card_payment, fee, transfer, external]\n\nThe type of the transaction related to the expense. If provided, only expenses with transactions of this type are returned.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve an expense",
+      "path": "/{{url}}/api/1.0/expenses/:expense_id",
+      "method": "GET",
+      "description": "Get the information about a specific expense by ID.\n\n[API Reference](https://developer.revolut.com/docs/business/get-expense)",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve an expense receipt",
+      "path": "/{{url}}/api/1.0/expenses/:expense_id/receipts/:receipt_id/content",
+      "method": "GET",
+      "description": "Get the receipt related to an expense by providing the receipt's ID.\n\n[API Reference](https://developer.revolut.com/docs/business/get-expense-receipt)",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get exchange rate",
+      "path": "/{{url}}/api/1.0/rate?from=EUR&amount=100&to=USD",
+      "method": "GET",
+      "description": "Get the sell exchange rate between two currencies.\n\nFor more information, see the guides: [Exchange money](https://developer.revolut.com/docs/guides/manage-accounts/exchange-money).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "from",
+            "description": "The currency that you exchange from.",
+            "required": true,
+            "type": "string",
+            "default": "EUR"
+          },
+          {
+            "name": "amount",
+            "description": "The amount of the currency. The default value is `1.00`.\n",
+            "required": true,
+            "type": "number",
+            "default": "100"
+          },
+          {
+            "name": "to",
+            "description": "The currency that you exchange to.",
+            "required": true,
+            "type": "string",
+            "default": "USD"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Exchange Money",
+      "path": "/{{url}}/api/1.0/exchange",
+      "method": "POST",
+      "description": "Exchange money from one currency to another.\n\n[API Reference](https://developer.revolut.com/docs/api-reference/business#tag/Exchanges/operation/exchangeMoney)",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"from\": {\n        \"account_id\": \"af98333c-ea53-482b-93c2-1fa5e4eae671\",\n        \"currency\": \"GBP\",\n        \"amount\": 10\n    },\n    \"to\": {\n        \"account_id\": \"b7ec67d3-5af1-42c8-bece-3d285774894d\",\n        \"currency\": \"AUD\"\n    },\n    \"reference\": \"exchange\",\n    \"request_id\": \"{{$randomUUID}}\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "from": {
+              "account_id": "af98333c-ea53-482b-93c2-1fa5e4eae671",
+              "currency": "GBP",
+              "amount": 10
+            },
+            "to": {
+              "account_id": "b7ec67d3-5af1-42c8-bece-3d285774894d",
+              "currency": "AUD"
+            },
+            "reference": "exchange",
+            "request_id": "{{$randomUUID}}"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a list of payment drafts",
+      "path": "/{{url}}/api/1.0/payment-drafts",
+      "method": "GET",
+      "description": "Get the list of payment drafts created with the API that haven't been [sent for processing](https://developer.revolut.com/docs/guides/manage-accounts/transfers/payment-drafts#send-drafts-for-processing).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a payment draft",
+      "path": "/{{url}}/api/1.0/payment-drafts",
+      "method": "POST",
+      "description": "Create a payment draft.\n\nWhen you create a payment draft, it stays a draft until you [send it for processing as payment](https://developer.revolut.com/docs/guides/manage-accounts/transfers/payment-drafts#send-drafts-for-processing) in the [Revolut Business app](https://business.revolut.com/).\n\nUntil then, you can [delete](https://developer.revolut.com/docs/business/delete-payment-draft) the draft if you no longer wish to proceed with it.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"title\": \"Draft Payment Title\",\n    \"schedule_for\": \"2022-12-24\",\n    \"payments\": [\n        {\n            \"account_id\": \"91da6ddd-4680-4d4e-a96b-baf0cfe4cc15\",\n            \"receiver\": {\n                \"counterparty_id\": \"23e42354-538d-4719-8ad5-f68c07456716\"\n            },\n            \"amount\": 10,\n            \"currency\": \"GBP\",\n            \"reference\": \"payment1\"\n        }\n    ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "title": "Draft Payment Title",
+            "schedule_for": "2022-12-24",
+            "payments": [
+              {
+                "account_id": "91da6ddd-4680-4d4e-a96b-baf0cfe4cc15",
+                "receiver": {
+                  "counterparty_id": "23e42354-538d-4719-8ad5-f68c07456716"
+                },
+                "amount": 10,
+                "currency": "GBP",
+                "reference": "payment1"
+              }
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a payment draft",
+      "path": "/{{url}}/api/1.0/payment-drafts/:payment_draft_id",
+      "method": "GET",
+      "description": "Get the information about a specific payment draft by ID.\n\nThe response lists the details of the payment(s) included in the draft, as well as the draft details.\n\nFor more information, see the guides: [Payment drafts](https://developer.revolut.com/docs/guides/manage-accounts/transfers/payment-drafts).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a payment draft",
+      "path": "/{{url}}/api/1.0/payment-drafts/:payment_draft_id",
+      "method": "DELETE",
+      "description": "Delete a payment draft with the given ID.\n\nYou can delete a payment draft only if it hasn't been [sent for processing](https://developer.revolut.com/docs/guides/manage-accounts/transfers/payment-drafts#send-drafts-for-processing).\n\nFor more information, see the guides: [Payment drafts](https://developer.revolut.com/docs/guides/manage-accounts/transfers/payment-drafts).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a list of payout links",
+      "path": "/{{url}}/api/1.0/payout-links",
+      "method": "GET",
+      "description": "Get all the links that you have created, or use the query parameters to filter the results.\n\nThe links are sorted by the `created_at` date in reverse chronological order.\n\nThe returned links are **paginated**. The maximum number of payout links returned per page is specified by the `limit` parameter. To get to the next page, make a new request and use the `created_at` date of the last payout link returned in the previous response.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "state",
+            "description": "Possible values: [created, failed, awaiting, active, expired, cancelled, processing, processed]\n\nRetrieves links in the specified state(s). Possible states are:\n\n- created: The payout link has been created, but the amount has not yet been blocked.\n- failed: The payout link couldn't be generated due to a failure during transaction booking.\n- awaiting: The payout link is awaiting approval.\n- active: The payout link can be redeemed.\n- expired: The payout link cannot be redeemed because it wasn't claimed before its expiry date.\n- cancelled: The payout link cannot be redeemed because it was cancelled.\n- processing: The payout link has been redeemed and is being processed.\n- processed: The payout link has been redeemed and the money has been transferred to the recipient.\n\nUse for filtering to retrieve only links in specified states. To specify multiple values, follow this pattern: state={VALUE1}&state={VALUE2}.",
+            "required": false,
+            "type": "string",
+            "default": "active"
+          },
+          {
+            "name": "created_before",
+            "description": "Retrieves links with created_at < created_before. The default value is the current date and time at which you are calling the endpoint.\n\nProvided in ISO 8601 format.",
+            "required": false,
+            "type": "date",
+            "default": "2024-03-22T13:24:39Z"
+          },
+          {
+            "name": "limit",
+            "description": "The maximum number of links returned per page.\n\nTo get to the next page, make a new request and use the created_at date of the last payout link returned in the previous response as the value for created_before.",
+            "required": false,
+            "type": "number",
+            "default": "100"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a payout link",
+      "path": "/{{url}}/api/1.0/payout-links/:payout_link_id",
+      "method": "GET",
+      "description": "Create a payout link to send money even when you don't have the full banking details of the counterparty.  \nAfter you have created the link, send it to the recipient so that they can claim the payment.\n\nFor more information, see the guides: [Send money via payout link](https://developer.revolut.com/docs/guides/manage-accounts/transfers/payout-links).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a payout link",
+      "path": "/{{url}}/api/1.0/payout-links",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"counterparty_name\": \"John Smith\",\n    \"save_counterparty\": false,\n    \"request_id\": \"{{$randomUUID}}\",\n    \"account_id\": \"85f515e4-588f-4496-a6a5-a7615a193e6b\",\n    \"amount\": 105.6,\n    \"currency\": \"GBP\",\n    \"reference\": \"Rent\",\n    \"payout_methods\": [\n        \"revolut\",\n        \"bank_account\",\n        \"card\"\n    ],\n    \"expiry_period\": \"P3D\",\n    \"transfer_reason_code\": \"property_rental\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "counterparty_name": "John Smith",
+            "save_counterparty": false,
+            "request_id": "{{$randomUUID}}",
+            "account_id": "85f515e4-588f-4496-a6a5-a7615a193e6b",
+            "amount": 105.6,
+            "currency": "GBP",
+            "reference": "Rent",
+            "payout_methods": [
+              "revolut",
+              "bank_account",
+              "card"
+            ],
+            "expiry_period": "P3D",
+            "transfer_reason_code": "property_rental"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Cancel a payout link",
+      "path": "/{{url}}/api/1.0/payout-links/:payout_link_id/cancel",
+      "method": "POST",
+      "description": "Cancel a payout link. You can only cancel a link that hasn't been claimed yet. A successful request does not get any content in response.\n\nFor more information, see the guides: [Send money via payout link](https://developer.revolut.com/docs/guides/manage-accounts/transfers/payout-links).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get transfer reasons",
+      "path": "/{{url}}/api/1.0/transfer-reasons",
+      "method": "GET",
+      "description": "In order to initiate a transfer in certain currencies and countries, you must provide a transfer reason. With this endpoint you can retrieve all transfer reasons available to your business account per country and currency.\n\nAfter you retrieve the results, use the appropriate reason code in the `transfer_reason_code` field when [making a transfer to a counterparty](https://developer.revolut.com/docs/business/create-payment) or [creating a payout link](https://developer.revolut.com/docs/business/create-payout-link).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Simulate a transfer state update",
+      "path": "/https://sandbox-b2b.revolut.com/api/1.0/sandbox/transactions/:id/:action",
+      "method": "POST",
+      "description": "Simulate a transfer state change in the Sandbox environment.\n\nFor example, after you make a transfer in Sandbox, you can change its state to `completed`. The resulting state is final and cannot be changed.\n\nFor more information, see the guides: [Test your flows with simulations (Sandbox only)](https://developer.revolut.com/docs/guides/manage-accounts/api-usage-and-testing/test-flows-with-simulations).",
+      "parameters": {
+        "path": [],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Account top-up",
+      "path": "/https://sandbox-b2b.revolut.com/api/1.0/sandbox/topup",
+      "method": "POST",
+      "description": "Simulate a top-up of your account in the Sandbox environment.\n\nThis is useful during testing, when you run out of money in your test account and need to add more.\n\nFor more information, see the guides: [Test your flows with simulations (Sandbox only)](https://developer.revolut.com/docs/guides/manage-accounts/api-usage-and-testing/test-flows-with-simulations).",
+      "parameters": {
+        "path": [],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"account_id\": \"e042faaa-1234-49cc-1234-db7a6c46944f\",\n    \"amount\": 100,\n    \"currency\": \"GBP\",\n    \"reference\": \"Test Top-up\",\n    \"state\": \"completed\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "account_id": "e042faaa-1234-49cc-1234-db7a6c46944f",
+            "amount": 100,
+            "currency": "GBP",
+            "reference": "Test Top-up",
+            "state": "completed"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a list of team members",
+      "path": "/{{url}}/api/1.0/team-members",
+      "method": "GET",
+      "description": "Get information about all the team members of your business.\n\nThe results are paginated and sorted by the `created_at` date in reverse chronological order.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "created_before",
+            "description": "Retrieves team members with created_at < created_before. The default value is the current date and time at which you are calling the endpoint.\n\nProvided in ISO 8601 format.",
+            "required": false,
+            "type": "date",
+            "default": "2023-10-03T22:33:00.186014Z"
+          },
+          {
+            "name": "limit",
+            "description": "The maximum number of team members returned per page.\n\nTo get to the next page, make a new request and use the created_at date of the last team member returned in the previous response as the value for created_before.",
+            "required": false,
+            "type": "number",
+            "default": "2"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Invite a new member to your business",
+      "path": "/{{url}}/api/1.0/team-members",
+      "method": "POST",
+      "description": "Invite a new member to your business account.\n\nWhen you invite a new team member to your business account, an invitation is sent to their email address that you provided in this request. To join your business account, the new team member has to accept this invitation.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"email\": \"john.smith@example.com\",\n    \"role_id\": \"0098ac28-b92f-435e-a3a2-2829d3918dfb\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "email": "john.smith@example.com",
+            "role_id": "0098ac28-b92f-435e-a3a2-2829d3918dfb"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve team roles",
+      "path": "/{{url}}/api/1.0/roles",
+      "method": "GET",
+      "description": "Get the list of roles for your business.\n\nThe results are paginated and sorted by the `created_at` date in reverse chronological order.",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "created_before",
+            "description": "Retrieves team members with created_at < created_before. The default value is the current date and time at which you are calling the endpoint.\n\nProvided in ISO 8601 format.",
+            "required": false,
+            "type": "date",
+            "default": "2023-10-03T22:33:00.186014Z"
+          },
+          {
+            "name": "limit",
+            "description": "The maximum number of team members returned per page.\n\nTo get to the next page, make a new request and use the created_at date of the last team member returned in the previous response as the value for created_before.",
+            "required": false,
+            "type": "number",
+            "default": "2"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve all transactions",
+      "path": "/{{url}}/api/1.0/transactions",
+      "method": "GET",
+      "description": "Retrieve the historical transactions based on the provided query criteria.\n\nThe transactions are sorted by the `created_at` date in reverse chronological order, and they're **paginated**. The maximum number of transactions returned per page is specified by the `count` parameter. To get the next page of results, make a new request and use the `created_at` date from the last item of the previous page as the value for the `to` parameter.\n\nFor more details, see the guides: [Retrieve transaction data](https://developer.revolut.com/docs/guides/manage-accounts/accounts-and-transactions/retrieve-transactions).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "from",
+            "description": "The date and time you retrieve the historical transactions from, including this date-time. Corresponds to the created_at value of the transaction. Provided in ISO 8601 format.\n\nUsed also for pagination. To get back to the previous page of results, make a new request and use the created_at date from the first item of the current page as the value for the from parameter.",
+            "required": false,
+            "type": "date",
+            "default": "2022-08-31T17:21:20.364171Z"
+          },
+          {
+            "name": "to",
+            "description": "The date and time you retrieve the historical transactions to, excluding this date-time. Corresponds to the created_at value of the transaction. Provided in ISO 8601 format. The default value is the date and time at which you're calling the endpoint.\n\nUsed also for pagination. To get the next page of results, make a new request and use the created_at date from the last item of the previous (current) page as the value for the to parameter.",
+            "required": false,
+            "type": "date",
+            "default": "2025-08-31T17:21:20.364171Z"
+          },
+          {
+            "name": "account",
+            "description": "The ID of the account",
+            "required": false,
+            "type": "string",
+            "default": "<account_id>"
+          },
+          {
+            "name": "count",
+            "description": "The maximum number of the historical transactions to retrieve per page.\n\nTo get the next page of results, make a new request and use the created_at date from the last item of the previous page as the value for the to parameter.",
+            "required": false,
+            "type": "number",
+            "default": "1000"
+          },
+          {
+            "name": "type",
+            "description": "The type of the historical transactions to retrieve.\n\nPossible values: [atm, card_payment, card_refund, card_chargeback, card_credit, exchange, transfer, loan, fee, refund, topup, topup_return, tax, tax_refund]",
+            "required": false,
+            "type": "string",
+            "default": "<type>"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a transaction",
+      "path": "/{{url}}/api/1.0/transaction/:id",
+      "method": "GET",
+      "description": "Retrieve the details of a specific transaction. The details can include, for example, cardholder details for card payments.\n\nYou can retrieve a transaction with its details either by its **transaction ID** or by the **request ID** that was provided for this transaction at the time of its creation, for example, when you [created a payment](https://developer.revolut.com/docs/business/create-payment).\n\n- To retrieve a transaction by its **transaction ID**, use:  \n    `/transaction/{transaction_id}`\n    \n- To retrieve a transaction by a **request ID** provided at transaction creation, use:  \n    `/transaction/{request_id}?id_type=request_id`\n    \n\nFor more details, see the guides: [Retrieve transaction data](https://developer.revolut.com/docs/guides/manage-accounts/accounts-and-transactions/retrieve-transactions).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "id_type",
+            "description": "The type of the ID to retrieve the transaction by.",
+            "required": false,
+            "type": "string",
+            "default": "request_id"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Move money between your accounts",
+      "path": "/{{url}}/api/1.0/transfer",
+      "method": "POST",
+      "description": "Move money between the Revolut accounts of the business in the same currency.\n\nThe resulting transaction has the type `transfer`.\n\nFor more information, see the guides: [Send money](https://developer.revolut.com/docs/guides/manage-accounts/transfers/send-money).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"request_id\": \"{{$randomUUID}}\",\n    \"source_account_id\": \"2e6de1bf-97ad-478d-aad1-9d7a3cdf1234\",\n    \"target_account_id\": \"ae2e1241-81dd-498d-868e-075484785678\",\n    \"amount\": 10,\n    \"currency\": \"GBP\",\n    \"reference\": \"John's transfer\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "request_id": "{{$randomUUID}}",
+            "source_account_id": "2e6de1bf-97ad-478d-aad1-9d7a3cdf1234",
+            "target_account_id": "ae2e1241-81dd-498d-868e-075484785678",
+            "amount": 10,
+            "currency": "GBP",
+            "reference": "John's transfer"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a transfer to another account or card",
+      "path": "/{{url}}/api/1.0/pay",
+      "method": "POST",
+      "description": "Make a payment to a counterparty. You can choose either a bank transfer or a card transfer. The resulting transaction has the type `transfer`.\n\nIf you make the payment to another Revolut account, either business or personal, the transaction is executed instantly.\n\nIf the counterparty has multiple payment methods available, for example, 2 accounts, or 1 account and 1 card, you **must specify the account or card** to which you want to transfer the money (`receiver.account_id` or `receiver.card_id` respectively) .\n\nFor more details, see the guides: [Send money via bank transfer](https://developer.revolut.com/docs/guides/manage-accounts/transfers/bank-transfers) and [Card transfers](https://developer.revolut.com/docs/guides/manage-accounts/transfers/card-transfers).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"request_id\": \"{{$randomUUID}}\",\n    \"account_id\": \"228f4ddc-b981-4d45-bc16-54304b14da22\",\n    \"receiver\": {\n        \"counterparty_id\": \"a1d2a938-c69b-4f08-b15f-bfc1b54b69d1\",\n        \"account_id\": \"417433c2-d930-47a0-ad34-a88b01939ce5\"\n    },\n    \"amount\": 0.50,\n    \"currency\": \"EUR\",\n    \"charge_bearer\" : \"shared\",\n    \"reference\": \"To John Doe\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "request_id": "{{$randomUUID}}",
+            "account_id": "228f4ddc-b981-4d45-bc16-54304b14da22",
+            "receiver": {
+              "counterparty_id": "a1d2a938-c69b-4f08-b15f-bfc1b54b69d1",
+              "account_id": "417433c2-d930-47a0-ad34-a88b01939ce5"
+            },
+            "amount": 0.5,
+            "currency": "EUR",
+            "charge_bearer": "shared",
+            "reference": "To John Doe"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get transfer reasons",
+      "path": "/{{url}}/api/1.0/transfer-reasons",
+      "method": "GET",
+      "description": "In order to initiate a transfer in certain currencies and countries, you must provide a transfer reason. With this endpoint you can retrieve all transfer reasons available to your business account per country and currency.\n\nAfter you retrieve the results, use the appropriate reason code in the `transfer_reason_code` field when [making a transfer to a counterparty](https://developer.revolut.com/docs/business/create-payment) or [creating a payout link](https://developer.revolut.com/docs/business/create-payout-link).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a webhook",
+      "path": "/{{url}}/api/1.0/webhook",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Set a webhook",
+      "path": "/{{url}}/api/1.0/webhook",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"url\": \"https://www.example.com\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "url": "https://www.example.com"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a webhook",
+      "path": "/{{url}}/api/1.0/webhook",
+      "method": "DELETE",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"url\": \"https://www.example.com\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "url": "https://www.example.com"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a new webhook",
+      "path": "/{{url}}/api/2.0/webhooks",
+      "method": "POST",
+      "description": "Create a new webhook to receive event notifications to the specified URL. Provide a list of event types that you want to subscribe to and a URL for the webhook. Only HTTPS URLs are supported.\n\nFor more information, see the guides: [About webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/about-webhooks) and [Manage webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/manage-webhooks#create-a-webhook).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"url\": \"https://www.revolut.com\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "url": "https://www.revolut.com"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a list of webhooks",
+      "path": "/{{url}}/api/2.0/webhooks",
+      "method": "GET",
+      "description": "Get the list of all your existing webhooks and their details.\n\nFor more information, see the guides: [About webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/about-webhooks) and [Manage webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/manage-webhooks#retrieve-a-list-of-webhooks).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a webhook",
+      "path": "/{{url}}/api/2.0/webhooks/:webhook_id",
+      "method": "GET",
+      "description": "Get the information about a specific webhook by ID.\n\nFor more information, see the guides: [About webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/about-webhooks) and [Manage webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/manage-webhooks#retrieve-a-specific-webhook).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update a webhook URL",
+      "path": "/{{url}}/api/2.0/webhooks/:webhook_id",
+      "method": "PATCH",
+      "description": "Update an existing webhook. Change the URL to which event notifications are sent or the list of event types to be notified about.\n\nYou must specify at least one of these two. The fields that you don't specify are not updated.\n\nFor more information, see the guides: [About webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/about-webhooks) and [Manage webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/manage-webhooks#update-a-webhook).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"url\": \"https://www.example.com\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "url": "https://www.example.com"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a webhook",
+      "path": "/{{url}}/api/2.0/webhooks/:webhook_id",
+      "method": "DELETE",
+      "description": "Delete a specific webhook.\n\nA successful response does not get any content in return.\n\nFor more information, see the guides: [About webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/about-webhooks) and [Manage webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/manage-webhooks#delete-a-webhook).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Rotate a webhook signing secret",
+      "path": "/{{url}}/api/2.0/webhooks/:webhook_id/rotate-signing-secret",
+      "method": "POST",
+      "description": "Rotate a signing secret for a specific webhook.\n\nFor more information, see the guides: [About webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/about-webhooks) and [Manage webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/manage-webhooks#rotate-a-webhook-signing-secret).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"expiration_period\": \"PT5H30M\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "expiration_period": "PT5H30M"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a list of failed webhook events",
+      "path": "/{{url}}/api/2.0/webhooks/:webhook_id/failed-events",
+      "method": "GET",
+      "description": "Get the list of all your failed webhook events, or use the query parameters to filter the results.\n\nThe events are sorted by the `created_at` date in reverse chronological order.\n\nThe returned failed events are **paginated**. The maximum number of events returned per page is specified by the `limit` parameter. To get to the next page, make a new request and use the `created_at` date of the last event returned in the previous response.\n\nFor more information, see the guides: [About webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/about-webhooks) and [Manage webhooks](https://developer.revolut.com/docs/guides/manage-accounts/webhooks/manage-webhooks#retrieve-a-list-of-failed-webhook-events).",
+      "parameters": {
+        "path": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: url"
+          }
+        ],
+        "query": [
+          {
+            "name": "limit",
+            "description": "The maximum number of events returned per page.\n\nTo get to the next page, make a new request and use the created_at date of the last event returned in the previous response as value for created_before.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "created_before",
+            "description": "Retrieves events with created_at < created_before. Cannot be older than the current date minus 21 days. The default value is the current date and time at which you are calling the endpoint.\n\nProvided in ISO 8601 format.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    }
+  ],
+  "webhooks": [],
+  "dependencies": [],
+  "capabilities": [
+    "authentication",
+    "webhooks"
+  ],
+  "metadata": {
+    "description": "## Introduction\n\nAs a Revolut Business customer, you can use the Business API to automate your own business processes. Save time, reduce your costs, and avoid errors by using the Business API.\n\nYou can view accounts, manage counterparties, make payments or currency exchanges without manual effort in the Web UI.\n\nTo get started using the Business API, check the [user guide](https://developer.revolut.com/docs/manage-accounts/).\n\n## Access Token[​](https://developer.revolut.com/docs/business/business-api#access-token)\n\nEach Business API request must contain an authorization header in the following format to make a call:\n\n``` json\n\"Authorization: Bearer <your_access_token>\"\n\n ```\n\nThe access token will be obtained the first time you set up your application and has an expiration of 40 minutes. During setup, a `refresh_token` will also be obtained which allows to obtain a new `access_token`.\n\nAccess tokens can be issued with four security scopes and require a JWT (JSON Web Token) signature to be obtained:\n\n- `READ`: Permissions for `GET` operations.\n- `WRITE`: Permissions to update counterparties, webhooks, and issue payment drafts.\n- `PAY`: Permissions to initiate or cancel transactions and currency exchanges.\n- `READ_SENSITIVE_CARD_DATA`: Permissions to retrieve sensitive card details.",
+    "postmanId": "17ea09e9-176b-4b8d-a6ec-12be36e662a8",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "exporterId": "43116137",
+    "variables": {}
+  }
+}

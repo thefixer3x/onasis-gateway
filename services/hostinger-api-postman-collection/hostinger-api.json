@@ -1,0 +1,3125 @@
+{
+  "name": "hostinger-api",
+  "version": "1.0.0",
+  "baseUrl": "https://developers.hostinger.com",
+  "authentication": {
+    "type": "bearer",
+    "config": {
+      "token": "{{bearerToken}}"
+    }
+  },
+  "endpoints": [
+    {
+      "name": "Get catalog item list",
+      "path": "/{{baseUrl}}/api/billing/v1/catalog?category=DOMAIN&name=<string>",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of catalog items available for order. \n\nPrices in catalog items is displayed as cents (without floating point), e.g: float `17.99` is displayed as integer `1799`.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "category",
+            "description": "Filter catalog items by category",
+            "required": true,
+            "type": "string",
+            "default": "DOMAIN"
+          },
+          {
+            "name": "name",
+            "description": "Filter catalog items by name. Use `*` for wildcard search, e.g. `.COM*` to find .com domain",
+            "required": true,
+            "type": "string",
+            "default": "<string>"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create new service order",
+      "path": "/{{baseUrl}}/api/billing/v1/orders",
+      "method": "POST",
+      "description": "This endpoint creates a new service order. \n\n**DEPRECATED**\n\nTo purchase a domain, use [`POST /api/domains/v1/portfolio`](/#tag/domains-portfolio/POST/api/domains/v1/portfolio) instead.\n\nTo purchase a VPS, use [`POST /api/vps/v1/virtual-machines`](/#tag/vps-virtual-machine/POST/api/vps/v1/virtual-machines) instead.\n\n\nTo place order, you need to provide payment method ID and list of price items from the catalog endpoint together with quantity.\nCoupons also can be provided during order creation.\n\nOrders created using this endpoint will be set for automatic renewal.\n\nSome `credit_card` payments might need additional verification, rendering purchase unprocessed.\nWe recommend use other payment methods than `credit_card` if you encounter this issue.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"payment_method_id\": \"<integer>\",\n  \"items\": [\n    {\n      \"item_id\": \"<string>\",\n      \"quantity\": \"<integer>\"\n    },\n    {\n      \"item_id\": \"<string>\",\n      \"quantity\": \"<integer>\"\n    }\n  ],\n  \"coupons\": [\n    {\n      \"example\": [\n        \"Coupon 3\"\n      ]\n    },\n    {\n      \"example\": [\n        \"Coupon 3\"\n      ]\n    }\n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "payment_method_id": "<integer>",
+            "items": [
+              {
+                "item_id": "<string>",
+                "quantity": "<integer>"
+              },
+              {
+                "item_id": "<string>",
+                "quantity": "<integer>"
+              }
+            ],
+            "coupons": [
+              {
+                "example": [
+                  "Coupon 3"
+                ]
+              },
+              {
+                "example": [
+                  "Coupon 3"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Set default payment method",
+      "path": "/{{baseUrl}}/api/billing/v1/payment-methods/:paymentMethodId",
+      "method": "POST",
+      "description": "This endpoint sets default payment method for your account.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete payment method",
+      "path": "/{{baseUrl}}/api/billing/v1/payment-methods/:paymentMethodId",
+      "method": "DELETE",
+      "description": "This endpoint deletes a payment method from your account.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get payment method list",
+      "path": "/{{baseUrl}}/api/billing/v1/payment-methods",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of available payment methods that can be used for placing new orders.\n\nIf you want to add new payment method, please use [hPanel](https://hpanel.hostinger.com/billing/payment-methods).",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Cancel subscription",
+      "path": "/{{baseUrl}}/api/billing/v1/subscriptions/:subscriptionId",
+      "method": "DELETE",
+      "description": "This endpoint cancels a subscription and stops any further billing.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"reason_code\": \"other\",\n  \"cancel_option\": \"immediately\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "reason_code": "other",
+            "cancel_option": "immediately"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get subscription list",
+      "path": "/{{baseUrl}}/api/billing/v1/subscriptions",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of all subscriptions associated with your account.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get snapshot",
+      "path": "/{{baseUrl}}/api/dns/v1/snapshots/:domain/:snapshotId",
+      "method": "GET",
+      "description": "This endpoint retrieves particular DNS snapshot with the contents of DNS zone records.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get snapshot list",
+      "path": "/{{baseUrl}}/api/dns/v1/snapshots/:domain",
+      "method": "GET",
+      "description": "This endpoint retrieves list of DNS snapshots.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Restore snapshot",
+      "path": "/{{baseUrl}}/api/dns/v1/snapshots/:domain/:snapshotId/restore",
+      "method": "POST",
+      "description": "This endpoint restores DNS zone to the selected snapshot.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get records",
+      "path": "/{{baseUrl}}/api/dns/v1/zones/:domain",
+      "method": "GET",
+      "description": "This endpoint retrieves DNS zone records for a specific domain.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update zone records",
+      "path": "/{{baseUrl}}/api/dns/v1/zones/:domain",
+      "method": "PUT",
+      "description": "This endpoint updates DNS records for the selected domain. \n\nUsing `overwrite = true` will replace existing records with the provided ones. \nOtherwise existing records will be updated and new records will be added.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"zone\": [\n    {\n      \"name\": \"<string>\",\n      \"records\": [\n        {\n          \"content\": \"<string>\"\n        },\n        {\n          \"content\": \"<string>\"\n        }\n      ],\n      \"type\": \"NS\",\n      \"ttl\": \"<integer>\"\n    },\n    {\n      \"name\": \"<string>\",\n      \"records\": [\n        {\n          \"content\": \"<string>\"\n        },\n        {\n          \"content\": \"<string>\"\n        }\n      ],\n      \"type\": \"CNAME\",\n      \"ttl\": \"<integer>\"\n    }\n  ],\n  \"overwrite\": true\n}",
+          "contentType": "application/json",
+          "schema": {
+            "zone": [
+              {
+                "name": "<string>",
+                "records": [
+                  {
+                    "content": "<string>"
+                  },
+                  {
+                    "content": "<string>"
+                  }
+                ],
+                "type": "NS",
+                "ttl": "<integer>"
+              },
+              {
+                "name": "<string>",
+                "records": [
+                  {
+                    "content": "<string>"
+                  },
+                  {
+                    "content": "<string>"
+                  }
+                ],
+                "type": "CNAME",
+                "ttl": "<integer>"
+              }
+            ],
+            "overwrite": true
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete zone records",
+      "path": "/{{baseUrl}}/api/dns/v1/zones/:domain",
+      "method": "DELETE",
+      "description": "This endpoint deletes DNS records for the selected domain. \nTo filter which records to delete, add the `name` of the record and `type` to the filter. \nMultiple filters can be provided with single request.\n\nIf you have multiple records with the same name and type, and you want to delete only part of them,\nrefer to the `Update zone records` endpoint.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"filters\": [\n    {\n      \"name\": \"<string>\",\n      \"type\": \"ALIAS\"\n    },\n    {\n      \"name\": \"<string>\",\n      \"type\": \"CAA\"\n    }\n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "filters": [
+              {
+                "name": "<string>",
+                "type": "ALIAS"
+              },
+              {
+                "name": "<string>",
+                "type": "CAA"
+              }
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Reset zone records",
+      "path": "/{{baseUrl}}/api/dns/v1/zones/:domain/reset",
+      "method": "POST",
+      "description": "This endpoint resets DNS zone to the default records.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"sync\": true,\n  \"reset_email_records\": true,\n  \"whitelisted_record_types\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "sync": true,
+            "reset_email_records": true,
+            "whitelisted_record_types": [
+              "<string>",
+              "<string>"
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Validate zone records",
+      "path": "/{{baseUrl}}/api/dns/v1/zones/:domain/validate",
+      "method": "POST",
+      "description": "This endpoint used to validate DNS records prior update for the selected domain. \n\nIf the validation is successful, the response will contain `200 Success` code.\nIf there is validation error, the response will fail with `422 Validation error` code.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"zone\": [\n    {\n      \"name\": \"<string>\",\n      \"records\": [\n        {\n          \"content\": \"<string>\"\n        },\n        {\n          \"content\": \"<string>\"\n        }\n      ],\n      \"type\": \"NS\",\n      \"ttl\": \"<integer>\"\n    },\n    {\n      \"name\": \"<string>\",\n      \"records\": [\n        {\n          \"content\": \"<string>\"\n        },\n        {\n          \"content\": \"<string>\"\n        }\n      ],\n      \"type\": \"CNAME\",\n      \"ttl\": \"<integer>\"\n    }\n  ],\n  \"overwrite\": true\n}",
+          "contentType": "application/json",
+          "schema": {
+            "zone": [
+              {
+                "name": "<string>",
+                "records": [
+                  {
+                    "content": "<string>"
+                  },
+                  {
+                    "content": "<string>"
+                  }
+                ],
+                "type": "NS",
+                "ttl": "<integer>"
+              },
+              {
+                "name": "<string>",
+                "records": [
+                  {
+                    "content": "<string>"
+                  },
+                  {
+                    "content": "<string>"
+                  }
+                ],
+                "type": "CNAME",
+                "ttl": "<integer>"
+              }
+            ],
+            "overwrite": true
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Check domain availability",
+      "path": "/{{baseUrl}}/api/domains/v1/availability",
+      "method": "POST",
+      "description": "This endpoint checks the availability of a domain name. Multiple TLDs can be checked at once.\nIf you want to get alternative domains with response, provide only one TLD in the request and set `with_alternatives` to `true`.\nTLDs should be provided without the leading dot (e.g. `com`, `net`, `org`).\n\nEndpoint has rate limit of 10 requests per minute.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"domain\": \"<string>\",\n  \"tlds\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"with_alternatives\": false\n}",
+          "contentType": "application/json",
+          "schema": {
+            "domain": "<string>",
+            "tlds": [
+              "<string>",
+              "<string>"
+            ],
+            "with_alternatives": false
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get forwarding data",
+      "path": "/{{baseUrl}}/api/domains/v1/forwarding/:domain",
+      "method": "GET",
+      "description": "This endpoint retrieves domain forwarding data.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete forwarding data",
+      "path": "/{{baseUrl}}/api/domains/v1/forwarding/:domain",
+      "method": "DELETE",
+      "description": "This endpoint deletes domain forwarding data.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create forwarding data",
+      "path": "/{{baseUrl}}/api/domains/v1/forwarding",
+      "method": "POST",
+      "description": "This endpoint creates domain forwarding data.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"domain\": \"<string>\",\n  \"redirect_type\": \"301\",\n  \"redirect_url\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "domain": "<string>",
+            "redirect_type": "301",
+            "redirect_url": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Enable domain lock",
+      "path": "/{{baseUrl}}/api/domains/v1/portfolio/:domain/domain-lock",
+      "method": "PUT",
+      "description": "This endpoint enables domain lock for the domain. When domain lock is enabled, \nthe domain cannot be transferred to another registrar without first disabling the lock.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Disable domain lock",
+      "path": "/{{baseUrl}}/api/domains/v1/portfolio/:domain/domain-lock",
+      "method": "DELETE",
+      "description": "This endpoint disables domain lock for the domain. Domain lock needs to be disabled \nbefore transferring the domain to another registrar.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get domain",
+      "path": "/{{baseUrl}}/api/domains/v1/portfolio/:domain",
+      "method": "GET",
+      "description": "This endpoint retrieves details for specified domain.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get domain list",
+      "path": "/{{baseUrl}}/api/domains/v1/portfolio",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of all domains associated with your account.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Purchase new domain",
+      "path": "/{{baseUrl}}/api/domains/v1/portfolio",
+      "method": "POST",
+      "description": "This endpoint allows you to buy (purchase) and register a new domain name. \n\nIf registration fails, login to [hPanel](https://hpanel.hostinger.com/) and check the domain registration status.\n\nIf no payment method is provided, your default payment method will be used automatically.\n\nIf no WHOIS information is provided, the default contact information for that TLD (Top-Level Domain) will be used. \nBefore making a request, ensure that WHOIS information for the desired TLD exists in your account.\n\nSome TLDs require `additional_details` to be provided and these will be validated before completing the purchase. The required additional details vary by TLD.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"domain\": \"<string>\",\n  \"item_id\": \"<string>\",\n  \"payment_method_id\": \"<integer>\",\n  \"domain_contacts\": {\n    \"owner_id\": \"<integer>\",\n    \"admin_id\": \"<integer>\",\n    \"billing_id\": \"<integer>\",\n    \"tech_id\": \"<integer>\"\n  },\n  \"additional_details\": {},\n  \"coupons\": [\n    {\n      \"example\": [\n        \"Coupon 3\"\n      ]\n    },\n    {\n      \"example\": [\n        \"Coupon 3\"\n      ]\n    }\n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "domain": "<string>",
+            "item_id": "<string>",
+            "payment_method_id": "<integer>",
+            "domain_contacts": {
+              "owner_id": "<integer>",
+              "admin_id": "<integer>",
+              "billing_id": "<integer>",
+              "tech_id": "<integer>"
+            },
+            "additional_details": {},
+            "coupons": [
+              {
+                "example": [
+                  "Coupon 3"
+                ]
+              },
+              {
+                "example": [
+                  "Coupon 3"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Enable privacy protection",
+      "path": "/{{baseUrl}}/api/domains/v1/portfolio/:domain/privacy-protection",
+      "method": "PUT",
+      "description": "This endpoint enables privacy protection for the domain.\nWhen privacy protection is enabled, the domain owner's personal information is hidden from the public WHOIS database.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Disable privacy protection",
+      "path": "/{{baseUrl}}/api/domains/v1/portfolio/:domain/privacy-protection",
+      "method": "DELETE",
+      "description": "This endpoint disables privacy protection for the domain.\nWhen privacy protection is disabled, the domain owner's personal information is visible in the public WHOIS database.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update nameservers",
+      "path": "/{{baseUrl}}/api/domains/v1/portfolio/:domain/nameservers",
+      "method": "PUT",
+      "description": "This endpoint sets the nameservers for a specified domain.\n\nBe aware, that improper nameserver configuration can lead to the domain being unresolvable or unavailable. ",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"ns1\": \"<string>\",\n  \"ns2\": \"<string>\",\n  \"ns3\": \"<string>\",\n  \"ns4\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "ns1": "<string>",
+            "ns2": "<string>",
+            "ns3": "<string>",
+            "ns4": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get WHOIS profile",
+      "path": "/{{baseUrl}}/api/domains/v1/whois/:whoisId",
+      "method": "GET",
+      "description": "This endpoint retrieves a WHOIS contact profile.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete WHOIS profile",
+      "path": "/{{baseUrl}}/api/domains/v1/whois/:whoisId",
+      "method": "DELETE",
+      "description": "This endpoint deletes WHOIS contact profile.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get WHOIS profile list",
+      "path": "/{{baseUrl}}/api/domains/v1/whois?tld=<string>",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of WHOIS contact profiles.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "tld",
+            "description": "Filter by TLD (without leading dot)",
+            "required": true,
+            "type": "string",
+            "default": "<string>"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create WHOIS profile",
+      "path": "/{{baseUrl}}/api/domains/v1/whois",
+      "method": "POST",
+      "description": "This endpoint creates WHOIS contact profile.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"tld\": \"<string>\",\n  \"entity_type\": \"individual\",\n  \"country\": \"<string>\",\n  \"whois_details\": {},\n  \"tld_details\": {}\n}",
+          "contentType": "application/json",
+          "schema": {
+            "tld": "<string>",
+            "entity_type": "individual",
+            "country": "<string>",
+            "whois_details": {},
+            "tld_details": {}
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get WHOIS profile usage",
+      "path": "/{{baseUrl}}/api/domains/v1/whois/:whoisId/usage",
+      "method": "GET",
+      "description": "This endpoint retrieves a domain list where provided WHOIS contact profile is used.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get data centers list",
+      "path": "/{{baseUrl}}/api/vps/v1/data-centers",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of all data centers available.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Activate firewall",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall/:firewallId/activate/:virtualMachineId",
+      "method": "POST",
+      "description": "This endpoint activates a firewall for a specified virtual machine. \n\nOnly one firewall can be active for a virtual machine at a time.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Deactivate firewall",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall/:firewallId/deactivate/:virtualMachineId",
+      "method": "POST",
+      "description": "This endpoint deactivates a firewall for a specified virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get firewall",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall/:firewallId",
+      "method": "GET",
+      "description": "This endpoint retrieves firewall by its ID and rules associated with it.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete firewall",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall/:firewallId",
+      "method": "DELETE",
+      "description": "This endpoint deletes a specified firewall. \n\nAny virtual machine that has this firewall activated will automatically have it deactivated.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get firewall list",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall?page=<integer>",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of all firewalls available.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "Page number",
+            "required": true,
+            "type": "string",
+            "default": "<integer>"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create new firewall",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall",
+      "method": "POST",
+      "description": "This endpoint creates a new firewall.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"name\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "name": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update firewall rule",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall/:firewallId/rules/:ruleId",
+      "method": "PUT",
+      "description": "This endpoint updates a specific firewall rule from a specified firewall.\n\nAny virtual machine that has this firewall activated will loose sync with the firewall and will have to be synced again manually.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"protocol\": \"HTTPS\",\n  \"port\": \"<string>\",\n  \"source\": \"any\",\n  \"source_detail\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "protocol": "HTTPS",
+            "port": "<string>",
+            "source": "any",
+            "source_detail": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete firewall rule",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall/:firewallId/rules/:ruleId",
+      "method": "DELETE",
+      "description": "This endpoint deletes a specific firewall rule from a specified firewall.\n\nAny virtual machine that has this firewall activated will loose sync with the firewall and will have to be synced again manually.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create firewall rule",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall/:firewallId/rules",
+      "method": "POST",
+      "description": "This endpoint creates new firewall rule from a specified firewall. \nBy default, the firewall drops all incoming traffic, which means you must add accept rules for all ports you want to use.\n\nAny virtual machine that has this firewall activated will loose sync with the firewall and will have to be synced again manually.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"protocol\": \"HTTPS\",\n  \"port\": \"<string>\",\n  \"source\": \"any\",\n  \"source_detail\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "protocol": "HTTPS",
+            "port": "<string>",
+            "source": "any",
+            "source_detail": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Sync firewall",
+      "path": "/{{baseUrl}}/api/vps/v1/firewall/:firewallId/sync/:virtualMachineId",
+      "method": "POST",
+      "description": "This endpoint syncs a firewall for a specified virtual machine.\n\nFirewall can loose sync with virtual machine if the firewall has new rules added, removed or updated.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get post-install script",
+      "path": "/{{baseUrl}}/api/vps/v1/post-install-scripts/:postInstallScriptId",
+      "method": "GET",
+      "description": "This endpoint retrieves post-install script by its ID.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update post-install script",
+      "path": "/{{baseUrl}}/api/vps/v1/post-install-scripts/:postInstallScriptId",
+      "method": "PUT",
+      "description": "This endpoint updates a specific post-install script.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"name\": \"<string>\",\n  \"content\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "name": "<string>",
+            "content": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a post-install script",
+      "path": "/{{baseUrl}}/api/vps/v1/post-install-scripts/:postInstallScriptId",
+      "method": "DELETE",
+      "description": "This endpoint deletes a post-install script from your account. ",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get post-install script list",
+      "path": "/{{baseUrl}}/api/vps/v1/post-install-scripts?page=<integer>",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of post-install scripts associated with your account.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "Page number",
+            "required": true,
+            "type": "string",
+            "default": "<integer>"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create post-install script",
+      "path": "/{{baseUrl}}/api/vps/v1/post-install-scripts",
+      "method": "POST",
+      "description": "This endpoint allows you to add a new post-install script to your account, \nwhich can then be used run after the installation of a virtual machine instance.\n\nThe script contents will be saved to the file `/post_install` with executable attribute set and will be executed once virtual machine is installed.\nThe output of the script will be redirected to `/post_install.log`. Maximum script size is 48KB. ",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"name\": \"<string>\",\n  \"content\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "name": "<string>",
+            "content": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Attach public key",
+      "path": "/{{baseUrl}}/api/vps/v1/public-keys/attach/:virtualMachineId",
+      "method": "POST",
+      "description": "This endpoint attaches an existing public keys from your account to a specified virtual machine.\n\nMultiple keys can be attached to a single virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"ids\": [\n    \"<integer>\",\n    \"<integer>\"\n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "ids": [
+              "<integer>",
+              "<integer>"
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a public key",
+      "path": "/{{baseUrl}}/api/vps/v1/public-keys/:publicKeyId",
+      "method": "DELETE",
+      "description": "This endpoint deletes a public key from your account. \n\n**Deleting public key from account does not remove it from virtual machine** ",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get public key list",
+      "path": "/{{baseUrl}}/api/vps/v1/public-keys?page=<integer>",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of public keys associated with your account.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "Page number",
+            "required": true,
+            "type": "string",
+            "default": "<integer>"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create new public key",
+      "path": "/{{baseUrl}}/api/vps/v1/public-keys",
+      "method": "POST",
+      "description": "This endpoint allows you to add a new public key to your account, \nwhich can then be attached to virtual machine instances for secure access.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"name\": \"<string>\",\n  \"key\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "name": "<string>",
+            "key": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get template",
+      "path": "/{{baseUrl}}/api/vps/v1/templates/:templateId",
+      "method": "GET",
+      "description": "This endpoint retrieves details of a specific OS template for virtual machines.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get template list",
+      "path": "/{{baseUrl}}/api/vps/v1/templates",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of available OS templates for virtual machines.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get action",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/actions/:actionId",
+      "method": "GET",
+      "description": "This endpoint retrieves details of a specific action performed on a specified virtual machine. \n\nThis endpoint allows you to view detailed information about a particular action, including the action name, timestamp, and status.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get action list",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/actions?page=<integer>",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of actions performed on a specified virtual machine.\n\nActions are operations or events that have been executed on the virtual machine, such as starting, stopping, or modifying \nthe machine. This endpoint allows you to view the history of these actions, providing details about each action, \nsuch as the action name, timestamp, and status.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "Page number",
+            "required": true,
+            "type": "string",
+            "default": "<integer>"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get attached public keys",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/public-keys?page=<integer>",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of public keys attached to a specified virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "Page number",
+            "required": true,
+            "type": "string",
+            "default": "<integer>"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Set hostname",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/hostname",
+      "method": "PUT",
+      "description": "This endpoint sets the hostname for a specified virtual machine. \nChanging hostname does not update PTR record automatically.\nIf you want your virtual machine to be reachable by a hostname, \nyou need to point your domain A/AAAA records to virtual machine IP as well.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"hostname\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "hostname": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Reset hostname",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/hostname",
+      "method": "DELETE",
+      "description": "This endpoint resets the hostname and PTR record of a specified virtual machine to the default value.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get virtual machine",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId",
+      "method": "GET",
+      "description": "This endpoint retrieves detailed information about a specified virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get virtual machine list",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of all available virtual machines.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Purchase new virtual machine",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines",
+      "method": "POST",
+      "description": "This endpoint allows you to buy (purchase) and setup a new virtual machine.\n\nIf virtual machine setup fails for any reason, login to [hPanel](https://hpanel.hostinger.com/) and complete the setup manually.\n\nIf no payment method is provided, your default payment method will be used automatically.                        ",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"item_id\": \"<string>\",\n  \"setup\": {\n    \"data_center_id\": \"<integer>\",\n    \"template_id\": \"<integer>\",\n    \"post_install_script_id\": \"<integer>\",\n    \"password\": \"<string>\",\n    \"hostname\": \"<string>\",\n    \"install_monarx\": false,\n    \"enable_backups\": true,\n    \"ns1\": \"<string>\",\n    \"ns2\": \"<string>\",\n    \"public_key\": {\n      \"name\": \"<string>\",\n      \"key\": \"<string>\"\n    }\n  },\n  \"payment_method_id\": \"<integer>\",\n  \"coupons\": [\n    {\n      \"example\": [\n        \"Coupon 3\"\n      ]\n    },\n    {\n      \"example\": [\n        \"Coupon 3\"\n      ]\n    }\n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "item_id": "<string>",
+            "setup": {
+              "data_center_id": "<integer>",
+              "template_id": "<integer>",
+              "post_install_script_id": "<integer>",
+              "password": "<string>",
+              "hostname": "<string>",
+              "install_monarx": false,
+              "enable_backups": true,
+              "ns1": "<string>",
+              "ns2": "<string>",
+              "public_key": {
+                "name": "<string>",
+                "key": "<string>"
+              }
+            },
+            "payment_method_id": "<integer>",
+            "coupons": [
+              {
+                "example": [
+                  "Coupon 3"
+                ]
+              },
+              {
+                "example": [
+                  "Coupon 3"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get metrics",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/metrics?date_from=&date_to=",
+      "method": "GET",
+      "description": "This endpoint retrieves the historical metrics for a specified virtual machine.\nIt includes the following metrics: \n- CPU usage\n- Memory usage\n- Disk usage\n- Network usage\n- Uptime",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "date_from",
+            "description": "(Required) ",
+            "required": true,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "date_to",
+            "description": "(Required) ",
+            "required": true,
+            "type": "string",
+            "default": ""
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Set nameservers",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/nameservers",
+      "method": "PUT",
+      "description": "This endpoint sets the nameservers for a specified virtual machine.\nBe aware, that improper nameserver configuration can lead to the virtual machine being unable to resolve domain names.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"ns1\": \"<string>\",\n  \"ns2\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "ns1": "<string>",
+            "ns2": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Set panel password",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/panel-password",
+      "method": "PUT",
+      "description": "This endpoint sets the panel password for a specified virtual machine. \nIf virtual machine does not use panel OS, the request will still be processed without any effect.\nRequirements for the password is the same as in the [recreate virtual machine endpoint](/#tag/vps-virtual-machine/POST/api/vps/v1/virtual-machines/{virtualMachineId}/recreate).",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"password\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "password": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Recreate virtual machine",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/recreate",
+      "method": "POST",
+      "description": "This endpoint will recreate a virtual machine from scratch. \nThe recreation process involves reinstalling the operating system and resetting the virtual machine to its initial state.\nSnapshots, if there are any, will be deleted.\n\n## Password Requirements\nPassword will be checked against leaked password databases. \nRequirements for the password are:\n- At least 8 characters long\n- At least one uppercase letter\n- At least one lowercase letter\n- At least one number\n- Is not leaked publicly\n\n**This operation is irreversible and will result in the loss of all data stored on the virtual machine!**",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"template_id\": \"<integer>\",\n  \"password\": \"<string>\",\n  \"post_install_script_id\": \"<integer>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "template_id": "<integer>",
+            "password": "<string>",
+            "post_install_script_id": "<integer>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Restart virtual machine",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/restart",
+      "method": "POST",
+      "description": "This endpoint restarts a specified virtual machine. This is equivalent to fully stopping and starting the virtual machine.\nIf the virtual machine was stopped, it will be started.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Set root password",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/root-password",
+      "method": "PUT",
+      "description": "This endpoint sets the root password for a specified virtual machine. \nRequirements for the password is the same as in the [recreate virtual machine endpoint](/#tag/vps-virtual-machine/POST/api/vps/v1/virtual-machines/{virtualMachineId}/recreate).",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"password\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "password": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Setup new virtual machine",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/setup",
+      "method": "POST",
+      "description": "This endpoint will setup newly purchased virtual machine with `initial` state. ",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"data_center_id\": \"<integer>\",\n  \"template_id\": \"<integer>\",\n  \"post_install_script_id\": \"<integer>\",\n  \"password\": \"<string>\",\n  \"hostname\": \"<string>\",\n  \"install_monarx\": false,\n  \"enable_backups\": true,\n  \"ns1\": \"<string>\",\n  \"ns2\": \"<string>\",\n  \"public_key\": {\n    \"name\": \"<string>\",\n    \"key\": \"<string>\"\n  }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "data_center_id": "<integer>",
+            "template_id": "<integer>",
+            "post_install_script_id": "<integer>",
+            "password": "<string>",
+            "hostname": "<string>",
+            "install_monarx": false,
+            "enable_backups": true,
+            "ns1": "<string>",
+            "ns2": "<string>",
+            "public_key": {
+              "name": "<string>",
+              "key": "<string>"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Start virtual machine",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/start",
+      "method": "POST",
+      "description": "This endpoint starts a specified virtual machine. \nIf the virtual machine is already running, the request will still be processed without any effect.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Stop virtual machine",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/stop",
+      "method": "POST",
+      "description": "This endpoint stops a specified virtual machine. \nIf the virtual machine is already stopped, the request will still be processed without any effect.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete backup",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/backups/:backupId",
+      "method": "DELETE",
+      "description": "This endpoint deletes a specified backup for a virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get backup list",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/backups?page=<integer>",
+      "method": "GET",
+      "description": "This endpoint retrieves a list of backups for a specified virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "Page number",
+            "required": true,
+            "type": "string",
+            "default": "<integer>"
+          }
+        ],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Restore backup",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/backups/:backupId/restore",
+      "method": "POST",
+      "description": "This endpoint restores a backup for a specified virtual machine.\n\nThe system will then initiate the restore process, which may take some time depending on the size of the backup.\n\n**All data on the virtual machine will be overwritten with the data from the backup.**",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get scan metrics",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/monarx",
+      "method": "GET",
+      "description": "This endpoint retrieves the scan metrics for the [Monarx](https://www.monarx.com/) malware scanner installed on a specified virtual machine.\nThe scan metrics provide detailed information about the malware scans performed by Monarx, including the number of scans, \ndetected threats, and other relevant statistics. This information is useful for monitoring the security status of the \nvirtual machine and assessing the effectiveness of the malware scanner.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Install Monarx",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/monarx",
+      "method": "POST",
+      "description": "This endpoint installs the Monarx malware scanner on a specified virtual machine. \n\n[Monarx](https://www.monarx.com/) is a security tool designed to detect and prevent malware infections on virtual machines. \nBy installing Monarx, users can enhance the security of their virtual machines, ensuring that they are protected against malicious software.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Uninstall Monarx",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/monarx",
+      "method": "DELETE",
+      "description": "This endpoint uninstalls the Monarx malware scanner on a specified virtual machine.\nIf Monarx is not installed, the request will still be processed without any effect.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create PTR record",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/ptr",
+      "method": "POST",
+      "description": "This endpoint creates or updates a PTR (Pointer) record for a specified virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete PTR record",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/ptr",
+      "method": "DELETE",
+      "description": "This endpoint deletes a PTR (Pointer) record for a specified virtual machine. \n\nOnce deleted, reverse DNS lookups to the virtual machine's IP address will no longer return the previously configured hostname.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Start recovery mode",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/recovery",
+      "method": "POST",
+      "description": "This endpoint initiates the recovery mode for a specified virtual machine. \nRecovery mode is a special state that allows users to perform system rescue operations, \nsuch as repairing file systems, recovering data, or troubleshooting issues that prevent the virtual machine \nfrom booting normally. \n\nVirtual machine will boot recovery disk image and original disk image will be mounted in `/mnt` directory.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"root_password\": \"<string>\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "root_password": "<string>"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Stop recovery mode",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/recovery",
+      "method": "DELETE",
+      "description": "This endpoint stops the recovery mode for a specified virtual machine. \nIf virtual machine is not in recovery mode, this operation will fail.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Get snapshot",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/snapshot",
+      "method": "GET",
+      "description": "This endpoint retrieves a snapshot for a specified virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create snapshot",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/snapshot",
+      "method": "POST",
+      "description": "This endpoint creates a snapshot of a specified virtual machine. \nA snapshot captures the state and data of the virtual machine at a specific point in time, \nallowing users to restore the virtual machine to that state if needed. \nThis operation is useful for backup purposes, system recovery, \nand testing changes without affecting the current state of the virtual machine.\n\n**Creating new snapshot will overwrite the existing snapshot!**",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete snapshot",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/snapshot",
+      "method": "DELETE",
+      "description": "This endpoint deletes a snapshot of a specified virtual machine.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Restore snapshot",
+      "path": "/{{baseUrl}}/api/vps/v1/virtual-machines/:virtualMachineId/snapshot/restore",
+      "method": "POST",
+      "description": "This endpoint restores a specified virtual machine to a previous state using a snapshot. \nRestoring from a snapshot allows users to revert the virtual machine to that state, which is useful for system recovery, undoing changes, or testing.",
+      "parameters": {
+        "path": [
+          {
+            "name": "baseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: baseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    }
+  ],
+  "webhooks": [],
+  "dependencies": [],
+  "capabilities": [
+    "infrastructure"
+  ],
+  "metadata": {
+    "description": "# Overview\nThe Hostinger API provides a comprehensive set of endpoints that allow developers to interact with Hostinger's services programmatically.\nThis API enables you to manage various aspects of your Hostinger account.\n\nThe Hostinger API is a (mostly) RESTful API that uses standard HTTP methods and status codes.\n# Authentication\nThe Hostinger API uses tokens for authentication. To authenticate your requests, you need to include a valid bearer token in the Authorization header of your HTTP requests:\n```yaml\nAuthorization: Bearer YOUR_API_TOKEN\n```\nAPI tokens for individual users can be created and managed from the [Account page](https://hpanel.hostinger.com/profile/api) of the Hostinger Panel.\nTokens will have same permissions as the owning user. Optionally, tokens can be set to expire after a certain period of time.\n# Rate Limiting\nTo ensure fair usage and prevent abuse, the API enforces rate limits on the number of requests that can be made within a certain time period.\nIf you exceed the rate limit, you will receive a 429 Too Many Requests response. Rate limit headers are included in the response to help you manage your requests.\nYour IP address might get temporarily blocked if you exceed the rate limit multiple times.\n# Parameters\nAll requests sent to API must have the content type `application/json`. `POST`, `PUT`, `PATCH` methods may include a JSON object in the request body. Documentation provides required structure and examples of the object.\nSome endpoints require path parameters. These parameters are included in the URL path and are marked with curly braces.\n# Pagination\nSome endpoints return a large number of items. To make these responses more manageable, the API uses pagination.\nBy default, the API returns50 items per page.\n\n The page number can be specified using the `page` query parameter, for example: `/api/vps/v1/public-keys?page=2`\n# Errors\nThe Hostinger API uses standard HTTP status codes to indicate the success or failure of a request.\nIn case of an error, the API will return a JSON response with an `error` field, containing a human-readable error message.\nError responses also contain a `correlation_id` field which can be used to identify the request in case you need to contact support.\n# SDKs & Tools\nTo help you get started with the Hostinger API, we provide SDKs and tools in various programming languages.\nThe usage & documentation for each SDK can be found in the respective repositories:            \n- Ansible - https://github.com/hostinger/ansible-collection-hostinger\n- CLI - https://github.com/hostinger/api-cli\n- n8n Node - https://github.com/hostinger/api-n8n-node\n- MCP Server - https://github.com/hostinger/api-mcp-server\n- PHP - https://github.com/hostinger/api-php-sdk\n- Python - https://github.com/hostinger/api-python-sdk\n- Terraform - https://github.com/hostinger/terraform-provider-hostinger\n- Node / TypeScript - https://github.com/hostinger/api-typescript-sdk\n- Postman Collection - https://www.postman.com/hostinger-api\n# Change log\nFor information on the latest changes to the API, please refer to the [change log](https://github.com/hostinger/api/blob/main/CHANGELOG.md).\n# Support\nIf you have any questions, feedback or feature requests, please create an [issue](https://github.com/hostinger/api/issues) or [discussion](https://github.com/hostinger/api/discussions) on the repository.\n\nFor any support take a look at our [Github Repository](https://github.com/hostinger/api/), dedicated to the Hostinger API.\n\nContact Support:\n Name: Hostinger\n Email: devs@hostinger.com",
+    "postmanId": "4a733c4f-6704-49f6-832a-0ccd28c37021",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "exporterId": "43116137",
+    "variables": {
+      "baseUrl": "https://developers.hostinger.com"
+    }
+  }
+}

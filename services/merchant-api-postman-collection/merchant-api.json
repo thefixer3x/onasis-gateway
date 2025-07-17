@@ -1,0 +1,1547 @@
+{
+  "name": "merchant-api",
+  "version": "1.0.0",
+  "baseUrl": "",
+  "authentication": {
+    "type": "apikey",
+    "config": {
+      "key": "value",
+      "value": "Bearer {{secret_api_key}}"
+    }
+  },
+  "endpoints": [
+    {
+      "name": "Create an order",
+      "path": "/{{base_url}}/api/orders",
+      "method": "POST",
+      "description": "Create an `Order` object.\n\nFull documentation: [Merchant API - Create an order](https://developer.revolut.com/docs/merchant/create-order)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "The version of the Merchant API, specified in YYYY-MM-DD format. If not specified, you will receive an error. \n\nFor more information about API versioning, see: [API versions](https://developer.revolut.com/docs/merchant/api-versions)",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"amount\": 500,\n  \"currency\": \"GBP\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 500,
+            "currency": "GBP"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve an order list",
+      "path": "/{{base_url}}/api/1.0/orders?limit=100&from_created_date=1991-03-12T03:51:25.311Z",
+      "method": "GET",
+      "description": "Retrieve all the orders that you’ve created. You can also use the query parameters for:\n\n- Filtering\n- Pagination\n    \n\nThe response contains an array of simplified `Order` objects.\n\nFull documentation: [Merchant API - Retrieve an order list](https://developer.revolut.com/docs/merchant/retrieve-order-list)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [
+          {
+            "name": "limit",
+            "description": "The maximum number of orders returned per page. Used for **pagination**.",
+            "required": true,
+            "type": "number",
+            "default": "100"
+          },
+          {
+            "name": "created_before",
+            "description": "Retrieve orders with a `created_date` < `created_before`. Used for **pagination**. Use the `created_date` of the last order returned in the previous response to get to the next page.\n\nThe default value is the current date and time you are calling the endpoint.",
+            "required": false,
+            "type": "date",
+            "default": "1991-03-12T03:51:25.311Z"
+          },
+          {
+            "name": "from_created_date",
+            "description": "Retrieve all orders with a `created_date` ≥ `from_created_date`. Used for **filtering**.\n\nUse the [ISO date format](https://en.wikipedia.org/wiki/ISO_8601) : `yyyy-MM-ddTHH:mm:ss[.SSSSSS]Z`. For example, `2021-02-10T16:59:50.886826Z`.",
+            "required": true,
+            "type": "date",
+            "default": "1991-03-12T03:51:25.311Z"
+          },
+          {
+            "name": "to_created_date",
+            "description": "Retrieve all orders with a `created_date` ≤ `to_created_date`. Used for **filtering**.\n\nUse the [ISO date format](https://en.wikipedia.org/wiki/ISO_8601) : `yyyy-MM-ddTHH:mm:ss[.SSSSSS]Z`. For example, `2021-02-10T16:59:50.886826Z`.",
+            "required": false,
+            "type": "date",
+            "default": "1991-03-12T03:51:25.311Z"
+          },
+          {
+            "name": "email",
+            "description": "Retrieve all orders that have this `email` associated to them. Used for **filtering**. \n\nThis parameter is case sensitive.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "merchant_order_ext_ref",
+            "description": "Merchant order ID for external reference. Use this field to filter and retrieve all the orders that have this ID. Used for **filtering**. \n\nThis parameter is case sensitive.",
+            "required": false,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "state",
+            "description": "Retrieve all orders with specific states. You can pass several states. Used for filtering.\n\nIf multiple states are selected, for example `AUTHORISED` and `COMPLETED`, orders with either of the selected values are returned. \n\nThe parameter is case sensitive.",
+            "required": false,
+            "type": "string",
+            "default": "COMPLETED"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve an order",
+      "path": "/{{base_url}}/api/orders/:order_id",
+      "method": "GET",
+      "description": "Retrieve the details of an order that has been created. Provide the unique order ID, and the corresponding order information is returned.\n\nFull documentation: [Merchant API - Retrieve an order](https://developer.revolut.com/docs/merchant/retrieve-order)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "The version of the Merchant API, specified in YYYY-MM-DD format. If not specified, you will receive an error. \n\nFor more information about API versioning, see: [API versions](https://developer.revolut.com/docs/merchant/api-versions)",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update an order",
+      "path": "/{{base_url}}/api/orders/:order_id",
+      "method": "PATCH",
+      "description": "Update the details of an order.\n\nSpecific limitations apply based on the state of the order, see full documentation: [Merchant API - Update an order](https://developer.revolut.com/docs/merchant/update-order).",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "The version of the Merchant API, specified in YYYY-MM-DD format. If not specified, you will receive an error. \n\nFor more information about API versioning, see: [API versions](https://developer.revolut.com/docs/merchant/api-versions)",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"amount\": 100,\n    \"currency\": \"EUR\",\n    \"merchant_order_data\": {\n        \"reference\": \"test order\"\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 100,
+            "currency": "EUR",
+            "merchant_order_data": {
+              "reference": "test order"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Capture an order",
+      "path": "/{{base_url}}/api/orders/:order_id/capture",
+      "method": "POST",
+      "description": "Capture the funds of an existing, uncaptured order. When the payment for an order is authorized, the order is captured and sent to the processing stage.\n\nFull documentation: [Merchant API - Capture an order](https://developer.revolut.com/docs/merchant/capture-order)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"amount\": 5\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 5
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Cancel an order",
+      "path": "/{{base_url}}/api/orders/:order_id/cancel",
+      "method": "POST",
+      "description": "Cancel an existing uncaptured order.\n\nSpecific limitations apply based on the state of the order, see full documentation: [Merchant API - Cancel an order](https://developer.revolut.com/docs/merchant/cancel-order)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Refund an order",
+      "path": "/{{base_url}}/api/1.0/orders/:order_id/refund",
+      "method": "POST",
+      "description": "Issue a refund for a completed order. A refund can be either full or partial.\n\nYou can initiate a refund for an order only when it is in the `COMPLETED` state.\n\nFull documentation: [Merchant API - Refund an order](https://developer.revolut.com/docs/merchant/refund-order)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"amount\": 40,\n    \"currency\": \"GBP\",\n    \"merchant_order_ext_ref\": \"00122\",\n    \"description\": \"Refund for damaged goods\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 40,
+            "currency": "GBP",
+            "merchant_order_ext_ref": "00122",
+            "description": "Refund for damaged goods"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Pay for an order",
+      "path": "/{{base_url}}/api/orders/:order_id/payments",
+      "method": "POST",
+      "description": "Initiate a payment to pay full amount for an order using a customer's saved payment method.\n\nFull documentation: [Merchant API - Pay for an order](https://developer.revolut.com/docs/merchant/pay-order)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"saved_payment_method\": {\n    \"type\": \"card\",\n    \"id\": \"{payment_method_id}\",\n    \"initiator\": \"merchant\"\n  }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "saved_payment_method": {
+              "type": "card",
+              "id": "{payment_method_id}",
+              "initiator": "merchant"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a customer",
+      "path": "/{{base_url}}/api/1.0/customers",
+      "method": "POST",
+      "description": "Create a customer that has the information in the body of the request.\n\nFull documentation: [Merchant API - Create a customer](https://developer.revolut.com/docs/merchant/create-customer)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"full_name\": \"Example Customer\",\n  \"business_name\": \"Example Business\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"+447123456789\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "full_name": "Example Customer",
+            "business_name": "Example Business",
+            "email": "customer@example.com",
+            "phone": "+447123456789"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a customer list",
+      "path": "/{{base_url}}/api/1.0/customers",
+      "method": "GET",
+      "description": "Get a list of all your customers.\n\nFull documentation: [Merchant API - Retrieve a customer list](https://developer.revolut.com/docs/merchant/retrieve-all-customers)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a customer",
+      "path": "/{{base_url}}/api/1.0/customers/:customer_id",
+      "method": "GET",
+      "description": "Get the information about a specific customer, based on its ID.\n\nFull documentation: [Merchant API - Retrieve a customer](https://developer.revolut.com/docs/merchant/retrieve-customer)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update a customer",
+      "path": "/{{base_url}}/api/1.0/customers/:customer_id",
+      "method": "PATCH",
+      "description": "Update the attributes of a specific customer.\n\nFull documentation: [Merchant API - Update a customer](https://developer.revolut.com/docs/merchant/update-customer)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"full_name\": \"Example Customer\",\n  \"business_name\": \"Example Business\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"+447123456789\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "full_name": "Example Customer",
+            "business_name": "Example Business",
+            "email": "customer@example.com",
+            "phone": "+447123456789"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a customer",
+      "path": "/{{base_url}}/api/1.0/customers/:customer_id",
+      "method": "DELETE",
+      "description": "Delete the profile of a specific customer.\n\nFull documentation: [Merchant API - Delete a customer](https://developer.revolut.com/docs/merchant/delete-customer)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve all payment methods of a customer",
+      "path": "/{{base_url}}/api/1.0/customers/:customer_id/payment-methods",
+      "method": "GET",
+      "description": "Retrieve all the payment methods for a specific customer.\n\nFull documentation: [Merchant API - Retrieve all payment methods of a customer](https://developer.revolut.com/docs/merchant/retrieve-all-payment-methods)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [
+          {
+            "name": "only_merchant",
+            "description": "Boolean. If `only_merchant` is set to `true`, you retrieve the payment methods that were saved for the merchant (saved_for: \"MERCHANT\").",
+            "required": false,
+            "type": "boolean",
+            "default": "true"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a customer's payment method",
+      "path": "/{{base_url}}/api/1.0/customers/:customer_id/payment-methods/:payment_method_id",
+      "method": "GET",
+      "description": "Retrieve the information of a specific payment method that is saved.\n\nFull documentation: [Merchant API - Retrieve a customer's payment method](https://developer.revolut.com/docs/merchant/retrieve-payment-method)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update a customer's payment method",
+      "path": "/{{base_url}}/api/1.0/customers/:customer_id/payment-methods/:payment_method_id",
+      "method": "PATCH",
+      "description": "When you use this request to update a customer's payment method, the payment method can't be used by the merchant to initiate transactions any more. This payment method can be used only when the customer is on the checkout page.\n\nFull documentation: [Merchant API - Update a customer's payment method](https://developer.revolut.com/docs/merchant/update-payment-method)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"saved_for\": \"CUSTOMER\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "saved_for": "CUSTOMER"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a customer's payment method",
+      "path": "/{{base_url}}/api/1.0/customers/:customer_id/payment-methods/:payment_method_id",
+      "method": "DELETE",
+      "description": "Delete a specific payment method.\n\nFull documentation: [Merchant API - Delete a customer's payment method](https://developer.revolut.com/docs/merchant/delete-payment-method)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Pay for an order",
+      "path": "/{{base_url}}/api/orders/:order_id/payments",
+      "method": "POST",
+      "description": "Initiate a payment to pay full amount for an order using a customer's saved payment method.\n\nFull documentation: [Merchant API - Pay for an order](https://developer.revolut.com/docs/merchant/pay-order)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"saved_payment_method\": {\n    \"type\": \"card\",\n    \"id\": \"{payment_method_id}\",\n    \"initiator\": \"merchant\"\n  }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "saved_payment_method": {
+              "type": "card",
+              "id": "{payment_method_id}",
+              "initiator": "merchant"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve payment details",
+      "path": "/{{base_url}}/api/payments/:payment_id",
+      "method": "GET",
+      "description": "Retrieve information about a specific payment, based on the payment's ID.\n\nFull documentation: [Merchant API - Retrieve payment details](https://developer.revolut.com/docs/merchant/retrieve-payment-details)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a payout list",
+      "path": "/{{base_url}}/api/payouts?limit=100",
+      "method": "GET",
+      "description": "Retrieve all the payouts you made from your Merchant account. You can also use the query parameters for:\n\n- Filtering\n    \n- Pagination\n    \n\nFull documentation: [Merchant API - Retrieve a payout list](https://developer.revolut.com/docs/merchant/retrieve-payout-list)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [
+          {
+            "name": "limit",
+            "description": "The maximum number of payouts returned per page. Used for pagination.",
+            "required": true,
+            "type": "number",
+            "default": "100"
+          },
+          {
+            "name": "from_created_date",
+            "description": "Retrieve all payouts with a `created_date` ≥ `from_created_date`. Used for filtering.",
+            "required": false,
+            "type": "string",
+            "default": null
+          },
+          {
+            "name": "to_created_date",
+            "description": "Retrieve all payouts with a `created_date` ≤ `to_created_date`. Used for filtering.",
+            "required": false,
+            "type": "string",
+            "default": null
+          },
+          {
+            "name": "currency",
+            "description": "ISO 4217 currency code in upper case.",
+            "required": false,
+            "type": "string",
+            "default": null
+          },
+          {
+            "name": "state",
+            "description": "Retrieve all payouts with specific states. You can pass several states. Used for filtering.",
+            "required": false,
+            "type": "string",
+            "default": null
+          }
+        ],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a payout",
+      "path": "/{{base_url}}/api/payouts/:payout_id",
+      "method": "GET",
+      "description": "Retrieve the details of a payout. Provide the unique payout ID, and the corresponding payout information is returned.\n\nFull documentation: [Merchant API - Retrieve a payout](https://developer.revolut.com/docs/merchant/retrieve-payout)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a dispute list",
+      "path": "/{{base_url}}/api/disputes",
+      "method": "GET",
+      "description": "Retrieve all the disputes linked to your Merchant account. You can also use the query parameters for:\n\n- Filtering\n    \n- Pagination\n    \n\nFull documentation: [Merchant API - Retrieve a dispute list](https://developer.revolut.com/docs/merchant/retrieve-dispute-list)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [
+          {
+            "name": "limit",
+            "description": "The maximum number of disputes returned per request.",
+            "required": false,
+            "type": "string",
+            "default": null
+          },
+          {
+            "name": "from_created_date",
+            "description": "Retrieve all diputes with a `created_at` value ≥ `from_created_date`.",
+            "required": false,
+            "type": "string",
+            "default": null
+          },
+          {
+            "name": "to_created_date",
+            "description": "Retrieve all diputes with a `created_at` value ≤ `to_created_date`.",
+            "required": false,
+            "type": "string",
+            "default": null
+          },
+          {
+            "name": "state",
+            "description": "Retrieve all disputes with specific states. You can pass multiple values.",
+            "required": false,
+            "type": "string",
+            "default": null
+          },
+          {
+            "name": "payment_id",
+            "description": "Retrieve disputes related to one or more payments based on their IDs.",
+            "required": false,
+            "type": "string",
+            "default": null
+          }
+        ],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a dispute",
+      "path": "/{{base_url}}/api/disputes/:dispute_id",
+      "method": "GET",
+      "description": "Retrieve the details of a dispute. Provide the unique dispute ID, and the corresponding dispute information is returned.\n\nFull documentation: [Merchant API - Retrieve a dispute](https://developer.revolut.com/docs/merchant/retrieve-dispute)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "Revolut-Api-Version",
+            "value": "{{api_version}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Accept a dispute",
+      "path": "/{{base_url}}/api/disputes/:dispute_id/accept",
+      "method": "POST",
+      "description": "Marks a specific dispute as accepted. After accepting a dispute, you cannot challenge it.\n\nFull documentation: [Merchant API - Accept a dispute](https://developer.revolut.com/docs/merchant/accept-dispute)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Upload evidence for a dispute",
+      "path": "/{{base_url}}/api/disputes/:dispute_id/evidences",
+      "method": "POST",
+      "description": "Allows uploading a single evidence file for a specific dispute. Use these evidences to provide proof for claims when challenging a dispute.\n\nFull documentation: [Merchant API - Upload evidence for a dispute](https://developer.revolut.com/docs/merchant/upload-dispute-evidence)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "formdata",
+          "description": "",
+          "fields": [
+            {
+              "name": "",
+              "type": "file",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Challenge a dispute",
+      "path": "/{{base_url}}/api/disputes/:dispute_id/challenge",
+      "method": "POST",
+      "description": "Allows challenging a dispute with a reason, comment and associated evidences. Use the uploaded evidences to provide proof for the challenge.\n\nA dispute previously accepted, cannot be challenged.\n\nFull documentation: [Merchant API - Challenge a dispute](https://developer.revolut.com/docs/merchant/challenge-dispute)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"reason\": \"refund_already_issued\",\n  \"comment\": \"Refund PDF attached as evidence.\",\n  \"evidences\": [\n    \n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "reason": "refund_already_issued",
+            "comment": "Refund PDF attached as evidence.",
+            "evidences": []
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a new report run",
+      "path": "/{{base_url}}/api/report-runs",
+      "method": "POST",
+      "description": "Start generating a new report of the relevant transactions.\n\nFull documentation: [Merchant API - Create a new report run](https://developer.revolut.com/docs/merchant/create-report-run)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"filter\": {\n    \"from\": \"2020-01-01T00:00:00Z\",\n    \"to\": \"2020-01-02T00:00:00Z\",\n    \"entity_types\": [\n      \"payment\"\n    ],\n    \"entity_states\": [\n      \"failed\"\n    ]\n  },\n  \"format\": \"csv\",\n  \"type\": \"settlement_report\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "filter": {
+              "from": "2020-01-01T00:00:00Z",
+              "to": "2020-01-02T00:00:00Z",
+              "entity_types": [
+                "payment"
+              ],
+              "entity_states": [
+                "failed"
+              ]
+            },
+            "format": "csv",
+            "type": "settlement_report"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve report run details",
+      "path": "/{{base_url}}/api/report-runs/:report_run_id",
+      "method": "GET",
+      "description": "Retrieve details of a report run, based on the `report_run_id`.\n\nFull documentation: [Merchant API - Retrieve report run details](https://developer.revolut.com/docs/merchant/retrieve-report-run-details)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Download report file",
+      "path": "/{{base_url}}/api/report-runs/:report_run_id/file",
+      "method": "GET",
+      "description": "Use this endpoint to download the generated report file.\n\nFull documentation: [Merchant API - Download report file](https://developer.revolut.com/docs/merchant/download-report-file)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a webhook",
+      "path": "/{{base_url}}/api/1.0/webhooks",
+      "method": "POST",
+      "description": "Set up a webhook URL so that the Merchant API can push event notifications to the specified URL.\n\nFull documentation: [Merchant API - Create a webhook](https://developer.revolut.com/docs/merchant/set-webhook)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"url\": \"https://example.com\",\n  \"events\": [\n    \"ORDER_COMPLETED\",\n    \"ORDER_AUTHORISED\"\n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "url": "https://example.com",
+            "events": [
+              "ORDER_COMPLETED",
+              "ORDER_AUTHORISED"
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a webhook list",
+      "path": "/{{base_url}}/api/1.0/webhooks",
+      "method": "GET",
+      "description": "Get a list of webhooks that you are currently subscribed to.\n\nFull documentation: [Merchant API - Retrieve a webhook list](https://developer.revolut.com/docs/merchant/retrieve-all-webhooks)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a webhook",
+      "path": "/{{base_url}}/api/1.0/webhooks/:webhook_id",
+      "method": "GET",
+      "description": "Get the details of a specific webhook.\n\nFull documentation: [Merchant API - Retrieve a webhook](https://developer.revolut.com/docs/merchant/retrieve-webhook)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update a webhook",
+      "path": "/{{base_url}}/api/1.0/webhooks/:webhook_id",
+      "method": "PUT",
+      "description": "Update the details of a specific webhook.\n\nFull documentation: [Merchant API - Update a webhook](https://developer.revolut.com/docs/merchant/update-webhook)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"url\": \"http://example.com\",\n  \"events\": [\n    \"ORDER_COMPLETED\"\n  ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "url": "http://example.com",
+            "events": [
+              "ORDER_COMPLETED"
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a webhook",
+      "path": "/{{base_url}}/api/1.0/webhooks/:webhook_id",
+      "method": "DELETE",
+      "description": "Delete a webhook so that events are not sent to the specified URL any more.\n\nFull documentation: [Merchant API - Delete a webhook](https://developer.revolut.com/docs/merchant/delete-webhook)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Rotate a webhook signing secret",
+      "path": "/{{base_url}}/api/1.0/webhooks/:webhook_id/rotate-signing-secret",
+      "method": "POST",
+      "description": "Rotate the `signing_secret` for a specific webhook.\n\nFull documentation: [Merchant API: Rotate a webhook signing secret](https://developer.revolut.com/docs/merchant/rotate-webhook-signing-secret)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"expiration_period\": \"PT5H30M\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "expiration_period": "PT5H30M"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create a location",
+      "path": "/{{base_url}}/api/locations",
+      "method": "POST",
+      "description": "Create a `Location` object.\n\nFull codumentation: [Merchant API: Create a location](https://developer.revolut.com/docs/merchant/create-location)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"name\": \"Grocery website\",\n  \"type\": \"online\",\n  \"details\": {\n    \"domain\": \"example.com\"\n  }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "name": "Grocery website",
+            "type": "online",
+            "details": {
+              "domain": "example.com"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve location list",
+      "path": "/{{base_url}}/api/locations",
+      "method": "GET",
+      "description": "Retrieve a list of locations registered for the merchant.\n\nFull documentation: [Merchant API: Retrieve location list](https://developer.revolut.com/docs/merchant/retrieve-location-list)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve a location",
+      "path": "/{{base_url}}/api/locations/:location_id",
+      "method": "GET",
+      "description": "Retrieve details of a specific location, based on its ID.\n\nFull documentation: [Merchant API: Retrieve a location](https://developer.revolut.com/docs/merchant/retrieve-location)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update a location",
+      "path": "/{{base_url}}/api/locations/:location_id",
+      "method": "PATCH",
+      "description": "Update details of a specific location, based on its ID.\n\n> **NOTE:** The value of the location's `type` cannot be updated. \n  \n\nFull documentation: [Merchant API: Update a location](https://developer.revolut.com/docs/merchant/update-location)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"name\": \"Cars website - Name update\",\n  \"details\": {\n    \"domain\": \"cars.example.com\"\n  }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "name": "Cars website - Name update",
+            "details": {
+              "domain": "cars.example.com"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a location",
+      "path": "/{{base_url}}/api/locations/:location_id",
+      "method": "DELETE",
+      "description": "Delete a specific location, based on its ID.\n\nFull documentation: [Merchant API: Delete a location](https://developer.revolut.com/docs/merchant/delete-location)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Register domain for Apple Pay",
+      "path": "/{{base_url}}/api/apple-pay/domains/register",
+      "method": "POST",
+      "description": "Register your website's domain to accept payments via Apple Pay.\n\nFull documentation: [Merchant API - Register domain for Apple Pay](https://developer.revolut.com/docs/merchant/register-domain-apple-pay)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"domain\": \"example.com\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "domain": "example.com"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Register address validation endpoint for Fast checkout",
+      "path": "/{{base_url}}/api/synchronous-webhooks",
+      "method": "POST",
+      "description": "Use this endpoint to register a URL where Revolut can send shipping address(es) from a Revolut Pay customer for validation during the [Fast checkout process](https://developer.revolut.com/docs/guides/accept-payments/payment-methods/accept-payments-via-revolut-pay2/fast-checkout).\n\nFull documentation: [Merchant API - Register address validation endpoint for Fast checkout](https://developer.revolut.com/docs/merchant/register-address-validation-endpoint)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n  \"event_type\": \"fast_checkout.validate_address\",\n  \"url\": \"https://backend.example.com/webhooks/validate-address\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "event_type": "fast_checkout.validate_address",
+            "url": "https://backend.example.com/webhooks/validate-address"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve synchronous webhook list",
+      "path": "/{{base_url}}/api/synchronous-webhooks",
+      "method": "GET",
+      "description": "Retrieve a list of synchronous webhook objects.\n\nYou can use this endpoint to see your different address validation endpoints registered to different locations.\n\nFull documentation: [Merchant API - Retrieve synchronous webhook list](https://developer.revolut.com/docs/merchant/retrieve-synchronous-webhook-list)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Delete a synchronous webhook",
+      "path": "/{{base_url}}/api/synchronous-webhooks/:synchronous_webhook_id",
+      "method": "DELETE",
+      "description": "Delete a specific synchronous webhook registration, based on its ID.\n\nFull documentation: [Merchant API - Delete a synchronous webhook](https://developer.revolut.com/docs/merchant/delete-synchronous-webhook)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Create an order (Deprecated)",
+      "path": "/{{base_url}}/api/1.0/orders",
+      "method": "POST",
+      "description": "Create an `Order` object.\n\nFull documentation: [Merchant API - Create an order (Deprecated)](https://developer.revolut.com/docs/merchant/legacy/create-order-deprecated)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"amount\": 5,\n    \"merchant_order_ext_ref\": \"Order test\",\n    \"email\": \"test.customer@example.com\",\n    \"currency\": \"GBP\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 5,
+            "merchant_order_ext_ref": "Order test",
+            "email": "test.customer@example.com",
+            "currency": "GBP"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Retrieve an order (Deprecated)",
+      "path": "/{{base_url}}/api/1.0/orders/:order_id",
+      "method": "GET",
+      "description": "Retrieve the details of an order that has been created. Provide the unique order ID, and the corresponding order information is returned.\n\nFull documentation: [Merchant API - Retrieve an order (Deprecated)](https://developer.revolut.com/docs/merchant/legacy/retrieve-order-deprecated)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Update an order (Deprecated)",
+      "path": "/{{base_url}}/api/1.0/orders/:order_id",
+      "method": "PATCH",
+      "description": "Update the details of an order.\n\nSpecific limitations apply based on the state of the order, see full documentation: [Merchant API - Update an order (Deprecated)](https://developer.revolut.com/docs/merchant/legacy/update-order-deprecated)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"amount\": 100,\n    \"currency\": \"EUR\",\n    \"merchant_order_ext_ref\": \"test order\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 100,
+            "currency": "EUR",
+            "merchant_order_ext_ref": "test order"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Capture an order (Deprecated)",
+      "path": "/{{base_url}}/api/1.0/orders/:order_id/capture",
+      "method": "POST",
+      "description": "Capture the funds of an existing, uncaptured order. When the payment for an order is authorized, the order is captured and sent to the processing stage.\n\nFull documentation: [Merchant API - Capture an order (Deprecated)](https://developer.revolut.com/docs/merchant/legacy/capture-order-deprecated)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"amount\": 5\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 5
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    },
+    {
+      "name": "Cancel an order (Deprecated)",
+      "path": "/{{base_url}}/api/1.0/orders/:order_id/cancel",
+      "method": "POST",
+      "description": "Cancel an existing uncaptured order.\n\nSpecific limitations apply based on the state of the order, see full documentation: [Merchant API - Cancel an order](https://developer.revolut.com/docs/merchant/legacy/cancel-order-deprecated)",
+      "parameters": {
+        "path": [
+          {
+            "name": "base_url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base_url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": null
+    }
+  ],
+  "webhooks": [],
+  "dependencies": [],
+  "capabilities": [
+    "file-upload",
+    "webhooks"
+  ],
+  "metadata": {
+    "description": "# Introduction\n\nAs a Revolut Business customer, you can use the Merchant API to accept online payments (Card Not Present) by debit or credit cards, and also to manage the orders and customers.\n\nThis Postman collection lets you try Revolut's Merchant API.\n\nTo see the full documentation of the Merchant API, visit: [Revolut Docs - Merchant API](https://developer.revolut.com/docs/merchant/merchant-api).\n\n## Authorization\n\nEach Merchant API request must contain an authorization header in the following format to make a call:\n\n``` json\n\"Authorization: Bearer <yourSecretApiKey>\"\n\n ```\n\nUse the predefined environment variables (`secret_api_key`) in Postman to authorize your API calls. Make sure to use your Sandbox and Production Secret API keys with the corresponding environments!\n\nSelect the environment you want to use in the top-right corner.\n\nTo learn more about authorization, see: [Merchant API - Authorization](https://developer.revolut.com/docs/merchant/merchant-api#authorization).\n\n### API versions\n\nWe highly recommend using versioning in your API calls. If you don't provide a version header on the operations where it's required, you will receive an error response.\n\nThe Merchant API uses request header versioning. Where it is required you need to use the `Revolut-Api-Version` header parameter to specify an API version. Each request, where it is indicated in the API specification, must contain a version header in the following format:\n\n```\n 'Revolut-Api-Version: 2023-09-01'\n\n ```\n\nFor more information, see: [API versions](https://developer.revolut.com/docs/merchant/api-versions)",
+    "postmanId": "abdcb155-8c8d-4712-a16c-9ab023f59f7a",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "exporterId": "43116137",
+    "variables": {
+      "undefined": ""
+    }
+  }
+}

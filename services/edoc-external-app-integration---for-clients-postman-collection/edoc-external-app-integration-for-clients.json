@@ -1,0 +1,276 @@
+{
+  "name": "edoc-external-app-integration-for-clients",
+  "version": "1.0.0",
+  "baseUrl": "",
+  "authentication": {
+    "type": "bearer",
+    "config": {
+      "inferred": true
+    }
+  },
+  "endpoints": [
+    {
+      "name": "Fetch User Consents",
+      "path": "/{{eDocAPIBaseUrl}}/api/v1/external/consent/byUser?email=pathik_demo@edoc.ng",
+      "method": "GET",
+      "description": "This API helps to fetch details of all the existing consents available for a given User (Email).",
+      "parameters": {
+        "path": [
+          {
+            "name": "eDocAPIBaseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: eDocAPIBaseUrl"
+          }
+        ],
+        "query": [
+          {
+            "name": "email",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "pathik_demo@edoc.ng"
+          }
+        ],
+        "headers": [
+          {
+            "name": "client-id",
+            "value": "{{CLIENT_APP_ID}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{token}}"
+        }
+      }
+    },
+    {
+      "name": "Initialize Consent",
+      "path": "/{{eDocAPIBaseUrl}}/api/v1/external/consent/initialize",
+      "method": "POST",
+      "description": "Initialize a consent from your backend.\n\nYou will receive a consent id in the response of this request. Using this consent id we need to perform the verification in order to get the transaction data.\n\nFor verification you can use any of the 3 Methods provided by EDoc.\n\n1. Verficiation using Javascript SDK.\n    \n2. Verficiation using Backend API\n    \n3. Verficiation using EDoc Redirection",
+      "parameters": {
+        "path": [
+          {
+            "name": "eDocAPIBaseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: eDocAPIBaseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "client-id",
+            "value": "{{CLIENT_APP_ID}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\r\n    \"email\": \"pathik_demo@edoc.ng\",\r\n    \"redirection_url\": \"\"\r\n}",
+          "contentType": "application/json",
+          "schema": {
+            "email": "pathik_demo@edoc.ng",
+            "redirection_url": ""
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{token}}"
+        }
+      }
+    },
+    {
+      "name": "Fetch Consent",
+      "path": "/{{eDocAPIBaseUrl}}/api/v1/external/consent/:id",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "eDocAPIBaseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: eDocAPIBaseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "client-id",
+            "value": "{{CLIENT_APP_ID}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{token}}"
+        }
+      }
+    },
+    {
+      "name": "Delete Consent",
+      "path": "/{{eDocAPIBaseUrl}}/api/v1/external/consent/:id",
+      "method": "DELETE",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "eDocAPIBaseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: eDocAPIBaseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "client-id",
+            "value": "{{CLIENT_APP_ID}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{token}}"
+        }
+      }
+    },
+    {
+      "name": "Get Dashboard",
+      "path": "/{{eDocAPIBaseUrl}}/api/v1/external/consent/:consentId/dashboard",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "eDocAPIBaseUrl",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: eDocAPIBaseUrl"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "client-id",
+            "value": "{{CLIENT_APP_ID}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "",
+          "contentType": "text/plain"
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{token}}"
+        }
+      }
+    },
+    {
+      "name": "Sample Request",
+      "path": "/<YOUR_WEBHOOK_URL>",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [],
+        "query": [],
+        "headers": [
+          {
+            "name": "x-signature",
+            "value": "<SIGNATURE_SIGNED>",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\r\n    \"event\": \"consent.transactions\",\r\n    \"data\": {\r\n        \"consentId\": \"b4fa2d6e-44ff-4732-b67a-dd4774ad345f\",\r\n        \"consentStatus\": \"Active\",\r\n        \"balance\": 57157.7,\r\n        \"transactions\": [\r\n            {\r\n                \"creditType\": \"Debit\",\r\n                \"amount\": 20,\r\n                \"currency\": \"\",\r\n                \"transactionReference\": \"\",\r\n                \"transactionDate\": \"2023-10-17T07:42:48.114Z\",\r\n                \"transactionInformation\": \"SMS Alert Charges for MAY 25 to JUN 24, 2023\"\r\n            },\r\n            {\r\n                \"creditType\": \"Credit\",\r\n                \"amount\": 250000,\r\n                \"currency\": \"\",\r\n                \"transactionReference\": \"000001230601164553224122114915\",\r\n                \"transactionDate\": \"2023-09-30T07:42:48.114Z\",\r\n                \"transactionInformation\": \"NIP:OLUBUKOLA OGUNDIPE-Transfer from OLUBUKOLA OG\"\r\n            }\r\n        ]\r\n    }\r\n}",
+          "contentType": "application/json",
+          "schema": {
+            "event": "consent.transactions",
+            "data": {
+              "consentId": "b4fa2d6e-44ff-4732-b67a-dd4774ad345f",
+              "consentStatus": "Active",
+              "balance": 57157.7,
+              "transactions": [
+                {
+                  "creditType": "Debit",
+                  "amount": 20,
+                  "currency": "",
+                  "transactionReference": "",
+                  "transactionDate": "2023-10-17T07:42:48.114Z",
+                  "transactionInformation": "SMS Alert Charges for MAY 25 to JUN 24, 2023"
+                },
+                {
+                  "creditType": "Credit",
+                  "amount": 250000,
+                  "currency": "",
+                  "transactionReference": "000001230601164553224122114915",
+                  "transactionDate": "2023-09-30T07:42:48.114Z",
+                  "transactionInformation": "NIP:OLUBUKOLA OGUNDIPE-Transfer from OLUBUKOLA OG"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "noauth",
+        "config": {}
+      }
+    }
+  ],
+  "webhooks": [],
+  "dependencies": [],
+  "capabilities": [
+    "webhooks"
+  ],
+  "metadata": {
+    "description": "# 📄 EDoc APIs\n\nThe EDoc provides API endpoints that enable you to manage fetch the user transaction informations\n\n## **Getting started guide**\n\nTo start using the EDoc API, you need to -\n\n- You must get a valid client credentials to send requests to the API endpoints. You can get your credentials by contacting [info@e-doconline.ng](https://)\n    \n- The API has [rate and usage limits](https://).\n    \n- The API only responds to HTTPS-secured communications. Any requests sent via HTTP return an HTTP 301 redirect to the corresponding HTTPS resources.\n    \n- The API returns request responses in JSON format.\n    \n\n## Authentication\n\nThe EDoc API uses Bearer Token which needs to be passed as Authorization Header along with the client id.\n\nStartFragmentAuthorization headers should be in the following format:\n\n`Authorization: Bearer CLIENT_SECRET`\n\n`client-id: CLIENT_ID`\n\nIf an Authorization header or client id is missing, malformed, or invalid, you will receive an HTTP 401 Unauthorized response code.\n\n## Intergration Approaches\n\nEDoc currently offer Integration using Popup (Javascript SDK).\n\n##### Verficiation using POP Up (Javascript SDK)\n\n###### Step1 : Initialize Consent\n\nFirst step for any of the approach will be to initialize consent (from backend). This will give you the unique consent id. which needs to be passed to the frontend for further use.\n\n###### Step2 : SDK Integration\n\nFor POPUp Integration. Please paste the below code on your web page's head section.\n\n``` html\n<head>\n...\n<script src=\"https://e-doconline.ng/external/eDocSDK.js\">\n</script>\n....\n</head>\n\n ```\n\nAfter that you can call our Javascript SDK to open a authentication window where user can compelete the Journey.\n\n``` bash\nvar handler = EDoc.setup({\n    key: 'YOUR_PUBLIC_KEY', // Replace with your public key\n    consent_id: 'YOUR_CONSENT_ID', // Replace with conesnt id received from backend\n    onSuccess: function(response) {\n      //this happens after the payment is completed successfully\n      console.log('EDoc Response',response);\n      // Make an AJAX call to your server with the reference to verify the transaction\n    },\n    onError: function(error) {\n       console.log('EDoc Error',error);\n    },\n    onClose: function() {\n      alert('Transaction was not completed, window closed.');\n    },\n  });\n  handler.openWindow();\n\n ```\n\n> **Note:** In case of successful verification, Transaction information will also be sent via Webhook \n  \n\n###### Step 3 : Call the Dashboard API to get the Data\n\nOn completion of popup journey, You will get the response in onSuccess call back. After that you can call the Dashboard API (from Backend) to get the to get the summary of the transactions\n\nHaving doubts? Please visit our [demo page](https://preprod.connect.e-doconline.ng/external-demo) to see this journey in action.\n\n> **Note:** In case of successful verification, Transaction information will be sent via Webhook \n  \n\n## Rate and usage limits\n\nAPI access rate limits apply at a per-API key basis in unit time. The limit is 300 requests per minute. Also, depending on your plan, you may have usage limits. If you exceed either limit, your request will return an HTTP 429 Too Many Requests status code.\n\nEach API response returns the following set of headers to help you identify your use status:\n\n| Header | Description |\n| --- | --- |\n| `X-RateLimit-Limit` | The maximum number of requests that the consumer is permitted to make per minute. |\n| `X-RateLimit-Remaining` | The number of requests remaining in the current rate limit window. |\n| `X-RateLimit-Reset` | The time at which the current rate limit window resets in UTC epoch seconds. |\n\n### 503 response\n\nAn HTTP `503` response from our servers indicates there is an unexpected spike in API access traffic. The server is usually operational within the next five minutes. If the outage persists or you receive any other form of an HTTP `5XX` error, [contact support](https://e-doconline.ng).\n\n### Environments\n\n**Sandbox URL:** [https://preprod.connect.e-doconline.ng](https://)\n\n**Production URL:** [https://connect.e-doconline.ng](https://)\n\n### **Need some help?**\n\nIn case you have questions please share your queries on [info@e-doconline.ng](https://).",
+    "postmanId": "1ffabc81-8316-45ca-ae94-8eb9456d7ead",
+    "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+    "exporterId": "43116137",
+    "variables": {
+      "eDocAPIBaseUrl": "https://preprod.connect.e-doconline.ng",
+      "accessToken": ""
+    }
+  }
+}

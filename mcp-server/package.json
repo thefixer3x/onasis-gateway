@@ -1,0 +1,38 @@
+{
+  "name": "api-warehouse-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for API Service Warehouse management and discovery",
+  "main": "index.js",
+  "bin": {
+    "api-warehouse-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest",
+    "build": "npm run test"
+  },
+  "keywords": [
+    "mcp",
+    "api",
+    "warehouse",
+    "service-discovery",
+    "integration"
+  ],
+  "author": "API Integration Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/api-warehouse-mcp-server.git"
+  }
+}

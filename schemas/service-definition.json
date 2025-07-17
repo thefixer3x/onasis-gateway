@@ -1,0 +1,215 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "API Service Definition Schema",
+  "type": "object",
+  "required": ["id", "name", "version", "baseUrl", "endpoints"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Unique service identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable service name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v\\d+(\\.\\d+)*$",
+      "description": "Service version (e.g., v1.0.0)"
+    },
+    "baseUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL for the service"
+    },
+    "description": {
+      "type": "string",
+      "description": "Service description"
+    },
+    "authentication": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["bearer", "apikey", "hmac", "oauth2", "basic", "none"],
+          "description": "Authentication method"
+        },
+        "config": {
+          "type": "object",
+          "description": "Authentication configuration"
+        },
+        "headers": {
+          "type": "object",
+          "description": "Required authentication headers"
+        }
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/endpoint"
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "properties": {
+        "pci": { "type": "boolean" },
+        "gdpr": { "type": "boolean" },
+        "psd2": { "type": "boolean" },
+        "sox": { "type": "boolean" },
+        "hipaa": { "type": "boolean" }
+      }
+    },
+    "rateLimit": {
+      "$ref": "#/definitions/rateLimit"
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "healthCheck": {
+          "type": "object",
+          "properties": {
+            "endpoint": { "type": "string" },
+            "method": { "type": "string" },
+            "expectedStatus": { "type": "number" }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "endpoints": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "service": { "type": "string" },
+          "version": { "type": "string" },
+          "required": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "endpoint": {
+      "type": "object",
+      "required": ["id", "path", "method"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique endpoint identifier"
+        },
+        "path": {
+          "type": "string",
+          "description": "Endpoint path"
+        },
+        "method": {
+          "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+          "description": "HTTP method"
+        },
+        "description": {
+          "type": "string",
+          "description": "Endpoint description"
+        },
+        "parameters": {
+          "$ref": "#/definitions/parameters"
+        },
+        "requestBody": {
+          "$ref": "#/definitions/requestBody"
+        },
+        "responses": {
+          "$ref": "#/definitions/responses"
+        },
+        "rateLimit": {
+          "$ref": "#/definitions/rateLimit"
+        },
+        "authentication": {
+          "type": "object",
+          "properties": {
+            "required": { "type": "boolean" },
+            "scopes": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "deprecated": {
+          "type": "boolean",
+          "description": "Whether endpoint is deprecated"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Endpoint tags for categorization"
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/parameter" }
+        },
+        "query": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/parameter" }
+        },
+        "header": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/parameter" }
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "enum": ["string", "number", "boolean", "array", "object"] },
+        "required": { "type": "boolean" },
+        "description": { "type": "string" },
+        "default": {},
+        "enum": { "type": "array" },
+        "format": { "type": "string" },
+        "pattern": { "type": "string" }
+      }
+    },
+    "requestBody": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "boolean" },
+        "contentType": { "type": "string" },
+        "schema": { "type": "object" },
+        "examples": { "type": "array" }
+      }
+    },
+    "responses": {
+      "type": "object",
+      "patternProperties": {
+        "^[1-5][0-9][0-9]$": {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string" },
+            "schema": { "type": "object" },
+            "headers": { "type": "object" },
+            "examples": { "type": "array" }
+          }
+        }
+      }
+    },
+    "rateLimit": {
+      "type": "object",
+      "properties": {
+        "requests": { "type": "number" },
+        "window": { "type": "string" },
+        "burst": { "type": "number" },
+        "skipSuccessfulRequests": { "type": "boolean" },
+        "skipFailedRequests": { "type": "boolean" }
+      }
+    }
+  }
+}

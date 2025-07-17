@@ -1,0 +1,1792 @@
+{
+  "name": "xpress-wallet-for-merchants",
+  "version": "1.0.0",
+  "baseUrl": "",
+  "authentication": {
+    "type": "bearer",
+    "config": {
+      "token": "sk_sandbox_4W8iqOGLNnLMkQRzwkdFEiXk8PUsKuYymynK2ulFbcVj9Zch"
+    }
+  },
+  "endpoints": [
+    {
+      "name": "Merchant Wallet",
+      "path": "/{{base-url}}/merchant/wallet",
+      "method": "GET",
+      "description": "The merchant wallet information details",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [
+          {
+            "name": "X-DNS-Prefetch-Control",
+            "value": " off:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "X-Frame-Options",
+            "value": " SAMEORIGIN:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Strict-Transport-Security",
+            "value": " max-age=15552000; includeSubDomains:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "X-Download-Options",
+            "value": " noopen:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "X-Content-Type-Options",
+            "value": " nosniff:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "X-XSS-Protection",
+            "value": " 1; mode=block:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Access-Control-Allow-Origin",
+            "value": " *:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Access-Control-Allow-Credentials",
+            "value": " true:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Access-Control-Expose-Headers",
+            "value": " X-Access-Token,X-Refresh-Token:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Content-Length",
+            "value": " 415",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "ETag",
+            "value": " W/\"19f-nOsVCTJ4HyE/ZERDfozcVRjbT7s\":",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Vary",
+            "value": " Accept-Encoding:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Date",
+            "value": " Fri, 11 Aug 2023 13:35:35 GMT",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Connection",
+            "value": " keep-alive:",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "Keep-Alive",
+            "value": " timeout=5:",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "",
+          "contentType": "text/plain"
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Create Customer Wallet",
+      "path": "/{{base-url}}/wallet",
+      "method": "POST",
+      "description": "Mechant endpoint to create wallet for customers.",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"bvn\": \"\",\n    \"firstName\": \"First\",\n    \"lastName\": \"User\",\n    \"accountPrefix\": \"11\",\n    \"dateOfBirth\": \"\",\n    \"phoneNumber\": \"08020245369\",\n    \"email\": \"jamis@gmail.com\",\n    \"address\": \"No 10, Adewale Ajasin University\",\n    \"metadata\": {\n        \"even-more\": \"Other data\",\n        \"additional-data\": \"some more data\"\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "bvn": "",
+            "firstName": "First",
+            "lastName": "User",
+            "accountPrefix": "11",
+            "dateOfBirth": "",
+            "phoneNumber": "08020245369",
+            "email": "jamis@gmail.com",
+            "address": "No 10, Adewale Ajasin University",
+            "metadata": {
+              "even-more": "Other data",
+              "additional-data": "some more data"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "All Wallets",
+      "path": "/{{base-url}}/wallet?page=1&perPage=20",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "type",
+            "description": "",
+            "required": false,
+            "type": "string",
+            "default": "STATIC"
+          },
+          {
+            "name": "page",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "1"
+          },
+          {
+            "name": "perPage",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "20"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Customer Wallet",
+      "path": "/{{base-url}}/wallet/customer?customerId=791a0898-50e4-40ab-90cb-3714ccdbb761",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "customerId",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "791a0898-50e4-40ab-90cb-3714ccdbb761"
+          }
+        ],
+        "headers": [
+          {
+            "name": "X-Access-Token",
+            "value": "{{access-token}}",
+            "description": "",
+            "required": true
+          },
+          {
+            "name": "X-Refresh-Token",
+            "value": "{{refresh-token}}",
+            "description": "",
+            "required": true
+          }
+        ],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Credit Wallet",
+      "path": "/{{base-url}}/wallet/credit",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n\t\"amount\": 2000,\n\t\"reference\": \"14kg34dqe3rkyd23wu26\",\n\t\"customerId\": \"2af1eaa5-2638-46a5-88c4-d0baa1f78317\",\n    \"metadata\": {\n        \"some-data\": \"sample data\",\n        \"more-data\": \"any value here\"\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 2000,
+            "reference": "14kg34dqe3rkyd23wu26",
+            "customerId": "2af1eaa5-2638-46a5-88c4-d0baa1f78317",
+            "metadata": {
+              "some-data": "sample data",
+              "more-data": "any value here"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Debit Wallet",
+      "path": "/{{base-url}}/wallet/debit",
+      "method": "POST",
+      "description": "Debit customer wallet.",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n\t\"amount\": 500,\n\t\"reference\": \"34k3e4f4ek4t8\",\n\t\"customerId\": \"e74d75b0-dbab-4b4e-abe9-c1a9a41c9912\",\n    \"metadata\": {\n        \"some-data\": \"sample data\",\n        \"more-data\": \"any value here\"\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 500,
+            "reference": "34k3e4f4ek4t8",
+            "customerId": "e74d75b0-dbab-4b4e-abe9-c1a9a41c9912",
+            "metadata": {
+              "some-data": "sample data",
+              "more-data": "any value here"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Merchant to Merchant Transfer",
+      "path": "/{{base-url}}/wallet/transfer/merchant",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n\t\"amount\": 1000,\n\t\"reference\": \"14kg34dqe3rkyd23wu30\",\n\t\"merchantId\": \"2051f664-32de-4982-a596-b52838a96dec\",\n    \"metadata\": {\n        \"some-data\": \"sample data\",\n        \"more-data\": \"any value here\"\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 1000,
+            "reference": "14kg34dqe3rkyd23wu30",
+            "merchantId": "2051f664-32de-4982-a596-b52838a96dec",
+            "metadata": {
+              "some-data": "sample data",
+              "more-data": "any value here"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Freeze Customer Wallet",
+      "path": "/{{base-url}}/wallet/close",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\r\n    \"customerId\": \"49d4ea6d-d3dc-490c-800d-7c50b89cf8ff\"\r\n}",
+          "contentType": "application/json",
+          "schema": {
+            "customerId": "49d4ea6d-d3dc-490c-800d-7c50b89cf8ff"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Unfreeze Customer Wallet",
+      "path": "/{{base-url}}/wallet/enable",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\r\n    \"customerId\": \"49d4ea6d-d3dc-490c-800d-7c50b89cf8ff\"\r\n}",
+          "contentType": "application/json",
+          "schema": {
+            "customerId": "49d4ea6d-d3dc-490c-800d-7c50b89cf8ff"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Batch Credit Customer Wallets",
+      "path": "/{{base-url}}/wallet/batch-credit-customer-wallet",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"batchReference\": \"8ede8w340ddk3erowr3ef64\",\n    \"transactions\": [\n        {\n            \"amount\": 200,\n            \"customerId\": \"cdb789ce-7b07-4f47-b72d-53f9c6c6de9c\"\n        },\n        {\n            \"amount\": 300,\n            \"customerId\": \"fa7801d6-fe48-4f8d-9316-c475cd01b474\"\n        }\n    ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "batchReference": "8ede8w340ddk3erowr3ef64",
+            "transactions": [
+              {
+                "amount": 200,
+                "customerId": "cdb789ce-7b07-4f47-b72d-53f9c6c6de9c"
+              },
+              {
+                "amount": 300,
+                "customerId": "fa7801d6-fe48-4f8d-9316-c475cd01b474"
+              }
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Batch Debit Customer Wallets",
+      "path": "/{{base-url}}/wallet/batch-debit-customer-wallet",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"batchReference\": \"88adsf8hssa43sefas8df8ahhjefasdff26\",\n    \"transactions\": [\n        {\n            \"amount\": 100,\n            \"reference\": \"dkfajdfsdjjjssd23sfjasdfasdkfjds22\",\n            \"customerId\": \"a2c40f33-489c-480f-9d24-e2742502b85f\"\n        },\n        {\n            \"amount\": 30000,\n            \"reference\": \"dkfajdfsdjjjdsfjasd45fssasdkfjds28\",\n            \"customerId\": \"cdf29144-10f7-4805-8389-3928050904f7\"\n        }\n    ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "batchReference": "88adsf8hssa43sefas8df8ahhjefasdff26",
+            "transactions": [
+              {
+                "amount": 100,
+                "reference": "dkfajdfsdjjjssd23sfjasdfasdkfjds22",
+                "customerId": "a2c40f33-489c-480f-9d24-e2742502b85f"
+              },
+              {
+                "amount": 30000,
+                "reference": "dkfajdfsdjjjdsfjasd45fssasdkfjds28",
+                "customerId": "cdf29144-10f7-4805-8389-3928050904f7"
+              }
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Customer Batch Credit Customer Wallets",
+      "path": "/{{base-url}}/wallet/customer-batch-credit-customer-wallet",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"batchReference\": \"88adsf8hssasefas8df8ahhjefasdff17\",\n    \"customerId\": \"aa4e9eea-d7a5-4ac2-a211-dc6d59b0c050\",\n    \"recipients\": [\n        {\n            \"amount\": 140,\n            \"reference\": \"dkfajdfsdjjjssdsfjasdfasdkfjds16\",\n            \"customerId\": \"cdb789ce-7b07-4f47-b72d-53f9c6c6de9c\"\n        },\n        {\n            \"amount\": 140,\n            \"reference\": \"fa7801d6-fe48-4f8d-9316-c475cd01b478\",\n            \"customerId\": \"fa7801d6-fe48-4f8d-9316-c475cd01b474\"\n        }\n    ]\n}",
+          "contentType": "application/json",
+          "schema": {
+            "batchReference": "88adsf8hssasefas8df8ahhjefasdff17",
+            "customerId": "aa4e9eea-d7a5-4ac2-a211-dc6d59b0c050",
+            "recipients": [
+              {
+                "amount": 140,
+                "reference": "dkfajdfsdjjjssdsfjasdfasdkfjds16",
+                "customerId": "cdb789ce-7b07-4f47-b72d-53f9c6c6de9c"
+              },
+              {
+                "amount": 140,
+                "reference": "fa7801d6-fe48-4f8d-9316-c475cd01b478",
+                "customerId": "fa7801d6-fe48-4f8d-9316-c475cd01b474"
+              }
+            ]
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "All Customers",
+      "path": "/{{base-url}}/customer",
+      "method": "GET",
+      "description": "List all merchant customers",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "",
+            "required": false,
+            "type": "number",
+            "default": "1"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Customer Details",
+      "path": "/{{base-url}}/customer/:customerId",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "",
+          "contentType": "text/plain"
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Update Customer Profile",
+      "path": "/{{base-url}}/customer/6834b937-bdf0-430e-9600-90009cd5c92e",
+      "method": "PUT",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\r\n    \"firstName\": \"Updated\",\r\n    \"lastName\": \"James\",\r\n    \"address\": \"No 10, Adewale street\",\r\n    \"phoneNumber\": \"08048584833\",\r\n    \"metadata\": {\r\n        \"others\": \"anything\"\r\n    },\r\n    \"tier\": \"TIER_1\"\r\n}",
+          "contentType": "application/json",
+          "schema": {
+            "firstName": "Updated",
+            "lastName": "James",
+            "address": "No 10, Adewale street",
+            "phoneNumber": "08048584833",
+            "metadata": {
+              "others": "anything"
+            },
+            "tier": "TIER_1"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Merchant Transactions",
+      "path": "/{{base-url}}/transaction?page=1&type=ALL",
+      "method": "GET",
+      "description": "Get all information about the merchant transactions\r\n\r\n`type` can be any of the option below\r\n - CREDIT\r\n - DEBIT\r\n - ALL\r\n\r\nDefault value for `type` is *ALL*",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "1"
+          },
+          {
+            "name": "type",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "ALL"
+          },
+          {
+            "name": "status",
+            "description": "",
+            "required": false,
+            "type": "string",
+            "default": "success"
+          },
+          {
+            "name": "category",
+            "description": "",
+            "required": false,
+            "type": "string",
+            "default": "DEBIT_CUSTOMER_WALLET"
+          },
+          {
+            "name": "search",
+            "description": "",
+            "required": false,
+            "type": "number",
+            "default": "1630688012568"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Transaction Details",
+      "path": "/{{base-url}}/merchant/transaction/:transactionReference",
+      "method": "GET",
+      "description": "Get transaction details",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Customer Transactions",
+      "path": "/{{base-url}}/transaction/customer?customerId=2af1eaa5-2638-46a5-88c4-d0baa1f78317&page=1&perPage=20",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "customerId",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "2af1eaa5-2638-46a5-88c4-d0baa1f78317"
+          },
+          {
+            "name": "page",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "1"
+          },
+          {
+            "name": "type",
+            "description": "",
+            "required": false,
+            "type": "string",
+            "default": "DEBIT"
+          },
+          {
+            "name": "perPage",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "20"
+          },
+          {
+            "name": "category",
+            "description": "",
+            "required": false,
+            "type": "string",
+            "default": "BANK_TRANSFER"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Batch Transactions",
+      "path": "/{{base-url}}/transaction/batch?search=reference&category&type=CREDIT&page=1&perPage=20",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "search",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "reference"
+          },
+          {
+            "name": "category",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "name": "type",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "CREDIT"
+          },
+          {
+            "name": "page",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "1"
+          },
+          {
+            "name": "perPage",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "20"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Batch Transaction Details",
+      "path": "/{{base-url}}/transaction/batch/:reference",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Pending Transactions",
+      "path": "/{{base-url}}/transaction/pending?page=1&type=ALL",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "page",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "1"
+          },
+          {
+            "name": "type",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "ALL"
+          },
+          {
+            "name": "category",
+            "description": "",
+            "required": false,
+            "type": "string",
+            "default": "BANK_TRANSFER"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Approve Transaction",
+      "path": "/{{base-url}}/transaction/approve",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"transactionId\": \"8b74c685-7282-48b4-b5bd-905fa09542e5\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "transactionId": "8b74c685-7282-48b4-b5bd-905fa09542e5"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Decline Pending Transaction",
+      "path": "/{{base-url}}/transaction/:transactionId",
+      "method": "DELETE",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "",
+          "contentType": "text/plain"
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Download Merchant Transactions",
+      "path": "/{{base-url}}/transaction/download/merchant",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Download Customer Transactions",
+      "path": "/{{base-url}}/transaction/download/customer?customerId=aa4e9eea-d7a5-4ac2-a211-dc6d59b0c050",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "customerId",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "aa4e9eea-d7a5-4ac2-a211-dc6d59b0c050"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Bank List",
+      "path": "/{{base-url}}/transfer/banks",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Get Bank Account Details",
+      "path": "/{{base-url}}/transfer/account/details?sortCode=000013&accountNumber=0167421242",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "sortCode",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "000013"
+          },
+          {
+            "name": "accountNumber",
+            "description": "",
+            "required": true,
+            "type": "number",
+            "default": "0167421242"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Merchant Bank Transfer",
+      "path": "/{{base-url}}/transfer/bank",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"amount\": 100,\n    \"sortCode\": \"000013\",\n    \"narration\": \"Testing\",\n    \"accountNumber\": \"1700263070\",\n    \"accountName\": \"Obagunwa Emmanuel\",\n    \"metadata\": {\n        \"reason\": \"testing\"\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 100,
+            "sortCode": "000013",
+            "narration": "Testing",
+            "accountNumber": "1700263070",
+            "accountName": "Obagunwa Emmanuel",
+            "metadata": {
+              "reason": "testing"
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Customer Bank Transfer",
+      "path": "/{{base-url}}/transfer/bank/customer",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n\t\"amount\": 1000,\n    // \"reference\": \"38bDlOwxUmrDv3yzP46mZyiEaZWpYVcxMHLd\",\n\t\"sortCode\": \"000013\",\n    \"narration\": \"Customer transfer\",\n\t\"accountNumber\": \"0167421242\",\n    \"accountName\": \"Emmanuel Obagunwa\",\n    \"customerId\": \"6e7b8096-bf89-496a-badd-1ed5acf17280\",\n    \"metadata\": {\"key\": \"value\"}\n}",
+          "contentType": "text/plain"
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "{{merchantAPIKey}}"
+        }
+      }
+    },
+    {
+      "name": "Merchant Batch Bank Transfer",
+      "path": "/{{base-url}}/transfer/bank/batch",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "[\n    {\n        \"amount\": 600,\n        \"sortCode\": \"000013\",\n        \"narration\": \"Just kidding\",\n        \"accountNumber\": \"0167421242\",\n        \"accountName\": \"Obagunwa Emmanuel\",\n        \"metadata\": {\n            \"customer-data\": \"some customer details\"\n        }\n    },\n    {\n        \"amount\": 300,\n        \"sortCode\": \"000013\",\n        \"narration\": \"Just kidding\",\n        \"accountNumber\": \"0167421242\",\n        \"accountName\": \"Obagunwa Emmanuel\",\n        \"metadata\": {\n            \"customer-data\": \"some customer details\"\n        }\n    }\n]",
+          "contentType": "application/json",
+          "schema": [
+            {
+              "amount": 600,
+              "sortCode": "000013",
+              "narration": "Just kidding",
+              "accountNumber": "0167421242",
+              "accountName": "Obagunwa Emmanuel",
+              "metadata": {
+                "customer-data": "some customer details"
+              }
+            },
+            {
+              "amount": 300,
+              "sortCode": "000013",
+              "narration": "Just kidding",
+              "accountNumber": "0167421242",
+              "accountName": "Obagunwa Emmanuel",
+              "metadata": {
+                "customer-data": "some customer details"
+              }
+            }
+          ]
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Customer to Customer Wallet Transfer",
+      "path": "/{{base-url}}/transfer/wallet",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n\t\"amount\": 200,\n\t\"fromCustomerId\": \"aa4e9eea-d7a5-4ac2-a211-dc6d59b0c050\",\n\t\"toCustomerId\": \"a2c40f33-489c-480f-9d24-e2742502b85f\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "amount": 200,
+            "fromCustomerId": "aa4e9eea-d7a5-4ac2-a211-dc6d59b0c050",
+            "toCustomerId": "a2c40f33-489c-480f-9d24-e2742502b85f"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Batch Bank Transfer",
+      "path": "/{{base-url}}/transfer/bank/batch",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "[\n    {\n        \"amount\": 700,\n        \"sortCode\": \"000013\",\n        \"narration\": \"First transfer\",\n        \"accountNumber\": \"0167421242\",\n        \"accountName\": \"Emmanuel Obagunwa\"\n    },\n    {\n        \"amount\": 800,\n        \"sortCode\": \"000013\",\n        \"narration\": \"Second transfer\",\n        \"accountNumber\": \"1700263070\",\n        \"accountName\": \"Ologun Itunu\"\n    }\n]",
+          "contentType": "application/json",
+          "schema": [
+            {
+              "amount": 700,
+              "sortCode": "000013",
+              "narration": "First transfer",
+              "accountNumber": "0167421242",
+              "accountName": "Emmanuel Obagunwa"
+            },
+            {
+              "amount": 800,
+              "sortCode": "000013",
+              "narration": "Second transfer",
+              "accountNumber": "1700263070",
+              "accountName": "Ologun Itunu"
+            }
+          ]
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Merchant Profile",
+      "path": "/{{base-url}}/merchant/profile",
+      "method": "GET",
+      "description": "Get information about the current logged in Merchant",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "",
+          "contentType": "text/plain"
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "All Subsidiary Merchants",
+      "path": "/{{base-url}}/merchant/subsidiary",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Create Subsidiary Merchant Account",
+      "path": "/{{base-url}}/merchant/subsidiary",
+      "method": "POST",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"bvn\": \"27384950847\",\n    \"firstName\": \"Yemi\",\n    \"lastName\": \"Alade\",\n    \"password\": \"password\",\n    \"phoneNumber\": \"08055484569\",\n    \"businessName\": \"Yemi-Alade\",\n    \"email\": \"demo@sub.merchant.com\",\n    \"businessType\": \"FINANCIAL-SERVICES\",\n    \"charges\": {\n        \"bvnChargeV1\": 10,\n        \"fundingRate\": 0.85,\n        \"fundingRateMax\": 200,\n        \"tier_1_daily_limit\": 50000,\n        \"tier_2_daily_limit\": 200000,\n        \"tier_3_daily_limit\": 1000000,\n        \"bvnVerificationCharge\": 20,\n        \"walletToWalletTransfer\": 5,\n        \"walletReservationCharge\": 20,\n        \"transferCharges\": {\n            \"max5000\": 5,\n            \"max50000\": 10,\n            \"min50000\": 20\n        }\n    }\n}",
+          "contentType": "application/json",
+          "schema": {
+            "bvn": "27384950847",
+            "firstName": "Yemi",
+            "lastName": "Alade",
+            "password": "password",
+            "phoneNumber": "08055484569",
+            "businessName": "Yemi-Alade",
+            "email": "demo@sub.merchant.com",
+            "businessType": "FINANCIAL-SERVICES",
+            "charges": {
+              "bvnChargeV1": 10,
+              "fundingRate": 0.85,
+              "fundingRateMax": 200,
+              "tier_1_daily_limit": 50000,
+              "tier_2_daily_limit": 200000,
+              "tier_3_daily_limit": 1000000,
+              "bvnVerificationCharge": 20,
+              "walletToWalletTransfer": 5,
+              "walletReservationCharge": 20,
+              "transferCharges": {
+                "max5000": 5,
+                "max50000": 10,
+                "min50000": 20
+              }
+            }
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Subsidiary Merchant Transactions",
+      "path": "/{{base-url}}/admin/transactions?merchantId=754f4daa-b93b-4011-ac2a-857ddfccf96a&mode=SANDBOX&page=1&type=ALL&status=success",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "merchantId",
+            "description": "optional. Subsidiary merchant transaction to list",
+            "required": true,
+            "type": "string",
+            "default": "754f4daa-b93b-4011-ac2a-857ddfccf96a"
+          },
+          {
+            "name": "mode",
+            "description": "optional. (Default to PRODUCTION). Transaction mode to show.",
+            "required": true,
+            "type": "string",
+            "default": "SANDBOX"
+          },
+          {
+            "name": "page",
+            "description": "optional. (Default 1) Current page to list",
+            "required": true,
+            "type": "number",
+            "default": "1"
+          },
+          {
+            "name": "type",
+            "description": "optional. (Default to ALL). Options: ALL, CREDIT, DEBIT. Transaction type to be listed",
+            "required": true,
+            "type": "string",
+            "default": "ALL"
+          },
+          {
+            "name": "status",
+            "description": "Optional. (Default to success). Options: success, failed. Transaction status to be shown",
+            "required": true,
+            "type": "string",
+            "default": "success"
+          },
+          {
+            "name": "category",
+            "description": "Optional. Category of transaction to be listed.",
+            "required": false,
+            "type": "string",
+            "default": "WALLET_FUNDED_THROUGH_BANK_TRANSFER"
+          },
+          {
+            "name": "reference",
+            "description": "Optional. Search for transaction by reference.",
+            "required": false,
+            "type": "string",
+            "default": "NObfBc5JeIEyKj"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Single Merchant Detail",
+      "path": "/{{base-url}}/merchant/details/:merchantId?mode=SANDBOX",
+      "method": "GET",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [
+          {
+            "name": "mode",
+            "description": "",
+            "required": true,
+            "type": "string",
+            "default": "SANDBOX"
+          }
+        ],
+        "headers": [],
+        "body": null
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Update Merchant Limits",
+      "path": "/{{base-url}}/merchant/limits",
+      "method": "PATCH",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"merchantId\": \"754f4daa-b93b-4011-ac2a-857ddfccf96a\",\n    \"lien\": 50000,\n    \"tier_1_daily_limit\": 10000,\n    \"tier_2_daily_limit\": 200000,\n    \"tier_3_daily_limit\": 1000000000,\n    \"tier_1_min_balance\": 1000,\n    \"tier_2_min_balance\": 5000,\n    \"tier_3_min_balance\": 10000,\n    \"dailyTransactionLimit\": 50000\n}",
+          "contentType": "application/json",
+          "schema": {
+            "merchantId": "754f4daa-b93b-4011-ac2a-857ddfccf96a",
+            "lien": 50000,
+            "tier_1_daily_limit": 10000,
+            "tier_2_daily_limit": 200000,
+            "tier_3_daily_limit": 1000000000,
+            "tier_1_min_balance": 1000,
+            "tier_2_min_balance": 5000,
+            "tier_3_min_balance": 10000,
+            "dailyTransactionLimit": 50000
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "Update Merchant Information",
+      "path": "/{{base-url}}/merchant/details/:merchantId",
+      "method": "PUT",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"lien\": 50000,\n    \"canLogin\": true,\n    \"sendEmail\": true,\n    \"callbackURL\": \"callback-url\",\n    \"parentMerchant\": \"main-merchant-id\",\n    \"accountNumber\": \"providus-account-number\",\n    \"canDebitCustomer\": true,\n    \"dailyTransactionLimit\": 50000,\n    \"sandboxCallbackURL\": \"sandbox-callback-url\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "lien": 50000,
+            "canLogin": true,
+            "sendEmail": true,
+            "callbackURL": "callback-url",
+            "parentMerchant": "main-merchant-id",
+            "accountNumber": "providus-account-number",
+            "canDebitCustomer": true,
+            "dailyTransactionLimit": 50000,
+            "sandboxCallbackURL": "sandbox-callback-url"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    },
+    {
+      "name": "De-active Merchant Account",
+      "path": "/{{base-url}}/merchant/deactivate",
+      "method": "PATCH",
+      "description": "",
+      "parameters": {
+        "path": [
+          {
+            "name": "base-url",
+            "required": true,
+            "type": "string",
+            "description": "Path parameter: base-url"
+          }
+        ],
+        "query": [],
+        "headers": [],
+        "body": {
+          "type": "raw",
+          "description": "",
+          "content": "{\n    \"merchantId\": \"60106719-5d75-482e-bb0c-2ba9458b5360\"\n}",
+          "contentType": "application/json",
+          "schema": {
+            "merchantId": "60106719-5d75-482e-bb0c-2ba9458b5360"
+          }
+        }
+      },
+      "responses": [],
+      "rateLimit": null,
+      "authentication": {
+        "type": "bearer",
+        "config": {
+          "token": "your-api-key"
+        }
+      }
+    }
+  ],
+  "webhooks": [],
+  "dependencies": [],
+  "capabilities": [
+    "payment"
+  ],
+  "metadata": {
+    "description": "Implement Wallets seamlessly into your products using our APIs. Build better, smarter and faster.",
+    "postmanId": "d08623f9-00c8-401b-bdb2-ba0f40658e9f",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "exporterId": "43116137",
+    "variables": {}
+  }
+}
