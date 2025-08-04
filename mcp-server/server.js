@@ -11,6 +11,10 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
+// Import MCP tool modules
+const MemoryMCPTools = require('./tools/memory/index.js');
+const CreditMCPTools = require('./tools/credit/index.js');
+
 class APIServiceMCPServer {
   constructor() {
     this.server = new Server(
@@ -31,6 +35,10 @@ class APIServiceMCPServer {
     this.gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3000';
     this.services = new Map();
     
+    // Initialize MCP tool modules
+    this.memoryTools = new MemoryMCPTools();
+    this.creditTools = new CreditMCPTools();
+    
     this.setupHandlers();
     this.loadServices();
   }
@@ -46,6 +54,9 @@ class APIServiceMCPServer {
 
     const serviceDirs = fs.readdirSync(this.servicesPath)
       .filter(dir => fs.statSync(path.join(this.servicesPath, dir)).isDirectory());
+
+    console.log(`📦 Loading services from: ${this.servicesPath}`);
+    console.log(`🔍 Found service directories: ${serviceDirs.join(', ')}`);
 
     for (const serviceDir of serviceDirs) {
       try {
@@ -77,8 +88,26 @@ class APIServiceMCPServer {
   setupHandlers() {
     // List available tools
     this.server.setRequestHandler('tools/list', async () => {
+      // Get Memory and Credit tools
+      const memoryToolDefs = this.memoryTools.getToolDefinitions();
+      const creditToolDefs = this.creditTools.getToolDefinitions();
+      
+      // Convert tool definitions to MCP format
+      const memoryTools = Object.entries(memoryToolDefs).map(([name, def]) => ({
+        name,
+        description: def.description,
+        inputSchema: def.inputSchema
+      }));
+      
+      const creditTools = Object.entries(creditToolDefs).map(([name, def]) => ({
+        name,
+        description: def.description,
+        inputSchema: def.inputSchema
+      }));
+      
       return {
         tools: [
+          // Service management tools
           {
             name: 'list_services',
             description: 'List all available API services',
@@ -201,7 +230,10 @@ class APIServiceMCPServer {
               },
               required: ['requirements']
             }
-          }
+          },
+          // Add Memory and Credit tools
+          ...memoryTools,
+          ...creditTools
         ]
       };
     });
@@ -226,6 +258,13 @@ class APIServiceMCPServer {
         case 'recommend_services':
           return this.recommendServices(args);
         default:
+          // Check if it's a Memory or Credit tool
+          if (name.startsWith('memory_')) {
+            return this.memoryTools.executeTool(name, args);
+          }
+          if (name.startsWith('credit_')) {
+            return this.creditTools.executeTool(name, args);
+          }
           throw new Error(`Unknown tool: ${name}`);
       }
     });

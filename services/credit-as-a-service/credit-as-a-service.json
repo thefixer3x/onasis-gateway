@@ -1,0 +1,279 @@
+{
+  "name": "credit-as-a-service",
+  "display_name": "Credit-as-a-Service",
+  "description": "Comprehensive credit management and lending platform with provider integration",
+  "version": "1.0.0",
+  "category": "financial",
+  "internal_service": true,
+  "authentication": {
+    "type": "internal",
+    "config": {
+      "requires_api_key": true,
+      "permission_level": "credit_access"
+    }
+  },
+  "endpoints": [
+    {
+      "name": "submitCreditApplication",
+      "method": "POST",
+      "path": "applications",
+      "description": "Submit a new credit application",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "application_type": {
+            "type": "string",
+            "enum": ["personal", "business", "asset_finance"],
+            "description": "Type of credit application"
+          },
+          "requested_amount": {
+            "type": "number",
+            "minimum": 1000,
+            "maximum": 10000000,
+            "description": "Requested loan amount in NGN"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["NGN", "USD", "EUR"],
+            "default": "NGN",
+            "description": "Currency for the loan"
+          },
+          "loan_purpose": {
+            "type": "string",
+            "description": "Purpose of the loan"
+          },
+          "applicant_income": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Monthly income of applicant"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the user applying"
+          }
+        },
+        "required": ["application_type", "requested_amount", "user_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "application": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "reference_id": { "type": "string" },
+              "status": { "type": "string" },
+              "created_at": { "type": "string", "format": "datetime" }
+            }
+          },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "getCreditApplications",
+      "method": "GET", 
+      "path": "applications",
+      "description": "Get credit applications with filters",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending", "under_review", "approved", "rejected", "disbursed", "active", "completed", "defaulted"],
+            "description": "Filter by application status"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Filter by user ID"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Page number for pagination"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20,
+            "description": "Number of results per page"
+          }
+        }
+      }
+    },
+    {
+      "name": "registerCreditProvider",
+      "method": "POST",
+      "path": "providers",
+      "description": "Register a new credit provider",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider_code": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_]{3,20}$",
+            "description": "Unique provider code"
+          },
+          "company_name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Company name"
+          },
+          "provider_type": {
+            "type": "string",
+            "enum": ["bank", "fintech", "microfinance", "p2p_lending"],
+            "description": "Type of credit provider"
+          },
+          "api_endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "Provider's API endpoint"
+          },
+          "min_loan_amount": {
+            "type": "number",
+            "minimum": 1000,
+            "default": 50000,
+            "description": "Minimum loan amount"
+          },
+          "max_loan_amount": {
+            "type": "number",
+            "minimum": 50000,
+            "default": 5000000,
+            "description": "Maximum loan amount"
+          }
+        },
+        "required": ["provider_code", "company_name", "provider_type"]
+      }
+    },
+    {
+      "name": "processCreditTransaction",
+      "method": "POST",
+      "path": "transactions",
+      "description": "Process credit transaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Credit application ID"
+          },
+          "transaction_type": {
+            "type": "string",
+            "enum": ["disbursement", "repayment", "fee", "penalty"],
+            "description": "Type of transaction"
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0.01,
+            "description": "Transaction amount"
+          },
+          "gateway_provider": {
+            "type": "string",
+            "enum": ["stripe", "wise", "bap", "paystack"],
+            "default": "stripe",
+            "description": "Payment gateway to use"
+          }
+        },
+        "required": ["application_id", "transaction_type", "amount"]
+      }
+    },
+    {
+      "name": "performCreditCheck",
+      "method": "POST",
+      "path": "credit-check",
+      "description": "Perform credit score check",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID to check credit for"
+          },
+          "check_type": {
+            "type": "string",
+            "enum": ["basic", "enhanced", "comprehensive"],
+            "default": "basic",
+            "description": "Type of credit check"
+          }
+        },
+        "required": ["user_id"]
+      }
+    },
+    {
+      "name": "getCreditAnalytics",
+      "method": "GET",
+      "path": "analytics",
+      "description": "Get credit analytics and reports",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "metric_type": {
+            "type": "string",
+            "enum": ["daily", "weekly", "monthly"],
+            "default": "daily",
+            "description": "Analytics time period"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Start date for analytics"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "End date for analytics"
+          }
+        }
+      }
+    }
+  ],
+  "webhooks": {
+    "supported": true,
+    "events": [
+      "application.submitted",
+      "application.approved",
+      "application.rejected",
+      "transaction.completed",
+      "transaction.failed",
+      "provider.bid_received",
+      "credit_check.completed"
+    ]
+  },
+  "rate_limits": {
+    "requests_per_minute": 100,
+    "requests_per_hour": 1000,
+    "burst_limit": 20
+  },
+  "dependencies": {
+    "database": "postgresql",
+    "cache": "redis",
+    "external_apis": [
+      "credit_bureaus",
+      "payment_gateways",
+      "notification_services"
+    ]
+  },
+  "compliance": {
+    "gdpr_compliant": true,
+    "pci_dss_level": "Level 1",
+    "audit_logging": true,
+    "data_retention_days": 2555
+  },
+  "monitoring": {
+    "health_check_path": "/health",
+    "metrics_enabled": true,
+    "alerts": [
+      "high_error_rate",
+      "slow_response_time",
+      "database_connection_issues",
+      "failed_transactions"
+    ]
+  }
+}

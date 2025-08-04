@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "MCP Server for API Service Warehouse management and discovery",
   "main": "index.js",
+  "types": "types/index.d.ts",
   "bin": {
     "api-warehouse-mcp": "./index.js"
   },
@@ -26,7 +27,9 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0"
   },
   "engines": {
     "node": ">=16.0.0"

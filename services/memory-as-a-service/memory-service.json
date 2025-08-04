@@ -1,0 +1,253 @@
+{
+  "service": {
+    "name": "Memory as a Service (MaaS)",
+    "id": "memory-as-a-service",
+    "version": "1.0.0",
+    "description": "Enterprise Memory as a Service platform with vector search, semantic memory management, and comprehensive developer ecosystem",
+    "category": "AI & Machine Learning",
+    "provider": "Lanonasis",
+    "baseUrl": "https://api.lanonasis.com",
+    "documentation": "https://docs.lanonasis.com",
+    "status": "active",
+    "created": "2025-01-30T00:00:00Z",
+    "lastUpdated": "2025-01-30T00:00:00Z"
+  },
+  "authentication": {
+    "type": "apikey",
+    "scheme": "header",
+    "name": "X-API-Key",
+    "description": "API key from api.lanonasis.com dashboard",
+    "example": "onasis_abc123def456...",
+    "testEndpoint": "/api/v1/health",
+    "alternativeAuth": {
+      "jwt": {
+        "type": "bearer",
+        "scheme": "header",
+        "description": "JWT token from Supabase auth"
+      }
+    }
+  },
+  "endpoints": {
+    "health": {
+      "path": "/api/v1/health",
+      "method": "GET",
+      "description": "Health check endpoint",
+      "auth": false,
+      "rateLimit": "100/minute"
+    },
+    "createMemory": {
+      "path": "/api/v1/memory",
+      "method": "POST",
+      "description": "Create a new memory entry",
+      "auth": true,
+      "rateLimit": "50/minute",
+      "bodySchema": {
+        "type": "object",
+        "required": ["title", "content"],
+        "properties": {
+          "title": {"type": "string", "maxLength": 500},
+          "content": {"type": "string", "maxLength": 50000},
+          "memory_type": {
+            "type": "string",
+            "enum": ["conversation", "knowledge", "project", "context", "reference"],
+            "default": "context"
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "maxItems": 20
+          },
+          "metadata": {"type": "object"}
+        }
+      }
+    },
+    "searchMemories": {
+      "path": "/api/v1/memory/search",
+      "method": "POST",
+      "description": "Semantic search across memories",
+      "auth": true,
+      "rateLimit": "100/minute",
+      "bodySchema": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": {"type": "string", "maxLength": 1000},
+          "limit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20},
+          "threshold": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.7},
+          "memory_types": {
+            "type": "array",
+            "items": {"type": "string", "enum": ["conversation", "knowledge", "project", "context", "reference"]}
+          }
+        }
+      }
+    },
+    "getMemory": {
+      "path": "/api/v1/memory/{id}",
+      "method": "GET",
+      "description": "Retrieve a specific memory by ID",
+      "auth": true,
+      "rateLimit": "200/minute",
+      "parameters": {
+        "id": {"type": "string", "format": "uuid", "required": true}
+      }
+    },
+    "updateMemory": {
+      "path": "/api/v1/memory/{id}",
+      "method": "PUT",
+      "description": "Update an existing memory",
+      "auth": true,
+      "rateLimit": "50/minute",
+      "parameters": {
+        "id": {"type": "string", "format": "uuid", "required": true}
+      }
+    },
+    "deleteMemory": {
+      "path": "/api/v1/memory/{id}",
+      "method": "DELETE",
+      "description": "Delete a memory entry",
+      "auth": true,
+      "rateLimit": "30/minute",
+      "parameters": {
+        "id": {"type": "string", "format": "uuid", "required": true}
+      }
+    },
+    "listMemories": {
+      "path": "/api/v1/memory",
+      "method": "GET",
+      "description": "List memories with pagination and filtering",
+      "auth": true,
+      "rateLimit": "100/minute",
+      "queryParameters": {
+        "page": {"type": "integer", "minimum": 1, "default": 1},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20},
+        "memory_type": {"type": "string"},
+        "tags": {"type": "string", "description": "Comma-separated tags"}
+      }
+    },
+    "getMemoryStats": {
+      "path": "/api/v1/memory/stats",
+      "method": "GET",
+      "description": "Get user memory statistics and analytics",
+      "auth": true,
+      "rateLimit": "20/minute"
+    },
+    "bulkDeleteMemories": {
+      "path": "/api/v1/memory/bulk/delete",
+      "method": "POST",
+      "description": "Bulk delete multiple memories (Pro/Enterprise)",
+      "auth": true,
+      "rateLimit": "10/minute",
+      "planRequired": ["pro", "enterprise"],
+      "bodySchema": {
+        "type": "object",
+        "required": ["memory_ids"],
+        "properties": {
+          "memory_ids": {
+            "type": "array",
+            "items": {"type": "string", "format": "uuid"},
+            "maxItems": 100
+          }
+        }
+      }
+    },
+    "createTopic": {
+      "path": "/api/v1/topics",
+      "method": "POST",
+      "description": "Create a new memory topic/category",
+      "auth": true,
+      "rateLimit": "20/minute"
+    },
+    "getTopics": {
+      "path": "/api/v1/topics",
+      "method": "GET",
+      "description": "List all memory topics",
+      "auth": true,
+      "rateLimit": "50/minute"
+    }
+  },
+  "webhooks": {
+    "memoryCreated": {
+      "event": "memory.created",
+      "description": "Triggered when a new memory is created",
+      "payload": {
+        "memory_id": "string",
+        "user_id": "string",
+        "memory_type": "string",
+        "created_at": "string"
+      }
+    },
+    "memoryUpdated": {
+      "event": "memory.updated",
+      "description": "Triggered when a memory is updated",
+      "payload": {
+        "memory_id": "string",
+        "user_id": "string",
+        "changes": "object",
+        "updated_at": "string"
+      }
+    },
+    "memoryDeleted": {
+      "event": "memory.deleted",
+      "description": "Triggered when a memory is deleted",
+      "payload": {
+        "memory_id": "string",
+        "user_id": "string",
+        "deleted_at": "string"
+      }
+    }
+  },
+  "pricing": {
+    "model": "freemium",
+    "tiers": {
+      "free": {
+        "memories": 100,
+        "searches_per_month": 1000,
+        "api_calls_per_hour": 1000,
+        "features": ["basic_search", "5_memory_types", "web_interface"]
+      },
+      "pro": {
+        "price": "$19/month",
+        "memories": 10000,
+        "searches_per_month": 50000,
+        "api_calls_per_hour": 10000,
+        "features": ["advanced_search", "bulk_operations", "api_access", "integrations"]
+      },
+      "enterprise": {
+        "price": "Custom",
+        "memories": "Unlimited",
+        "searches_per_month": "Unlimited",
+        "api_calls_per_hour": "Unlimited",
+        "features": ["everything", "sso", "dedicated_support", "on_premise"]
+      }
+    }
+  },
+  "integrations": {
+    "vscode": {
+      "name": "VSCode Extension",
+      "status": "available",
+      "url": "https://marketplace.visualstudio.com/items?itemName=lanonasis.memory-assistant"
+    },
+    "cli": {
+      "name": "CLI Tool",
+      "status": "available",
+      "package": "@lanonasis/memory-cli"
+    },
+    "sdk": {
+      "name": "TypeScript/JavaScript SDK",
+      "status": "available",
+      "package": "@lanonasis/memory-client"
+    }
+  },
+  "compliance": {
+    "gdpr": true,
+    "hipaa": true,
+    "soc2": true,
+    "pci": false,
+    "psd2": false
+  },
+  "sla": {
+    "uptime": "99.9%",
+    "responseTime": "<200ms",
+    "support": "24/7 for Enterprise"
+  }
+}
