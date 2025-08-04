@@ -40,11 +40,27 @@ export interface MCPAdapter {
 
 export interface AdapterConfig {
   apiKey?: string;
+  secretKey?: string;
+  publicKey?: string;
   baseUrl?: string;
   timeout?: number;
   retryAttempts?: number;
   credentials?: Record<string, any>;
   environment?: 'development' | 'staging' | 'production';
+  
+  // Service provider configuration
+  serviceProvider?: {
+    enabled: boolean;
+    clientId?: string;
+    branding?: Record<string, any>;
+  };
+  
+  // Database configuration (for services like Xpress Wallet)
+  databaseUrl?: string;
+  
+  // Additional service-specific configs
+  merchantId?: string;
+  webhookSecret?: string;
 }
 
 export interface AdapterStatus {
@@ -56,6 +72,7 @@ export interface AdapterStatus {
   requestCount: number;
   errorCount: number;
   averageResponseTime: number;
+  metadata?: Record<string, any>;
 }
 
 export interface PostmanCollection {

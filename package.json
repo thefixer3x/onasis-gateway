@@ -30,6 +30,7 @@
   "license": "MIT",
   "dependencies": {
     "@netlify/functions": "^4.1.11",
+    "@supabase/supabase-js": "^2.53.0",
     "@types/pg": "^8.15.4",
     "@vercel/node": "^5.3.6",
     "axios": "^1.6.0",
