@@ -1,0 +1,429 @@
+{
+  "name": "verification-service",
+  "display_name": "Verification-as-a-Service (VaaS)",
+  "description": "Comprehensive KYC, KYB, and AML verification service with multi-provider integration",
+  "version": "1.0.0",
+  "category": "identity_verification",
+  "provider": "seftechub",
+  "deployment": {
+    "status": "deployed",
+    "domain": "verify.seftechub.com",
+    "port": 9985,
+    "environment": "production",
+    "infrastructure": "neon_database"
+  },
+  "capabilities": [
+    "kyc_verification",
+    "kyb_verification", 
+    "aml_compliance",
+    "biometric_verification",
+    "document_verification",
+    "business_verification",
+    "background_checks",
+    "risk_assessment"
+  ],
+  "authentication": {
+    "type": "api_key",
+    "config": {
+      "header_name": "X-API-Key",
+      "alternative_auth": "Bearer token",
+      "environment_vars": {
+        "api_key": "VERIFICATION_API_KEY",
+        "webhook_secret": "VERIFICATION_WEBHOOK_SECRET"
+      }
+    }
+  },
+  "provider_integrations": {
+    "primary_providers": {
+      "prembly": {
+        "description": "Nigerian market specialist",
+        "services": ["nin_verification", "bvn_verification", "cac_verification", "passport_verification", "drivers_license"],
+        "coverage": ["NG"]
+      },
+      "sourceid": {
+        "description": "Advanced identity verification",
+        "services": ["document_authentication", "biometric_verification", "liveness_detection", "risk_assessment"],
+        "coverage": ["global"]
+      }
+    },
+    "secondary_providers": {
+      "mono": {
+        "description": "Banking and financial data",
+        "services": ["bank_account_verification", "transaction_data"],
+        "coverage": ["NG"]
+      },
+      "dojah": {
+        "description": "Identity and financial verification", 
+        "services": ["identity_verification", "financial_verification"],
+        "coverage": ["NG", "KE", "GH"]
+      },
+      "youverify": {
+        "description": "KYC and business verification",
+        "services": ["kyc_verification", "business_verification"],
+        "coverage": ["NG", "Africa"]
+      },
+      "jumio": {
+        "description": "Global identity verification",
+        "services": ["global_identity_verification", "document_verification"],
+        "coverage": ["global"]
+      }
+    }
+  },
+  "service_categories": {
+    "identity_verification": {
+      "description": "Individual identity verification (KYC)",
+      "endpoints": [
+        {
+          "name": "verify_identity_document",
+          "method": "POST",
+          "path": "/api/v1/identity/verify",
+          "description": "Verify identity documents (passport, national ID, driver's license)", 
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "document_type": {
+                "type": "string",
+                "enum": ["passport", "national_id", "drivers_license", "voters_card", "nin", "bvn"]
+              },
+              "document_number": {"type": "string"},
+              "document_image": {"type": "string", "format": "base64"},
+              "customer_id": {"type": "string"},
+              "country": {"type": "string", "default": "NG"}
+            },
+            "required": ["document_type", "document_number", "customer_id"]
+          }
+        },
+        {
+          "name": "verify_phone_email",
+          "method": "POST", 
+          "path": "/api/v1/identity/phone-email",
+          "description": "Verify phone number and email with OTP",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "phone_number": {"type": "string"},
+              "email": {"type": "string", "format": "email"},
+              "customer_id": {"type": "string"},
+              "send_otp": {"type": "boolean", "default": true}
+            },
+            "required": ["customer_id"]
+          }
+        },
+        {
+          "name": "verify_address",
+          "method": "POST",
+          "path": "/api/v1/identity/address", 
+          "description": "Verify customer address using utility bills or bank statements",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "address": {"type": "string"},
+              "proof_document": {"type": "string", "format": "base64"},
+              "document_type": {"type": "string", "enum": ["utility_bill", "bank_statement", "rental_agreement"]},
+              "customer_id": {"type": "string"}
+            },
+            "required": ["address", "proof_document", "customer_id"]
+          }
+        }
+      ]
+    },
+    "business_verification": {
+      "description": "Business entity verification (KYB)",
+      "endpoints": [
+        {
+          "name": "verify_business_registration",
+          "method": "POST",
+          "path": "/api/v1/business/registration",
+          "description": "Verify business registration (CAC in Nigeria)",
+          "input_schema": {
+            "type": "object", 
+            "properties": {
+              "business_name": {"type": "string"},
+              "registration_number": {"type": "string"},
+              "country": {"type": "string", "default": "NG"},
+              "registration_type": {"type": "string", "enum": ["cac", "business_permit", "incorporation"]}
+            },
+            "required": ["business_name", "registration_number"]
+          }
+        },
+        {
+          "name": "verify_tax_identification",
+          "method": "POST",
+          "path": "/api/v1/business/tax-id",
+          "description": "Verify business tax identification number",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "tax_id": {"type": "string"},
+              "business_name": {"type": "string"},
+              "country": {"type": "string", "default": "NG"}
+            },
+            "required": ["tax_id", "business_name"]
+          }
+        },
+        {
+          "name": "verify_bank_account",
+          "method": "POST",
+          "path": "/api/v1/business/bank-account",
+          "description": "Verify business bank account ownership",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "account_number": {"type": "string"},
+              "bank_code": {"type": "string"},
+              "account_name": {"type": "string"},
+              "business_name": {"type": "string"}
+            },
+            "required": ["account_number", "bank_code", "business_name"]
+          }
+        }
+      ]
+    },
+    "biometric_verification": {
+      "description": "Advanced biometric verification services",
+      "endpoints": [
+        {
+          "name": "facial_recognition",
+          "method": "POST",
+          "path": "/api/v1/biometric/face-match",
+          "description": "Compare facial biometrics between two images",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "image1": {"type": "string", "format": "base64"},
+              "image2": {"type": "string", "format": "base64"},
+              "confidence_threshold": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.7}
+            },
+            "required": ["image1", "image2"]
+          }
+        },
+        {
+          "name": "liveness_detection",
+          "method": "POST",
+          "path": "/api/v1/biometric/liveness",
+          "description": "Detect if facial image is from a live person",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "image": {"type": "string", "format": "base64"},
+              "check_type": {"type": "string", "enum": ["basic", "advanced"], "default": "basic"}
+            },
+            "required": ["image"]
+          }
+        },
+        {
+          "name": "age_gender_detection",
+          "method": "POST",
+          "path": "/api/v1/biometric/age-gender",
+          "description": "Detect age and gender from facial image",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "image": {"type": "string", "format": "base64"}
+            },
+            "required": ["image"]
+          }
+        }
+      ]
+    },
+    "compliance_screening": {
+      "description": "AML and compliance screening services",
+      "endpoints": [
+        {
+          "name": "sanctions_screening",
+          "method": "POST",
+          "path": "/api/v1/compliance/sanctions",
+          "description": "Screen against global sanctions lists",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "full_name": {"type": "string"},
+              "date_of_birth": {"type": "string", "format": "date"},
+              "nationality": {"type": "string"},
+              "screening_lists": {"type": "array", "items": {"type": "string"}, "default": ["ofac", "un", "eu"]}
+            },
+            "required": ["full_name"]
+          }
+        },
+        {
+          "name": "pep_screening",
+          "method": "POST",
+          "path": "/api/v1/compliance/pep",
+          "description": "Screen for Politically Exposed Persons",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "full_name": {"type": "string"},
+              "country": {"type": "string"},
+              "position": {"type": "string"}
+            },
+            "required": ["full_name", "country"]
+          }
+        },
+        {
+          "name": "adverse_media_screening",
+          "method": "POST",
+          "path": "/api/v1/compliance/adverse-media",
+          "description": "Screen for negative media mentions",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "full_name": {"type": "string"},
+              "business_name": {"type": "string"},
+              "search_period_days": {"type": "integer", "default": 365}
+            }
+          }
+        }
+      ]
+    },
+    "background_checks": {
+      "description": "Comprehensive background verification",
+      "endpoints": [
+        {
+          "name": "criminal_background_check",
+          "method": "POST",
+          "path": "/api/v1/background/criminal",
+          "description": "Check criminal history records",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "full_name": {"type": "string"},
+              "date_of_birth": {"type": "string", "format": "date"},
+              "address": {"type": "string"},
+              "country": {"type": "string", "default": "NG"},
+              "search_scope": {"type": "string", "enum": ["local", "national", "international"], "default": "national"}
+            },
+            "required": ["full_name", "date_of_birth"]
+          }
+        },
+        {
+          "name": "employment_history_check",
+          "method": "POST",
+          "path": "/api/v1/background/employment",
+          "description": "Verify employment history",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "full_name": {"type": "string"},
+              "employers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "company_name": {"type": "string"},
+                    "position": {"type": "string"},
+                    "start_date": {"type": "string", "format": "date"},
+                    "end_date": {"type": "string", "format": "date"}
+                  }
+                }
+              }
+            },
+            "required": ["full_name", "employers"]
+          }
+        }
+      ]
+    }
+  },
+  "verification_levels": {
+    "basic": {
+      "description": "Phone/email verification, basic document upload",
+      "use_cases": ["consumer_apps", "low_risk_transactions"],
+      "cost_per_verification": 0.50
+    },
+    "enhanced": {
+      "description": "Government ID verification, biometric verification, address verification",
+      "use_cases": ["financial_services", "business_registration"],
+      "cost_per_verification": 2.00
+    },
+    "premium": {
+      "description": "Enhanced due diligence, business verification, sanctions screening",
+      "use_cases": ["banking", "high_value_transactions"],
+      "cost_per_verification": 5.00
+    }
+  },
+  "regional_coverage": {
+    "local_african": {
+      "countries": ["NG", "KE", "GH", "UG", "ZA"],
+      "services": ["nin", "bvn", "cac", "tax_id", "drivers_license", "voters_card"],
+      "primary_providers": ["prembly", "dojah", "youverify"]
+    },
+    "international": {
+      "countries": ["US", "UK", "EU", "global"],
+      "services": ["passport", "ssn", "business_registry", "sanctions_screening"],
+      "primary_providers": ["sourceid", "jumio"]
+    }
+  },
+  "third_party_extensions": {
+    "service_provider_mode": {
+      "enabled": true,
+      "description": "Enable white-label verification services for third-party clients",
+      "features": [
+        "custom_branding",
+        "client_isolation", 
+        "webhook_management",
+        "compliance_dashboard",
+        "rate_limiting",
+        "billing_integration"
+      ]
+    },
+    "white_label_capabilities": {
+      "custom_domains": true,
+      "branded_responses": true,
+      "client_specific_rules": true,
+      "isolated_databases": true
+    }
+  },
+  "compliance": {
+    "certifications": ["PCI_DSS_Level_1", "SOC2_Type_II"],
+    "data_protection": ["GDPR", "NDPR"],
+    "regional_compliance": {
+      "nigeria": ["CBN_guidelines", "NIMC_standards"],
+      "kenya": ["CBK_requirements"],
+      "ghana": ["BOG_standards"],
+      "international": ["FATF_recommendations", "KYC_AML_standards"]
+    }
+  },
+  "webhooks": {
+    "supported": true,
+    "events": [
+      "verification.completed",
+      "verification.failed",
+      "verification.manual_review_required",
+      "document.processed",
+      "biometric.match_found",
+      "compliance.alert_triggered",
+      "background_check.completed"
+    ],
+    "security": {
+      "signature_verification": true,
+      "ip_whitelist": true,
+      "retry_logic": true
+    }
+  },
+  "rate_limits": {
+    "default": {
+      "requests_per_minute": 60,
+      "requests_per_hour": 1000,
+      "burst_limit": 10
+    },
+    "premium_clients": {
+      "requests_per_minute": 200,
+      "requests_per_hour": 5000,
+      "burst_limit": 50
+    }
+  },
+  "monitoring": {
+    "health_checks": [
+      "/health",
+      "/api/v1/health",
+      "/api/v1/providers/health"
+    ],
+    "metrics": [
+      "verification_success_rate",
+      "provider_response_time",
+      "compliance_alert_count",
+      "manual_review_rate",
+      "cost_per_verification"
+    ]
+  }
+}

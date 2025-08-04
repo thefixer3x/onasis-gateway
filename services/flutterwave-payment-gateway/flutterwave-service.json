@@ -1,0 +1,475 @@
+{
+  "name": "flutterwave-payment-gateway",
+  "display_name": "Flutterwave Payment Gateway",
+  "description": "Comprehensive Flutterwave payment processing with wallet capabilities",
+  "version": "1.0.0",
+  "category": "payment_gateway",
+  "provider": "flutterwave",
+  "capabilities": [
+    "payment_processing",
+    "wallet_services",
+    "mobile_money",
+    "virtual_cards",
+    "bank_transfers",
+    "bill_payments",
+    "subscriptions",
+    "bulk_payments"
+  ],
+  "authentication": {
+    "type": "bearer_token",
+    "config": {
+      "header_name": "Authorization",
+      "token_prefix": "Bearer",
+      "environment_vars": {
+        "live": "FLUTTERWAVE_SECRET_KEY",
+        "test": "FLUTTERWAVE_TEST_SECRET_KEY",
+        "public": "FLUTTERWAVE_PUBLIC_KEY"
+      }
+    }
+  },
+  "service_groups": {
+    "payment_processing": {
+      "description": "Core payment processing capabilities",
+      "endpoints": [
+        {
+          "name": "initiate_payment",
+          "method": "POST",
+          "path": "payments",
+          "description": "Initialize payment transaction",
+          "category": "payment_processing",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number",
+                "minimum": 1,
+                "description": "Payment amount"
+              },
+              "currency": {
+                "type": "string",
+                "enum": ["NGN", "USD", "EUR", "GBP", "KES", "UGX", "ZAR"],
+                "default": "NGN",
+                "description": "Payment currency"
+              },
+              "payment_type": {
+                "type": "string",
+                "enum": ["card", "mobile_money", "bank_transfer", "ussd", "bank_account"],
+                "description": "Payment method type"
+              },
+              "customer": {
+                "type": "object",
+                "properties": {
+                  "email": {"type": "string", "format": "email"},
+                  "phone_number": {"type": "string"},
+                  "name": {"type": "string"}
+                },
+                "required": ["email"]
+              },
+              "tx_ref": {
+                "type": "string",
+                "description": "Unique transaction reference"
+              },
+              "redirect_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Success redirect URL"
+              }
+            },
+            "required": ["amount", "currency", "customer", "tx_ref"]
+          }
+        },
+        {
+          "name": "verify_payment",
+          "method": "GET",
+          "path": "transactions/:id/verify",
+          "description": "Verify payment transaction",
+          "category": "payment_processing",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "transaction_id": {
+                "type": "string",
+                "description": "Transaction ID to verify"
+              }
+            },
+            "required": ["transaction_id"]
+          }
+        },
+        {
+          "name": "get_payment_methods",
+          "method": "GET",
+          "path": "payment-methods",
+          "description": "Get available payment methods for country",
+          "category": "payment_processing",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "country": {
+                "type": "string",
+                "enum": ["NG", "KE", "UG", "ZA", "GH", "RW", "TZ"],
+                "description": "Country code"
+              }
+            },
+            "required": ["country"]
+          }
+        }
+      ]
+    },
+    "wallet_services": {
+      "description": "Digital wallet management capabilities",
+      "endpoints": [
+        {
+          "name": "create_virtual_account",
+          "method": "POST",
+          "path": "virtual-account-numbers",
+          "description": "Create virtual account for customer",
+          "category": "wallet_services",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "email": {"type": "string", "format": "email"},
+              "name": {"type": "string"},
+              "phone": {"type": "string"},
+              "narration": {"type": "string"},
+              "bvn": {"type": "string", "pattern": "^[0-9]{11}$"}
+            },
+            "required": ["email", "name"]
+          }
+        },
+        {
+          "name": "get_wallet_balance",
+          "method": "GET",
+          "path": "balances",
+          "description": "Get wallet balances",
+          "category": "wallet_services",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string",
+                "enum": ["NGN", "USD", "EUR", "GBP"],
+                "description": "Currency to check balance for"
+              }
+            }
+          }
+        },
+        {
+          "name": "wallet_transfer",
+          "method": "POST",
+          "path": "transfers",
+          "description": "Transfer funds from wallet",
+          "category": "wallet_services",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "account_bank": {"type": "string"},
+              "account_number": {"type": "string"},  
+              "amount": {"type": "number", "minimum": 1},
+              "currency": {"type": "string", "default": "NGN"},
+              "narration": {"type": "string"},
+              "reference": {"type": "string"}
+            },
+            "required": ["account_bank", "account_number", "amount", "reference"]
+          }
+        }
+      ]
+    },
+    "mobile_money": {
+      "description": "Mobile money payment processing",
+      "endpoints": [
+        {
+          "name": "mobile_money_ghana",
+          "method": "POST",
+          "path": "charges",
+          "description": "Process Ghana mobile money payment",
+          "category": "mobile_money",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string", "enum": ["mobile_money_ghana"]},
+              "amount": {"type": "number"},
+              "currency": {"type": "string", "default": "GHS"},
+              "phone_number": {"type": "string"},
+              "network": {"type": "string", "enum": ["MTN", "VODAFONE", "TIGO", "AIRTEL"]}
+            },
+            "required": ["type", "amount", "phone_number", "network"]
+          }
+        },
+        {
+          "name": "mobile_money_kenya",
+          "method": "POST", 
+          "path": "charges",
+          "description": "Process Kenya M-Pesa payment",
+          "category": "mobile_money",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string", "enum": ["mobile_money_mpesa"]},
+              "amount": {"type": "number"},
+              "currency": {"type": "string", "default": "KES"},
+              "phone_number": {"type": "string"}
+            },
+            "required": ["type", "amount", "phone_number"]
+          }
+        },
+        {
+          "name": "mobile_money_uganda",
+          "method": "POST",
+          "path": "charges", 
+          "description": "Process Uganda mobile money payment",
+          "category": "mobile_money",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string", "enum": ["mobile_money_uganda"]},
+              "amount": {"type": "number"},
+              "currency": {"type": "string", "default": "UGX"},
+              "phone_number": {"type": "string"},
+              "network": {"type": "string", "enum": ["MTN", "AIRTEL"]}
+            },
+            "required": ["type", "amount", "phone_number", "network"]
+          }
+        }
+      ]
+    },
+    "virtual_cards": {
+      "description": "Virtual card management and operations",
+      "endpoints": [
+        {
+          "name": "create_virtual_card",
+          "method": "POST",
+          "path": "virtual-cards",
+          "description": "Create new virtual card",
+          "category": "virtual_cards",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "currency": {"type": "string", "enum": ["NGN", "USD"]},
+              "amount": {"type": "number", "minimum": 1},
+              "debit_currencies": {"type": "array", "items": {"type": "string"}},
+              "card_type": {"type": "string", "enum": ["mastercard", "visa"]}
+            },
+            "required": ["currency", "amount"]
+          }
+        },
+        {
+          "name": "fund_virtual_card",
+          "method": "POST",
+          "path": "virtual-cards/:id/fund",
+          "description": "Fund virtual card",
+          "category": "virtual_cards",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "card_id": {"type": "string"},
+              "amount": {"type": "number", "minimum": 1},
+              "debit_currency": {"type": "string"}
+            },
+            "required": ["card_id", "amount", "debit_currency"]
+          }
+        },
+        {
+          "name": "get_virtual_card_transactions",
+          "method": "GET",
+          "path": "virtual-cards/:id/transactions",
+          "description": "Get virtual card transaction history",
+          "category": "virtual_cards",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "card_id": {"type": "string"},
+              "from": {"type": "string", "format": "date"},
+              "to": {"type": "string", "format": "date"},
+              "page": {"type": "integer", "minimum": 1}
+            },
+            "required": ["card_id"]
+          }
+        }
+      ]
+    },
+    "bill_payments": {
+      "description": "Bill payment services",
+      "endpoints": [
+        {
+          "name": "get_bill_categories",
+          "method": "GET",
+          "path": "bill-categories",
+          "description": "Get supported bill categories",
+          "category": "bill_payments",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "country": {"type": "string", "enum": ["NG", "KE", "UG", "GH"]}
+            }
+          }
+        },
+        {
+          "name": "validate_bill_service",
+          "method": "GET",
+          "path": "bill-services/:service_id/validate",
+          "description": "Validate customer for bill service",
+          "category": "bill_payments",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "item_code": {"type": "string"},
+              "biller_code": {"type": "string"},
+              "customer": {"type": "string"}
+            },
+            "required": ["item_code", "biller_code", "customer"]
+          }
+        },
+        {
+          "name": "pay_bill",
+          "method": "POST",
+          "path": "bills/:biller_code/items/:item_code",
+          "description": "Pay bill for customer",
+          "category": "bill_payments",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "biller_code": {"type": "string"},
+              "item_code": {"type": "string"},
+              "amount": {"type": "number"},
+              "customer": {"type": "string"},
+              "reference": {"type": "string"}
+            },
+            "required": ["biller_code", "item_code", "amount", "customer", "reference"]
+          }
+        }
+      ]
+    },
+    "bulk_operations": {
+      "description": "Bulk payment and transfer operations",
+      "endpoints": [
+        {
+          "name": "bulk_bank_transfer",
+          "method": "POST",
+          "path": "bulk-transfers",
+          "description": "Process bulk bank transfers",
+          "category": "bulk_operations",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "title": {"type": "string"},
+              "bulk_data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "bank_code": {"type": "string"},
+                    "account_number": {"type": "string"},
+                    "amount": {"type": "number"},
+                    "narration": {"type": "string"},
+                    "reference": {"type": "string"}
+                  },
+                  "required": ["bank_code", "account_number", "amount", "reference"]
+                }
+              }
+            },
+            "required": ["title", "bulk_data"]
+          }
+        },
+        {
+          "name": "bulk_bill_payment",
+          "method": "POST",
+          "path": "bulk-bills",
+          "description": "Process bulk bill payments",
+          "category": "bulk_operations",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "bulk_reference": {"type": "string"},
+              "callback_url": {"type": "string", "format": "uri"},
+              "bulk_data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "country": {"type": "string"},
+                    "customer": {"type": "string"},
+                    "amount": {"type": "number"},
+                    "type": {"type": "string"},
+                    "reference": {"type": "string"}
+                  }
+                }
+              }
+            },
+            "required": ["bulk_reference", "bulk_data"]
+          }
+        }
+      ]
+    }
+  },
+  "third_party_extensions": {
+    "service_provider_mode": {
+      "enabled": true,
+      "description": "Enable service provider capabilities for third-party clients",
+      "features": [
+        "client_isolation",
+        "custom_branding", 
+        "webhook_management",
+        "analytics_dashboard",
+        "rate_limiting",
+        "fee_management"
+      ]
+    },
+    "white_label_capabilities": {
+      "custom_endpoints": true,
+      "branded_responses": true,
+      "client_specific_configs": true,
+      "isolated_environments": true
+    }
+  },
+  "webhooks": {
+    "supported": true,
+    "events": [
+      "charge.completed",
+      "charge.failed", 
+      "transfer.completed",
+      "transfer.failed",
+      "card.created",
+      "card.funded",
+      "bill.completed",
+      "bulk.completed"
+    ],
+    "security": {
+      "signature_verification": true,
+      "ip_whitelist": true,
+      "retry_logic": true
+    }
+  },
+  "rate_limits": {
+    "default": {
+      "requests_per_minute": 100,
+      "requests_per_hour": 1000,
+      "burst_limit": 20
+    },
+    "bulk_operations": {
+      "requests_per_minute": 10,
+      "requests_per_hour": 100,
+      "burst_limit": 5
+    }
+  },
+  "compliance": {
+    "pci_dss": "Level 1",
+    "data_encryption": true,
+    "audit_logging": true,
+    "gdpr_compliant": true,
+    "supported_regions": ["NG", "KE", "UG", "GH", "ZA", "RW", "TZ", "US", "UK", "EU"]
+  },
+  "monitoring": {
+    "health_checks": [
+      "/health",
+      "/payments/health", 
+      "/wallets/health"
+    ],
+    "metrics": [
+      "transaction_volume",
+      "success_rate",
+      "response_time",
+      "error_rate",
+      "wallet_balance_total"
+    ]
+  }
+}

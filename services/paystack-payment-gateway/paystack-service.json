@@ -1,0 +1,643 @@
+{
+  "name": "paystack-payment-gateway",
+  "display_name": "PayStack Payment Gateway",  
+  "description": "Comprehensive PayStack payment processing with advanced features for African markets",
+  "version": "1.0.0",
+  "category": "payment_gateway",
+  "provider": "paystack",
+  "capabilities": [
+    "payment_processing",
+    "subscription_management",
+    "customer_management",
+    "virtual_accounts",
+    "split_payments",
+    "bulk_charges",
+    "settlement_management",
+    "refund_processing",
+    "dispute_management"
+  ],
+  "authentication": {
+    "type": "bearer_token",
+    "config": {
+      "header_name": "Authorization",
+      "token_prefix": "Bearer",
+      "environment_vars": {
+        "live": "PAYSTACK_SECRET_KEY",
+        "test": "PAYSTACK_TEST_SECRET_KEY",
+        "public": "PAYSTACK_PUBLIC_KEY"
+      }
+    }
+  },
+  "service_groups": {
+    "payment_processing": {
+      "description": "Core payment processing capabilities",
+      "endpoints": [
+        {
+          "name": "initialize_transaction",
+          "method": "POST",
+          "path": "transaction/initialize",
+          "description": "Initialize payment transaction",
+          "category": "payment_processing",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Payment amount in kobo (NGN)"
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "description": "Customer's email address"
+              },
+              "currency": {
+                "type": "string",
+                "enum": ["NGN", "GHS", "ZAR", "KES"],
+                "default": "NGN",
+                "description": "Payment currency"
+              },
+              "reference": {
+                "type": "string",
+                "description": "Unique transaction reference"
+              },
+              "callback_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Success callback URL"
+              },
+              "plan": {
+                "type": "string",
+                "description": "Plan code for subscription payments"
+              },
+              "invoice_limit": {
+                "type": "integer",
+                "description": "Number of invoices to generate"
+              },
+              "channels": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"]
+                },
+                "description": "Payment channels to activate"
+              },
+              "split_code": {
+                "type": "string", 
+                "description": "Split payment configuration"
+              },
+              "subaccount": {
+                "type": "string",
+                "description": "Subaccount code for split payments"
+              },
+              "transaction_charge": {
+                "type": "integer",
+                "description": "Transaction charge in kobo"
+              },
+              "bearer": {
+                "type": "string",
+                "enum": ["account", "subaccount"],
+                "description": "Who bears PayStack charges"
+              }
+            },
+            "required": ["amount", "email"]
+          }
+        },
+        {
+          "name": "verify_transaction",
+          "method": "GET",
+          "path": "transaction/verify/:reference",
+          "description": "Verify payment transaction",
+          "category": "payment_processing",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string",
+                "description": "Transaction reference to verify"
+              }
+            },
+            "required": ["reference"]
+          }
+        },
+        {
+          "name": "charge_authorization",
+          "method": "POST",
+          "path": "transaction/charge_authorization",
+          "description": "Charge returning customer with saved authorization",
+          "category": "payment_processing",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "authorization_code": {
+                "type": "string",
+                "description": "Authorization code from previous transaction"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "amount": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "currency": {
+                "type": "string",
+                "default": "NGN"
+              }
+            },
+            "required": ["authorization_code", "email", "amount"]
+          }
+        }
+      ]
+    },
+    "customer_management": {
+      "description": "Customer data and profile management",
+      "endpoints": [
+        {
+          "name": "create_customer",
+          "method": "POST",
+          "path": "customer",
+          "description": "Create customer profile",
+          "category": "customer_management",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "first_name": {
+                "type": "string"
+              },
+              "last_name": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "metadata": {
+                "type": "object",
+                "description": "Custom fields as key-value pairs"
+              }
+            },
+            "required": ["email"]
+          }
+        },
+        {
+          "name": "list_customers",
+          "method": "GET",
+          "path": "customer",
+          "description": "List customers with pagination",
+          "category": "customer_management",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "perPage": {
+                "type": "integer",
+                "default": 50,
+                "maximum": 100
+              },
+              "page": {
+                "type": "integer",
+                "default": 1
+              },
+              "from": {
+                "type": "string",
+                "format": "date"
+              },
+              "to": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          }
+        },
+        {
+          "name": "fetch_customer",
+          "method": "GET",
+          "path": "customer/:email_or_code",
+          "description": "Fetch customer details",
+          "category": "customer_management",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "email_or_code": {
+                "type": "string",
+                "description": "Customer email or code"
+              }
+            },
+            "required": ["email_or_code"]
+          }
+        }
+      ]
+    },
+    "virtual_accounts": {
+      "description": "Dedicated virtual account management",
+      "endpoints": [
+        {
+          "name": "create_dedicated_account",
+          "method": "POST",
+          "path": "dedicated_account",
+          "description": "Create dedicated virtual account for customer",
+          "category": "virtual_accounts",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "customer": {
+                "type": "string",
+                "description": "Customer ID or code"
+              },
+              "preferred_bank": {
+                "type": "string",
+                "enum": ["wema-bank", "titan-paystack"],
+                "description": "Preferred bank for virtual account"
+              },
+              "subaccount": {
+                "type": "string",
+                "description": "Subaccount code for split settlement"
+              },
+              "split_code": {
+                "type": "string",
+                "description": "Split code for transaction splitting"
+              }
+            },
+            "required": ["customer"]
+          }
+        },
+        {
+          "name": "list_dedicated_accounts",
+          "method": "GET",
+          "path": "dedicated_account",
+          "description": "List dedicated virtual accounts",
+          "category": "virtual_accounts",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "active": {
+                "type": "boolean",
+                "description": "Filter by active status"
+              },
+              "currency": {
+                "type": "string",
+                "default": "NGN"
+              },
+              "perPage": {
+                "type": "integer",
+                "default": 50
+              },
+              "page": {
+                "type": "integer",
+                "default": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "subscription_management": {
+      "description": "Recurring payment and subscription handling",
+      "endpoints": [
+        {
+          "name": "create_plan",
+          "method": "POST",
+          "path": "plan",
+          "description": "Create subscription plan",
+          "category": "subscription_management",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Plan name"
+              },
+              "amount": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Plan amount in kobo"
+              },
+              "interval": {
+                "type": "string",
+                "enum": ["daily", "weekly", "monthly", "biannually", "annually"],
+                "description": "Billing interval"
+              },
+              "description": {
+                "type": "string",
+                "description": "Plan description"
+              },
+              "send_invoices": {
+                "type": "boolean",
+                "default": false,
+                "description": "Send invoice to customer"
+              },
+              "send_sms": {
+                "type": "boolean",
+                "default": false,
+                "description": "Send SMS to customer"
+              },
+              "currency": {
+                "type": "string",
+                "default": "NGN"
+              }
+            },
+            "required": ["name", "amount", "interval"]
+          }
+        },
+        {
+          "name": "create_subscription",
+          "method": "POST",
+          "path": "subscription",
+          "description": "Create subscription for customer",
+          "category": "subscription_management",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "customer": {
+                "type": "string",
+                "description": "Customer email or code"
+              },
+              "plan": {
+                "type": "string",
+                "description": "Plan code"
+              },
+              "authorization": {
+                "type": "string",
+                "description": "Authorization code"
+              },
+              "start_date": {
+                "type": "string",
+                "format": "date",
+                "description": "Subscription start date"
+              }
+            },
+            "required": ["customer", "plan"]
+          }
+        }
+      ]
+    },
+    "split_payments": {
+      "description": "Payment splitting and multi-party settlements",
+      "endpoints": [
+        {
+          "name": "create_split",
+          "method": "POST",
+          "path": "split",
+          "description": "Create split payment configuration",
+          "category": "split_payments",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Split configuration name"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["percentage", "flat"],
+                "description": "Split type"
+              },
+              "currency": {
+                "type": "string",
+                "default": "NGN"
+              },
+              "subaccounts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "subaccount": {
+                      "type": "string",
+                      "description": "Subaccount code"
+                    },
+                    "share": {
+                      "type": "number",
+                      "description": "Percentage or flat amount"
+                    }
+                  },
+                  "required": ["subaccount", "share"]
+                }
+              },
+              "bearer_type": {
+                "type": "string",
+                "enum": ["all", "all-proportional", "account", "subaccount"],
+                "description": "Who bears transaction charges"
+              },
+              "bearer_subaccount": {
+                "type": "string",
+                "description": "Subaccount to bear charges"
+              }
+            },
+            "required": ["name", "type", "subaccounts"]
+          }
+        }
+      ]
+    },
+    "bulk_operations": {
+      "description": "Bulk payment processing",
+      "endpoints": [
+        {
+          "name": "bulk_charge",
+          "method": "POST",
+          "path": "bulkcharge",
+          "description": "Process bulk charges",
+          "category": "bulk_operations",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "charges": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "authorization": {
+                      "type": "string",
+                      "description": "Authorization code"
+                    },
+                    "amount": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "reference": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["authorization", "amount"]
+                }
+              }
+            },
+            "required": ["charges"]
+          }
+        }
+      ]
+    },
+    "transfer_operations": {
+      "description": "Money transfer and payout operations",
+      "endpoints": [
+        {
+          "name": "create_transfer_recipient",
+          "method": "POST",
+          "path": "transferrecipient",
+          "description": "Create transfer recipient",
+          "category": "transfer_operations",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["nuban", "mobile_money", "basa"],
+                "description": "Recipient type"
+              },
+              "name": {
+                "type": "string",
+                "description": "Recipient name"
+              },
+              "account_number": {
+                "type": "string",
+                "description": "Account number"
+              },
+              "bank_code": {
+                "type": "string",
+                "description": "Bank code"
+              },
+              "currency": {
+                "type": "string",
+                "default": "NGN"
+              },
+              "description": {
+                "type": "string",
+                "description": "Recipient description"
+              },
+              "metadata": {
+                "type": "object",
+                "description": "Custom metadata"
+              }
+            },
+            "required": ["type", "name", "account_number", "bank_code"]
+          }
+        },
+        {
+          "name": "initiate_transfer",
+          "method": "POST",
+          "path": "transfer",
+          "description": "Initiate money transfer",
+          "category": "transfer_operations",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "enum": ["balance"],
+                "description": "Transfer source"
+              },
+              "amount": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Transfer amount in kobo"
+              },
+              "recipient": {
+                "type": "string",
+                "description": "Recipient code"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Transfer reason"
+              },
+              "currency": {
+                "type": "string",
+                "default": "NGN"
+              },
+              "reference": {
+                "type": "string",
+                "description": "Unique transfer reference"
+              }
+            },
+            "required": ["source", "amount", "recipient"]
+          }
+        }
+      ]
+    }
+  },
+  "third_party_extensions": {
+    "service_provider_mode": {
+      "enabled": true,
+      "description": "Enable service provider capabilities for third-party clients",
+      "features": [
+        "client_isolation",
+        "custom_branding",
+        "webhook_management",
+        "analytics_dashboard",
+        "rate_limiting",
+        "fee_management",
+        "white_label_checkout"
+      ]
+    },
+    "white_label_capabilities": {
+      "custom_checkout": true,
+      "branded_receipts": true,
+      "client_specific_configs": true,
+      "isolated_settlements": true
+    }
+  },
+  "webhooks": {
+    "supported": true,
+    "events": [
+      "charge.success",
+      "charge.failed",
+      "transfer.success",
+      "transfer.failed",
+      "subscription.create",
+      "subscription.disable",
+      "invoice.create",
+      "invoice.update",
+      "invoice.payment_failed",
+      "customeridentification.success",
+      "customeridentification.failed",
+      "dedicatedaccount.assign.success",
+      "dedicatedaccount.assign.failed"
+    ],
+    "security": {
+      "signature_verification": true,
+      "ip_whitelist": true,
+      "retry_logic": true
+    }
+  },
+  "rate_limits": {
+    "default": {
+      "requests_per_minute": 60,
+      "requests_per_hour": 3000,
+      "burst_limit": 20
+    },
+    "bulk_operations": {
+      "requests_per_minute": 10,
+      "requests_per_hour": 100,
+      "burst_limit": 5
+    }
+  },
+  "compliance": {
+    "pci_dss": "Level 1",
+    "data_encryption": true,
+    "audit_logging": true,
+    "gdpr_compliant": true,
+    "supported_regions": ["NG", "GH", "ZA", "KE"],
+    "local_compliance": {
+      "nigeria": ["CBN_guidelines", "NIMC_requirements"],
+      "ghana": ["BOG_standards"],
+      "south_africa": ["SARB_regulations"],
+      "kenya": ["CBK_requirements"]
+    }
+  },
+  "monitoring": {
+    "health_checks": [
+      "/health",
+      "/payments/health",
+      "/customers/health"
+    ],
+    "metrics": [
+      "transaction_success_rate",
+      "settlement_speed",
+      "customer_conversion_rate",
+      "dispute_resolution_time",
+      "api_response_time"
+    ]
+  }
+}
