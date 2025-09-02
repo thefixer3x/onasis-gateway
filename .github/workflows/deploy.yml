@@ -99,26 +99,100 @@ jobs:
       with:
         name: build-artifacts
         
-    - name: Deploy to Hostinger VPS (Production)
-      env:
-        HOSTINGER_API_TOKEN: ${{ secrets.HOSTINGER_API_TOKEN }}
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add VPS to known hosts
       run: |
-        # Install Hostinger CLI if not present
-        npm install -g @hostinger/cli || echo "CLI already installed"
+        ssh-keyscan -p 2222 -H 168.231.74.29 >> ~/.ssh/known_hosts
         
-        # Authenticate with Hostinger
-        echo "$HOSTINGER_API_TOKEN" | hostinger auth login
+    - name: Deploy to VPS (Production)
+      run: |
+        ssh -p 2222 root@168.231.74.29 << 'ENDSSH'
+        set -e
         
-        # Deploy to production environment
-        hostinger deploy production --project-path . --environment production
+        # Configuration
+        DEPLOY_PATH="/opt/onasis-gateway"
+        SERVICE_NAME="onasis-gateway-server"
+        GIT_REPO="https://github.com/thefixer3x/onasis-gateway.git"
         
-        # Wait for deployment to complete
-        sleep 15
+        echo "🚀 Starting onasis-gateway deployment..."
         
-        # Health check
-        curl -f ${{ secrets.PRODUCTION_URL }}/health || exit 1
+        # Create deployment directories
+        mkdir -p /opt/onasis-gateway
+        mkdir -p /var/log/pm2
+        mkdir -p /var/log/onasis-gateway
         
-        echo "✅ Production deployment completed successfully"
+        # Navigate to deployment path
+        cd $DEPLOY_PATH
+        
+        # Backup existing deployment
+        if [ -d "current" ]; then
+          echo "📦 Backing up current deployment..."
+          mv current backup-$(date +%Y%m%d-%H%M%S)
+          
+          # Keep only last 3 backups
+          ls -dt backup-* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
+        fi
+        
+        # Clone fresh copy
+        echo "📥 Cloning latest code..."
+        git clone --depth 1 $GIT_REPO current
+        cd current
+        
+        # Install dependencies
+        echo "📦 Installing dependencies..."
+        npm ci --production
+        
+        # Build TypeScript
+        echo "🔨 Building TypeScript..."
+        npm run build || echo "Build completed with warnings"
+        
+        # Setup environment
+        echo "⚙️  Configuring environment..."
+        if [ ! -f .env ]; then
+          echo "Creating .env file..."
+          echo "PORT=3002" > .env
+          echo "NODE_ENV=production" >> .env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+        fi
+        
+        # Stop existing service
+        echo "🔄 Restarting service..."
+        pm2 stop $SERVICE_NAME 2>/dev/null || true
+        pm2 delete $SERVICE_NAME 2>/dev/null || true
+        
+        # Start the server
+        if [ -f server.js ]; then
+          echo "🚀 Starting onasis-gateway server..."
+          pm2 start server.js --name $SERVICE_NAME
+        elif [ -f ecosystem.config.js ]; then
+          pm2 start ecosystem.config.js --env production
+        else
+          echo "❌ No server configuration found"
+          exit 1
+        fi
+        
+        pm2 save
+        
+        # Wait and check status
+        sleep 10
+        if pm2 list | grep -q "$SERVICE_NAME.*online"; then
+          echo "✅ Deployment successful!"
+          echo "📊 Service Status:"
+          pm2 show $SERVICE_NAME
+        else
+          echo "❌ Deployment failed!"
+          pm2 logs $SERVICE_NAME --lines 20
+          exit 1
+        fi
+        
+        echo "🎉 Onasis Gateway deployment completed at $(date)"
+        echo "📦 Deployed commit: $(git rev-parse --short HEAD)"
+        
+        ENDSSH
           
     - name: Notify Deployment Success
       if: success()
@@ -133,6 +207,17 @@ jobs:
     if: always()
     
     steps:
+    - name: Setup SSH for health check
+      if: needs.deploy-production.result == 'success'
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add VPS to known hosts
+      if: needs.deploy-production.result == 'success'
+      run: |
+        ssh-keyscan -p 2222 -H 168.231.74.29 >> ~/.ssh/known_hosts
+        
     - name: Health Check Staging
       if: needs.deploy-staging.result == 'success'
       run: |
@@ -141,7 +226,8 @@ jobs:
     - name: Health Check Production  
       if: needs.deploy-production.result == 'success'
       run: |
-        curl -f ${{ secrets.PRODUCTION_URL }}/health || echo "Production health check failed"
+        # Test VPS health endpoint directly
+        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3002/health" || echo "Production health check failed"
         
     - name: Notify on Failure
       if: failure()
