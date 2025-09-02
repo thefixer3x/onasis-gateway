@@ -154,7 +154,7 @@ jobs:
         echo "⚙️  Configuring environment..."
         if [ ! -f .env ]; then
           echo "Creating .env file..."
-          echo "PORT=3002" > .env
+          echo "PORT=3000" > .env
           echo "NODE_ENV=production" >> .env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
         fi
@@ -227,7 +227,7 @@ jobs:
       if: needs.deploy-production.result == 'success'
       run: |
         # Test VPS health endpoint directly
-        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3002/health" || echo "Production health check failed"
+        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/health" || echo "Production health check failed"
         
     - name: Notify on Failure
       if: failure()
