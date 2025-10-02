@@ -246,20 +246,20 @@ EOF
     - name: Health Check Staging
       if: needs.deploy-staging.result == 'success'
       run: |
-        curl -f ${{ secrets.STAGING_URL }}/health || echo "Staging health check failed"
+        curl -f "${{ secrets.STAGING_URL }}/health" || (echo "Staging health check failed" && exit 1)
         
     - name: Health Check Production  
       if: needs.deploy-production.result == 'success'
       run: |
         # Test VPS health endpoints directly
         echo "🏥 Testing gateway health..."
-        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/health" || echo "Gateway health check failed"
+        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/health" || (echo "Gateway health check failed" && exit 1)
         
         echo "🔐 Testing authentication health..."
-        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/api/auth-health" || echo "Auth health check failed"
+        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/api/auth-health" || (echo "Auth health check failed" && exit 1)
         
         echo "📦 Testing API endpoints..."
-        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/api/adapters" || echo "API endpoints check failed"
+        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/api/adapters" || (echo "API endpoints check failed" && exit 1)
         
     - name: Notify on Failure
       if: failure()

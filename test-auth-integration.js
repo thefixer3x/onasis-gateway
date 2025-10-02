@@ -360,7 +360,11 @@ class AuthIntegrationTester {
         exp: Math.floor(Date.now() / 1000) - 3600 // 1 hour ago
       };
       
-      const expiredToken = jwt.sign(expiredPayload, 'test_secret');
+      const jwtSecret = process.env.ONASIS_JWT_SECRET || process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        throw new Error('JWT_SECRET not configured for testing');
+      }
+      const expiredToken = jwt.sign(expiredPayload, jwtSecret);
       
       const response = await this.makeRequest('POST', '/api/adapters/stripe-api-2024-04-10/tools/create-customer', {
         email: 'test@example.com'
