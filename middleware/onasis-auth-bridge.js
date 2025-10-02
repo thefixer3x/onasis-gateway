@@ -9,14 +9,14 @@ const jwt = require('jsonwebtoken');
 class OnasisAuthBridge {
   constructor(config = {}) {
     this.config = {
+      ...config,
       authApiUrl: config.authApiUrl || process.env.ONASIS_AUTH_API_URL || 'https://api.lanonasis.com/v1/auth',
       jwtSecret: config.jwtSecret || process.env.ONASIS_JWT_SECRET || process.env.JWT_SECRET,
       projectScope: config.projectScope || 'lanonasis-maas',
       timeout: config.timeout || 10000,
-      retries: config.retries || 2,
-      ...config
+      retries: config.retries || 2
     };
-    
+
     // Cache for session validation
     this.sessionCache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
@@ -61,7 +61,7 @@ class OnasisAuthBridge {
 
         next();
       } catch (error) {
-        console.error('Authentication middleware error:', error);
+        console.error('Authentication middleware error:', error.message);
         
         if (required) {
           return res.status(500).json({
@@ -98,7 +98,7 @@ class OnasisAuthBridge {
     }
 
     // 3. Try session validation for SSE/WebSocket
-    if (userId && req.path.includes('/sse') || req.path.includes('/ws')) {
+    if (userId && (req.path.includes('/sse') || req.path.includes('/ws'))) {
       return await this.validateSession(userId);
     }
 
@@ -118,7 +118,9 @@ class OnasisAuthBridge {
       // First try local JWT verification for performance
       if (this.config.jwtSecret) {
         try {
-          const decoded = jwt.verify(token, this.config.jwtSecret);
+          const decoded = jwt.verify(token, this.config.jwtSecret, {
+            algorithms: ['HS256', 'HS384', 'HS512']
+          });
           
           // Check if token is from correct project scope
           if (decoded.project_scope === this.config.projectScope) {
@@ -139,7 +141,6 @@ class OnasisAuthBridge {
           console.log('Local JWT validation failed, trying remote validation');
         }
       }
-
       // Remote session validation via onasis-core auth API
       const response = await this.makeAuthRequest('/session', {
         method: 'GET',
@@ -314,9 +315,17 @@ class OnasisAuthBridge {
         headers,
         body: body ? JSON.stringify(body) : undefined
       });
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (parseError) {
+        return res.status(502).json({
+          error: 'Invalid response from authentication service',
+          code: 'AUTH_PROXY_PARSE_ERROR'
+        });
+      }
 
-      const responseData = await response.json();
-      
+      res.status(response.status).json(responseData);
       res.status(response.status).json(responseData);
 
     } catch (error) {

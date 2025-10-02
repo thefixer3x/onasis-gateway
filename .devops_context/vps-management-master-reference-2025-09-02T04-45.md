@@ -90,26 +90,14 @@ Network Configuration:
 
 ### **Standard Operating Procedures**
 
-#### **Daily Health Check**
-```bash
-#!/bin/bash
-# Standard daily health check routine
-
-echo "🏥 VPS Daily Health Check - $(date)"
-echo "=================================="
-
-# System resources
-echo "💾 Memory: $(free | awk '/^Mem:/{printf("%.1f%%", $3/$2*100)}')"
-echo "💿 Disk: $(df / | awk 'NR==2{print $5}')"
-echo "⚡ Load: $(uptime | grep -o 'load average: .*' | cut -d' ' -f3-5)"
-
 # Service status  
-echo "🔧 PM2 Services: $(pm2 list | grep -c online)/2"
-echo "⚙️  System Services: $(systemctl is-active nginx redis-server ssh | grep -c active)/3"
+PM2_ONLINE=$(pm2 jlist 2>/dev/null | jq -r '[.[] | select(.pm2_env.status=="online")] | length' || echo "0")
+echo "🔧 PM2 Services: $PM2_ONLINE online"
+echo "⚙️  System Services: $(systemctl is-active nginx redis-server ssh 2>/dev/null | grep -c active) active"
 
 # Connectivity
-MCP_STATUS=$(curl -s http://localhost:3001/health | jq -r '.status // "FAILED"')
-REDIS_STATUS=$(redis-cli ping 2>/dev/null || echo "FAILED")
+MCP_STATUS=$(curl -sf --max-time 5 http://localhost:3001/health 2>/dev/null | jq -r '.status // "FAILED"' || echo "FAILED")
+REDIS_STATUS=$(timeout 2 redis-cli ping 2>/dev/null || echo "FAILED")
 echo "🌐 MCP Server: $MCP_STATUS"
 echo "🔗 Redis: $REDIS_STATUS"
 
@@ -119,7 +107,6 @@ if [[ "$MCP_STATUS" == "healthy" && "$REDIS_STATUS" == "PONG" ]]; then
 else
   echo "⚠️  Overall Status: NEEDS ATTENTION"
 fi
-```
 
 #### **Service Restart Sequence**
 ```bash
@@ -134,19 +121,37 @@ pm2 stop all
 systemctl stop nginx
 
 # 2. Wait for clean shutdown
-sleep 5
+#!/bin/bash
+# Safe service restart procedure
+
+echo "🔄 Starting safe service restart sequence..."
+
+# 1. Graceful stop
+echo "Stopping services gracefully..."
+pm2 stop all
+systemctl stop nginx
+systemctl stop redis-server
+
+# 2. Wait for clean shutdown
+echo "Waiting for services to stop..."
+for i in {1..10}; do
+  if ! pgrep -f "pm2|nginx|redis" >/dev/null; then
+    break
+  fi
+  sleep 1
+done
 
 # 3. Start in dependency order
 echo "Starting Redis (cache layer)..."
-systemctl start redis-server
+systemctl start redis-server || { echo "Failed to start Redis"; exit 1; }
 sleep 2
 
-echo "Starting Nginx (proxy layer)..."  
-systemctl start nginx
+echo "Starting Nginx (proxy layer)..."
+systemctl start nginx || { echo "Failed to start Nginx"; exit 1; }
 sleep 2
 
 echo "Starting MCP services (application layer)..."
-pm2 start all
+pm2 start all || { echo "Failed to start PM2 services"; exit 1; }
 sleep 5
 
 # 4. Verify startup
@@ -156,20 +161,6 @@ systemctl is-active nginx redis-server
 curl -s http://localhost:3001/health | jq
 
 echo "✅ Service restart sequence complete"
-```
-
-### **Monitoring & Alerts**
-
-#### **Performance Thresholds**
-```yaml
-Alert Conditions:
-  Memory Usage: >80% (3GB+ used)
-  Disk Usage: >90% (43GB+ used)  
-  Load Average: >2.0 (sustained)
-  Service Downtime: >30 seconds
-
-Response Times:
-  MCP Server: <200ms (http://localhost:3001/health)
   Redis: <10ms (redis-cli ping)
   Nginx: <100ms (basic request)
 
@@ -230,6 +221,12 @@ User Access Levels:
 ss -tulnp | grep :22                    # SSH port bindings
 ss -tulnp | grep :3001                  # MCP server binding  
 iptables -L                             # Firewall rules
+if ! dpkg -s fail2ban >/dev/null 2>&1; then
+  echo "Install Fail2Ban: sudo apt-get update && sudo apt-get install -y fail2ban"
+fi
+if ! systemctl is-active --quiet fail2ban; then
+  sudo systemctl enable --now fail2ban
+fi
 fail2ban-client status                  # Intrusion detection
 ```
 

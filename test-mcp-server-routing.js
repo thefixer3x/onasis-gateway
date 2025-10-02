@@ -189,12 +189,17 @@ class MCPServerRoutingTester {
    */
   async makeRequest(baseUrl, path, options = {}) {
     const url = `${baseUrl}${path}`;
-    const requestOptions = {
-      timeout: this.config.timeout,
-      ...options
-    };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
     
-    return await fetch(url, requestOptions);
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   /**

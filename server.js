@@ -45,11 +45,18 @@ class MCPServer {
     this.abstractedAPI = new AbstractedAPIEndpoints();
     
     // Initialize authentication bridge
+    if (!process.env.ONASIS_JWT_SECRET && !process.env.JWT_SECRET) {
+      console.error('❌ FATAL: JWT_SECRET is required for authentication');
+      throw new Error('Missing required JWT_SECRET configuration');
+    }
+
     this.authBridge = new OnasisAuthBridge({
       authApiUrl: process.env.ONASIS_AUTH_API_URL || 'https://api.lanonasis.com/v1/auth',
       jwtSecret: process.env.ONASIS_JWT_SECRET || process.env.JWT_SECRET,
       projectScope: process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas'
     });
+
+    console.log('✅ Authentication bridge initialized');
     
     this.setupMiddleware();
     this.setupRoutes();
@@ -84,9 +91,13 @@ class MCPServer {
       console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
       next();
     });
-  }
-
-  setupRoutes() {
+    // Authentication routes - proxy to onasis-core auth API
+    this.app.use('/api/auth/*', (req, res, next) => {
+      this.authBridge.proxyAuthRequest(req, res).catch(err => {
+        console.error('Auth proxy error:', err);
+        next(err);
+      });
+    });
     // Add abstracted API routes
     this.app.use('/', this.abstractedAPI.getRouter());
     

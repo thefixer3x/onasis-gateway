@@ -110,12 +110,6 @@ STEPS:
 ```
 
 **Migration Commands:**
-```bash
-ssh vps "mkdir -p /opt/onasis-services/gateway"
-ssh vps "cp -r /root/fixer-initiative/ecosystem-projects/onasis-gateway/* /opt/onasis-services/gateway/"
-ssh vps "cd /opt/onasis-services/gateway && npm install"
-ssh vps "cd /opt/onasis-services/gateway && npm test"  # Verify functionality
-```
 
 #### **Priority 2: Consolidate MCP Servers**
 ```bash  
@@ -362,22 +356,33 @@ module.exports = {
   apps: [
     {
       name: 'onasis-mcp-hub',
+module.exports = {
+  apps: [
+    {
+      name: 'onasis-mcp-hub',
       script: '/opt/onasis-services/mcp-hub/src/index.js',
       instances: 1,
-      port: 3001,
+      max_restarts: 10,
+      min_uptime: '10s',
+      error_file: '/opt/onasis-services/mcp-hub/logs/error.log',
+      out_file: '/opt/onasis-services/mcp-hub/logs/out.log',
       env_production: { NODE_ENV: 'production', PORT: 3001 }
     },
     {
-      name: 'onasis-gateway-api', 
-      script: '/opt/onasis-services/gateway/bun-neon-server.ts',
+      name: 'onasis-gateway-api',
+      script: '/opt/onasis-services/gateway/dist/bun-neon-server.js',
+      interpreter: 'node',
       instances: 1,
-      port: 3002,
+      max_restarts: 10,
+      min_uptime: '10s',
+      error_file: '/opt/onasis-services/gateway/logs/error.log',
+      out_file: '/opt/onasis-services/gateway/logs/out.log',
       env_production: { NODE_ENV: 'production', PORT: 3002 }
     },
     {
       name: 'onasis-privacy-core',
       script: '/opt/onasis-services/privacy-core/unified-router.js',
-      instances: 1, 
+      instances: 1,
       port: 3003,
       env_production: { NODE_ENV: 'production', PORT: 3003 }
     },
@@ -390,20 +395,13 @@ module.exports = {
     },
     {
       name: 'vortexcore-dashboard',
-      script: '/opt/onasis-services/dashboard/server.js', 
+      script: '/opt/onasis-services/dashboard/server.js',
       instances: 1,
       port: 3005,
       env_production: { NODE_ENV: 'production', PORT: 3005 }
     }
   ]
 }
-```
-
----
-
-## 🚨 RISK MITIGATION & ROLLBACK PLAN
-
-### **Potential Risks**
 1. **Service Downtime** - Services offline during migration
 2. **Data Loss** - Configuration or data corruption  
 3. **Dependency Conflicts** - Module loading issues
