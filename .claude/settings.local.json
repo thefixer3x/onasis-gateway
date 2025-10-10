@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/Users/seyederick/DevOps/_project_folders/onasis-mcp-standalone/**)",
+      "Read(/Users/seyederick/DevOps/_project_folders/onasis-mcp-standalone/**)",
+      "Read(/Users/seyederick/DevOps/_project_folders/onasis-mcp-standalone/**)"
+    ],
+    "additionalDirectories": [
+      "/Users/seyederick/DevOps/_project_folders/Onasis-CORE",
+      "/Users/seyederick/DevOps/_project_folders/onasis-mcp-standalone"
+    ]
+  }
+}
