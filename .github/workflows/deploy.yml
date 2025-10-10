@@ -183,6 +183,12 @@ HOSTINGER_API_TOKEN=${{ secrets.HOSTINGER_API_TOKEN }}
 BAP_API_KEY=${{ secrets.BAP_API_KEY }}
 GOOGLE_ANALYTICS_API_KEY=${{ secrets.GOOGLE_ANALYTICS_API_KEY }}
 EOF
+        if [ ! -f .env ]; then
+          echo "Creating .env file..."
+          echo "PORT=3000" > .env
+          echo "NODE_ENV=production" >> .env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+        fi
         
         # Stop existing service
         echo "🔄 Restarting service..."
