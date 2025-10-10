@@ -36,6 +36,11 @@ npm install -g @hostinger/cli
 hostinger deploy production
 
 # AFTER: SSH Deployment (working)
+ssh -p 2222 root@168.231.74.29 << 'ENDSSH'
+  # Direct VPS deployment commands
+  git clone --depth 1 $GIT_REPO current
+  npm ci --production
+  pm2 start server.js --name onasis-gateway-server
 ssh -p 2222 ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} << 'ENDSSH'
   set -e # Exit script on any error
 
