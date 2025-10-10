@@ -11,6 +11,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const AbstractedAPIEndpoints = require('./api/abstracted-endpoints');
+const OnasisAuthBridge = require('./middleware/onasis-auth-bridge');
 
 // Import our generated adapters (will be transpiled)
 // For now, we'll create a mock registry until TypeScript is compiled
@@ -42,6 +43,21 @@ class MCPServer {
     this.port = process.env.PORT || 3001; // Avoid conflict with logistics on 3000
     this.adapters = new Map();
     this.abstractedAPI = new AbstractedAPIEndpoints();
+    
+    // Initialize authentication bridge
+    if (!process.env.ONASIS_JWT_SECRET && !process.env.JWT_SECRET) {
+      console.error('❌ FATAL: JWT_SECRET is required for authentication');
+      throw new Error('Missing required JWT_SECRET configuration');
+    }
+
+    this.authBridge = new OnasisAuthBridge({
+      authApiUrl: process.env.ONASIS_AUTH_API_URL || 'https://api.lanonasis.com/v1/auth',
+      jwtSecret: process.env.ONASIS_JWT_SECRET || process.env.JWT_SECRET,
+      projectScope: process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas'
+    });
+
+    console.log('✅ Authentication bridge initialized');
+    
     this.setupMiddleware();
     this.setupRoutes();
     this.startTime = Date.now();
@@ -75,11 +91,26 @@ class MCPServer {
       console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
       next();
     });
-  }
-
-  setupRoutes() {
+    // Authentication routes - proxy to onasis-core auth API
+    this.app.use('/api/auth/*', (req, res, next) => {
+      this.authBridge.proxyAuthRequest(req, res).catch(err => {
+        console.error('Auth proxy error:', err);
+        next(err);
+      });
+    });
     // Add abstracted API routes
     this.app.use('/', this.abstractedAPI.getRouter());
+    
+    // Authentication routes - proxy to onasis-core auth API
+    this.app.use('/api/auth/*', (req, res) => {
+      this.authBridge.proxyAuthRequest(req, res);
+    });
+    
+    // Authentication health check
+    this.app.get('/api/auth-health', async (req, res) => {
+      const healthStatus = await this.authBridge.healthCheck();
+      res.json(healthStatus);
+    });
     
     // Health check
     this.app.get('/health', (req, res) => {
@@ -111,8 +142,8 @@ class MCPServer {
       });
     });
 
-    // List all adapters
-    this.app.get('/api/adapters', (req, res) => {
+    // List all adapters (with optional authentication for user context)
+    this.app.get('/api/adapters', this.authBridge.authenticate({ required: false, allowAnonymous: true }), (req, res) => {
       const adapters = Object.entries(MOCK_ADAPTERS).map(([name, info]) => ({
         name,
         tools: info.tools,
@@ -126,8 +157,8 @@ class MCPServer {
       });
     });
 
-    // List all tools
-    this.app.get('/api/tools', (req, res) => {
+    // List all tools (with optional authentication for user context)
+    this.app.get('/api/tools', this.authBridge.authenticate({ required: false, allowAnonymous: true }), (req, res) => {
       const totalTools = Object.values(MOCK_ADAPTERS).reduce((sum, adapter) => sum + adapter.tools, 0);
       
       res.json({
@@ -137,8 +168,8 @@ class MCPServer {
       });
     });
 
-    // Get adapter details
-    this.app.get('/api/adapters/:name', (req, res) => {
+    // Get adapter details (with optional authentication for user context)
+    this.app.get('/api/adapters/:name', this.authBridge.authenticate({ required: false, allowAnonymous: true }), (req, res) => {
       const adapterName = req.params.name;
       const adapter = MOCK_ADAPTERS[adapterName];
       
@@ -155,8 +186,11 @@ class MCPServer {
       });
     });
 
-    // Execute tool (placeholder)
-    this.app.post('/api/adapters/:adapter/tools/:tool', (req, res) => {
+    // Execute tool (requires authentication)
+    this.app.post('/api/adapters/:adapter/tools/:tool', 
+      this.authBridge.authenticate({ required: true }),
+      this.authBridge.injectUserContext(),
+      (req, res) => {
       const { adapter, tool } = req.params;
       const args = req.body;
 
@@ -170,10 +204,16 @@ class MCPServer {
         adapter: adapter,
         tool: tool,
         args: args,
+        user: req.adapterContext ? {
+          userId: req.adapterContext.userId,
+          projectScope: req.adapterContext.projectScope,
+          authMethod: req.adapterContext.authMethod
+        } : null,
         result: {
-          message: `Tool ${tool} executed successfully on ${adapter}`,
+          message: `Tool ${tool} executed successfully on ${adapter} for user ${req.user?.id || 'unknown'}`,
           timestamp: new Date().toISOString(),
-          status: 'completed'
+          status: 'completed',
+          authenticated: req.auth?.authenticated || false
         }
       });
     });

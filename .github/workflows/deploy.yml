@@ -152,6 +152,37 @@ jobs:
         
         # Setup environment
         echo "⚙️  Configuring environment..."
+        cat > .env << EOF
+# Onasis Gateway Production Environment
+NODE_ENV=production
+PORT=3000
+
+# Authentication Integration
+ONASIS_AUTH_API_URL=https://api.lanonasis.com/v1/auth
+ONASIS_PROJECT_SCOPE=lanonasis-maas
+ONASIS_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
+
+# Database Configuration
+DATABASE_URL=${{ secrets.DATABASE_URL }}
+SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}
+
+# CORS Configuration
+CORS_ORIGIN=https://lanonasis.com,https://api.lanonasis.com,https://mcp.lanonasis.com
+
+# Service Configuration
+SERVICE_NAME=onasis-gateway-server
+LOG_LEVEL=info
+
+# External API Keys
+STRIPE_API_KEY=${{ secrets.STRIPE_API_KEY }}
+PAYSTACK_SECRET_KEY=${{ secrets.PAYSTACK_SECRET_KEY }}
+NGROK_API_TOKEN=${{ secrets.NGROK_API_TOKEN }}
+HOSTINGER_API_TOKEN=${{ secrets.HOSTINGER_API_TOKEN }}
+BAP_API_KEY=${{ secrets.BAP_API_KEY }}
+GOOGLE_ANALYTICS_API_KEY=${{ secrets.GOOGLE_ANALYTICS_API_KEY }}
+EOF
         if [ ! -f .env ]; then
           echo "Creating .env file..."
           echo "PORT=3000" > .env
@@ -221,13 +252,20 @@ jobs:
     - name: Health Check Staging
       if: needs.deploy-staging.result == 'success'
       run: |
-        curl -f ${{ secrets.STAGING_URL }}/health || echo "Staging health check failed"
+        curl -f "${{ secrets.STAGING_URL }}/health" || (echo "Staging health check failed" && exit 1)
         
     - name: Health Check Production  
       if: needs.deploy-production.result == 'success'
       run: |
-        # Test VPS health endpoint directly
-        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/health" || echo "Production health check failed"
+        # Test VPS health endpoints directly
+        echo "🏥 Testing gateway health..."
+        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/health" || (echo "Gateway health check failed" && exit 1)
+        
+        echo "🔐 Testing authentication health..."
+        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/api/auth-health" || (echo "Auth health check failed" && exit 1)
+        
+        echo "📦 Testing API endpoints..."
+        ssh -p 2222 root@168.231.74.29 "curl -f http://localhost:3000/api/adapters" || (echo "API endpoints check failed" && exit 1)
         
     - name: Notify on Failure
       if: failure()
