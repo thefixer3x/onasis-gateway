@@ -1,0 +1,222 @@
+{
+  "name": "providus-bank",
+  "version": "1.0.0",
+  "category": "payment",
+  "description": "Providus Bank API - Nigerian banking and wallet services",
+  "baseUrl": {
+    "sandbox": "{{base-url}}",
+    "production": "https://api.providusbank.com"
+  },
+  "authentication": {
+    "type": "bearer",
+    "envVars": [
+      "PROVIDUS_API_KEY",
+      "PROVIDUS_USERNAME",
+      "PROVIDUS_PASSWORD"
+    ],
+    "config": {
+      "tokenEndpoint": "/auth/login",
+      "tokenHeaders": {
+        "X-Access-Token": "{{access-token}}",
+        "X-Refresh-Token": "{{refresh-token}}"
+      },
+      "refreshEndpoint": "/auth/refresh/token",
+      "tokenExpiry": 3600,
+      "authMethods": ["bearer", "apikey", "basic"]
+    }
+  },
+  "endpoints": [
+    {
+      "category": "authentication",
+      "endpoints": [
+        {
+          "name": "login",
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate merchant and receive tokens",
+          "requestBody": {
+            "email": "string (base64)",
+            "password": "string (base64)"
+          },
+          "responseHeaders": ["X-Access-Token", "X-Refresh-Token"]
+        },
+        {
+          "name": "logout",
+          "method": "POST",
+          "path": "/auth/logout",
+          "description": "Invalidate current session tokens"
+        },
+        {
+          "name": "refreshToken",
+          "method": "POST",
+          "path": "/auth/refresh/token",
+          "description": "Refresh access tokens"
+        }
+      ]
+    },
+    {
+      "category": "user-management",
+      "endpoints": [
+        {
+          "name": "getUserProfile",
+          "method": "GET",
+          "path": "/user/profile",
+          "description": "Get authenticated merchant profile",
+          "requiredHeaders": ["X-Access-Token", "X-Refresh-Token"]
+        },
+        {
+          "name": "updatePassword",
+          "method": "POST",
+          "path": "/user/password",
+          "description": "Update user password"
+        }
+      ]
+    },
+    {
+      "category": "wallet-operations",
+      "permissions": [
+        "BROWSE_CUSTOMERS",
+        "UPDATE_CUSTOMERS",
+        "CREATE_CUSTOMER_WALLET",
+        "WALLET_CREDIT_DEBIT",
+        "MANAGE_BALANCE_SETTLEMENT",
+        "BROWSE_MERCHANT_WALLET",
+        "ENABLE_DISABLE_WALLET",
+        "SET_TRANSACTION_PIN",
+        "MANAGE_TRANSFER",
+        "BROWSE_TRANSACTIONS"
+      ]
+    },
+    {
+      "category": "transfers",
+      "endpoints": [
+        {
+          "name": "nipFundTransfer",
+          "method": "POST",
+          "path": "/NIPFundTransfer",
+          "description": "Transfer funds via NIP to Nigerian banks",
+          "authType": "basic",
+          "requestBody": {
+            "beneficiaryAccountName": "string",
+            "transactionAmount": "string",
+            "currencyCode": "NGN",
+            "narration": "string",
+            "sourceAccountName": "string",
+            "beneficiaryAccountNumber": "string",
+            "beneficiaryBank": "string (bank code)",
+            "transactionReference": "string (unique)",
+            "userName": "string",
+            "password": "string"
+          }
+        },
+        {
+          "name": "nipMultiDebitTransfer",
+          "method": "POST",
+          "path": "/NIPFundTransferMultipleDebitAccounts",
+          "description": "Transfer funds from multiple debit accounts"
+        }
+      ]
+    },
+    {
+      "category": "merchant-operations",
+      "permissions": [
+        "UPDATE_MERCHANT_DETAIL",
+        "BROWSE_KEYS",
+        "GENERATE_KEYS",
+        "INVITE_TEAM_MEMBER",
+        "BROWSE_ROLES",
+        "MANAGE_ROLES",
+        "MANAGE_TEAM_MEMBER",
+        "BROWSE_TEAM_MEMBER"
+      ]
+    },
+    {
+      "category": "value-added-services",
+      "permissions": [
+        "MANAGE_AIRTIME",
+        "MANAGE_PREPAID_CARD"
+      ]
+    }
+  ],
+  "capabilities": [
+    "authentication",
+    "wallet-management",
+    "transfers",
+    "merchant-operations",
+    "customer-management",
+    "airtime-services",
+    "prepaid-cards",
+    "team-management",
+    "role-management"
+  ],
+  "healthCheck": {
+    "endpoint": "/health",
+    "timeout": 5000,
+    "expectedStatus": 200,
+    "fallback": "/user/profile"
+  },
+  "modes": {
+    "sandbox": {
+      "enabled": true,
+      "baseUrl": "{{base-url}}"
+    },
+    "production": {
+      "enabled": false,
+      "baseUrl": "https://api.providusbank.com"
+    }
+  },
+  "rateLimit": {
+    "requestsPerSecond": 10,
+    "burstLimit": 50,
+    "strategy": "sliding-window"
+  },
+  "errorHandling": {
+    "retryStrategy": "exponential-backoff",
+    "maxRetries": 3,
+    "timeoutMs": 30000
+  },
+  "mcp": {
+    "enabled": true,
+    "tools": [
+      {
+        "name": "pb_authenticate",
+        "description": "Authenticate with Providus Bank API",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "email": { "type": "string" },
+            "password": { "type": "string" }
+          }
+        }
+      },
+      {
+        "name": "pb_get_user_profile",
+        "description": "Get authenticated user profile and permissions",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "pb_nip_transfer",
+        "description": "Execute NIP fund transfer to Nigerian banks",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "beneficiaryAccountName": { "type": "string" },
+            "beneficiaryAccountNumber": { "type": "string" },
+            "beneficiaryBank": { "type": "string" },
+            "amount": { "type": "number" },
+            "narration": { "type": "string" }
+          },
+          "required": ["beneficiaryAccountName", "beneficiaryAccountNumber", "beneficiaryBank", "amount"]
+        }
+      }
+    ],
+    "server": "providus-bank-mcp"
+  },
+  "documentation": {
+    "apiReference": "https://developer.providusbank.com",
+    "mcpConnector": true
+  }
+}
