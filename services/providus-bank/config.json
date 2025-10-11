@@ -1,0 +1,76 @@
+{
+    "name": "providus-bank",
+    "version": "1.0.0",
+    "category": "payment",
+    "description": "Providus Bank API - Nigerian banking and wallet services",
+    "baseUrl": "https://api.providusbank.com",
+    "authentication": {
+        "type": "bearer",
+        "envVars": [
+            "PROVIDUS_API_KEY",
+            "PROVIDUS_USERNAME",
+            "PROVIDUS_PASSWORD",
+            "PROVIDUS_EMAIL"
+        ],
+        "config": {
+            "tokenEndpoint": "/auth/login",
+            "refreshEndpoint": "/auth/refresh/token",
+            "tokenExpiry": 3600,
+            "authMethods": [
+                "bearer",
+                "basic"
+            ]
+        }
+    },
+    "endpoints": [
+        {
+            "name": "authenticate",
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate merchant and receive tokens",
+            "category": "authentication"
+        },
+        {
+            "name": "getUserProfile",
+            "method": "GET",
+            "path": "/user/profile",
+            "description": "Get authenticated user profile",
+            "category": "user-management"
+        },
+        {
+            "name": "nipFundTransfer",
+            "method": "POST",
+            "path": "/NIPFundTransfer",
+            "description": "Transfer funds via NIP to Nigerian banks",
+            "category": "transfers"
+        },
+        {
+            "name": "nipMultiDebitTransfer",
+            "method": "POST",
+            "path": "/NIPFundTransferMultipleDebitAccounts",
+            "description": "Transfer funds from multiple debit accounts",
+            "category": "transfers"
+        }
+    ],
+    "capabilities": [
+        "authentication",
+        "wallet-management",
+        "transfers",
+        "merchant-operations",
+        "customer-management"
+    ],
+    "healthCheck": {
+        "endpoint": "/user/profile",
+        "timeout": 5000,
+        "expectedStatus": 200
+    },
+    "rateLimit": {
+        "requestsPerSecond": 10,
+        "burstLimit": 50
+    },
+    "errorHandling": {
+        "retryStrategy": "exponential-backoff",
+        "maxRetries": 3,
+        "timeoutMs": 30000
+    }
+}
