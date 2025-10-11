@@ -5,6 +5,8 @@
  * Loads and serves all generated MCP adapters
  */
 
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -59,7 +61,6 @@ class MCPServer {
     console.log('✅ Authentication bridge initialized');
     
     this.setupMiddleware();
-    this.setupRoutes();
     this.startTime = Date.now();
   }
 
