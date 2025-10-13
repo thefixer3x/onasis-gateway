@@ -1,0 +1,70 @@
+{
+  "id": "providus-bank-account",
+  "name": "Providus Bank Account Services",
+  "version": "1.0.0",
+  "description": "Corporate account management - balance inquiry, transaction history, account validation",
+  "category": "banking",
+  "provider": "Providus Bank",
+  "status": "active",
+  "authentication": {
+    "type": "bearer",
+    "tokenHeader": "X-Access-Token",
+    "refreshHeader": "X-Refresh-Token"
+  },
+  "baseUrl": "${PROVIDUS_BASE_URL}",
+  "endpoints": [
+    {
+      "id": "balance_inquiry",
+      "name": "Account Balance Inquiry",
+      "path": "/account/balance/{accountNumber}",
+      "method": "GET",
+      "description": "Get current balance for corporate account"
+    },
+    {
+      "id": "validate_account",
+      "name": "Account Validation",
+      "path": "/account/validate",
+      "method": "POST",
+      "description": "Validate beneficiary account before transfer"
+    },
+    {
+      "id": "transaction_history",
+      "name": "Transaction History",
+      "path": "/account/transactions",
+      "method": "GET",
+      "description": "Retrieve transaction history with pagination"
+    },
+    {
+      "id": "account_statement",
+      "name": "Account Statement",
+      "path": "/account/statement",
+      "method": "POST",
+      "description": "Generate account statement for date range"
+    },
+    {
+      "id": "transaction_status",
+      "name": "Transaction Status",
+      "path": "/transaction/status/{reference}",
+      "method": "GET",
+      "description": "Check status of specific transaction"
+    }
+  ],
+  "environment": {
+    "required": [
+      "PROVIDUS_BASE_URL",
+      "PROVIDUS_USERNAME",
+      "PROVIDUS_PASSWORD",
+      "PROVIDUS_ACCOUNT_NUMBER"
+    ]
+  },
+  "modes": {
+    "sandbox": {
+      "enabled": true,
+      "baseUrl": "https://sandbox.providusbank.com/api/v1"
+    },
+    "production": {
+      "enabled": false,
+      "baseUrl": "https://api.providusbank.com/v1"
+    }
+  }
+}
