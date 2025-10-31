@@ -1,6 +1,13 @@
 # Onasis Gateway MCP Server
 
-The Model Context Protocol (MCP) server for the Onasis Gateway API Service Warehouse, providing unified access to all integrated services including Credit-as-a-Service (CaaS), payment processing, and infrastructure management tools.
+> Deployment status: _Source only._ This bundle is not wired into PM2 in production; keep it in sync with the repo and enable when a dedicated MCP endpoint is required.
+
+The Model Context Protocol (MCP) server for the Onasis Gateway API Service Warehouse, providing unified access to all integrated services including Credit-as-a-Service (CaaS), payment processing, and infrastructure management tools. It currently packages two tool suites:
+
+- **Credit-as-a-Service** – 14 MCP tools backed by `services/credit-as-a-service/` (applications, providers, bidding, transactions, scoring, analytics)
+- **Memory-as-a-Service** – 30+ `memory_*` tools backed by `services/memory-as-a-service/` (create/search/manage semantic memories)
+
+Additional adapters can be plugged in by following the patterns in `tools/`.
 
 ## Overview
 
