@@ -10,6 +10,8 @@ bun.lockb
 .env
 .env.local
 .env.production
+/gateways/unified-gateway/.env
+/gateways/unified-gateway/.env.local
 
 # Logs
 logs/
