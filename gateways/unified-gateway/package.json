@@ -1,0 +1,21 @@
+{
+  "name": "mcp-unified-gateway",
+  "version": "1.0.0",
+  "description": "Unified MCP Gateway - Single port access to multiple MCP tools",
+  "main": "gateway.js",
+  "scripts": {
+    "start": "node gateway.js",
+    "dev": "node --watch gateway.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "winston": "^3.10.0",
+    "ws": "^8.18.3"
+  },
+  "type": "module"
+}
