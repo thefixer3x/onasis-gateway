@@ -6,6 +6,86 @@ This skill teaches AI agents to leverage `@lanonasis/mem-intel-sdk` for **behavi
 
 **Key Principle**: Local-first processing with cached embeddings. API calls are fallback, not primary.
 
+## API Reference
+
+Base URL: `https://api.lanonasis.com/api/v1`
+
+| Operation | Endpoint | Method | Description |
+|-----------|----------|--------|-------------|
+| Store pattern | `/memories` | POST | Create with `type: workflow` |
+| Recall patterns | `/memories/search` | POST | Semantic search with `type: workflow` |
+| List patterns | `/memories?type=workflow` | GET | Filter by workflow type |
+| Update pattern | `/memories/{id}` | PUT | Update use_count in metadata |
+| Delete pattern | `/memories/{id}` | DELETE | Remove stale patterns |
+| Analyze patterns | `/intelligence/analyze-patterns` | POST | mem-intel-sdk |
+| Find related | `/intelligence/find-related` | POST | mem-intel-sdk |
+| Extract insights | `/intelligence/extract-insights` | POST | mem-intel-sdk |
+
+### Authentication (3 methods)
+```
+OAuth2 PKCE (Primary): Authorization header with token
+API Key (Fallback):    X-API-Key: lano_*
+JWT (Legacy):          Authorization: Bearer <jwt>
+```
+
+### MemoryType Enum
+```typescript
+type MemoryType = 'context' | 'project' | 'knowledge' | 'reference' | 'personal' | 'workflow';
+//                                                                                  ^^^^^^^^
+//                                                                      Use this for behavior patterns
+```
+
+### API Payload Examples
+
+**Record Pattern (POST /memories)**
+```json
+{
+  "title": "Workflow: Fix authentication bug in TypeScript API",
+  "content": "{\"trigger\":\"fix auth bug\",\"actions\":[{\"tool\":\"Read\",\"outcome\":\"success\"},{\"tool\":\"Edit\",\"outcome\":\"success\"},{\"tool\":\"Bash\",\"outcome\":\"success\"}],\"final_outcome\":\"success\",\"duration_ms\":45000}",
+  "type": "workflow",
+  "tags": ["auth", "bugfix", "typescript-api"],
+  "metadata": {
+    "confidence": 0.85,
+    "use_count": 1,
+    "context": {
+      "directory": "/home/user/onasis-gateway",
+      "project_type": "typescript-api",
+      "branch": "main"
+    }
+  }
+}
+```
+
+**Recall Patterns (POST /memories/search)**
+```json
+{
+  "query": "fix authentication bug in typescript",
+  "type": "workflow",
+  "threshold": 0.7,
+  "limit": 5
+}
+```
+
+**Response Structure**
+```json
+{
+  "success": true,
+  "data": {
+    "results": [
+      {
+        "id": "uuid",
+        "title": "Workflow: Fix auth bug",
+        "content": "...",
+        "type": "workflow",
+        "similarity_score": 0.89,
+        "metadata": { "confidence": 0.85, "use_count": 3 }
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
 ## Architecture Understanding
 
 ```
