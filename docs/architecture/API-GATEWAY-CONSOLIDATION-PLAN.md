@@ -4,7 +4,7 @@
 
 **Feature Branch:** `feature/centralized-api-gateway`
 **Target Domain:** `gateway.lanonasis.com`
-**VPS:** Hostinger (168.231.74.29:2222)
+**VPS:** Hostinger (see credentials vault for access details)
 
 ---
 
@@ -43,7 +43,7 @@
 
 ## Target State: Single Gateway
 
-```
+```text
                     ┌─────────────────────────────────────────┐
                     │       gateway.lanonasis.com             │
                     │       (Nginx API Gateway)               │
@@ -69,7 +69,7 @@
 ### Gateway Features
 
 - **Single `gateway.conf`** - ALL API routing in one file
-- **Unified CORS** - One policy, consistent everywhere
+- **Unified CORS** - One policy, consistent everywhere (with origin validation)
 - **Centralized rate limiting** - Zone-based, per-endpoint configurable
 - **Structured JSON logging** - Every request logged with context
 - **Request tracing** - `X-Request-ID` propagated through all services
@@ -82,13 +82,24 @@
 ### Phase 1: Foundation (Week 1)
 **Goal:** Gateway infrastructure, health checks, basic routing
 
+#### Prerequisites
+> **IMPORTANT:** Create snippet files BEFORE `gateway.conf` to avoid nginx startup failures.
+
+```bash
+# Create directories and snippet files first
+sudo mkdir -p /etc/nginx/snippets
+sudo touch /etc/nginx/snippets/proxy-headers.conf
+sudo touch /etc/nginx/snippets/cors.conf
+```
+
 #### Tasks
 - [ ] Create `gateway.lanonasis.com` DNS record
 - [ ] Generate SSL certificate (Let's Encrypt)
+- [ ] Create snippet files (proxy-headers.conf, cors.conf)
 - [ ] Create base `gateway.conf` with:
   - Upstream definitions for all backends
   - JSON logging format
-  - Global CORS configuration
+  - CORS origin whitelist (validated)
   - Rate limiting zones
 - [ ] Implement `/health` aggregated endpoint
 - [ ] Implement `/api/v1/status` gateway status
@@ -97,6 +108,7 @@
 #### Deliverables
 ```nginx
 # /etc/nginx/sites-available/gateway.conf
+# NOTE: Rate limiting zones and maps must be in http context (nginx.conf)
 
 # === UPSTREAMS ===
 upstream auth_service {
@@ -114,7 +126,7 @@ upstream mcp_server {
     keepalive 16;
 }
 
-# === LOGGING ===
+# === LOGGING (place in http context) ===
 log_format gateway_json escape=json '{'
     '"timestamp":"$time_iso8601",'
     '"request_id":"$request_id",'
@@ -128,40 +140,126 @@ log_format gateway_json escape=json '{'
     '"user_agent":"$http_user_agent"'
 '}';
 
-# === RATE LIMITING ZONES ===
-limit_req_zone $binary_remote_addr zone=general:10m rate=100r/s;
+# === RATE LIMITING ZONES (place in http context) ===
+# General rate limit per IP - 20 r/s is reasonable for most APIs
+limit_req_zone $binary_remote_addr zone=general:10m rate=20r/s;
+# Stricter rate limit for auth endpoints
 limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/s;
+# API rate limit per IP
 limit_req_zone $binary_remote_addr zone=api:10m rate=50r/s;
-limit_req_zone $http_authorization zone=api_key:10m rate=200r/s;
+# Anonymous requests (no Authorization header) - separate bucket
+limit_req_zone $binary_remote_addr zone=anon:10m rate=10r/s;
+
+# === CORS ORIGIN WHITELIST (place in http context) ===
+# Only allow requests from trusted origins - prevents CSRF attacks
+map $http_origin $cors_origin {
+    default "";
+    "https://app.lanonasis.com" $http_origin;
+    "https://dashboard.lanonasis.com" $http_origin;
+    "https://admin.lanonasis.com" $http_origin;
+    "https://gateway.lanonasis.com" $http_origin;
+    "https://api.lanonasis.com" $http_origin;
+    # Development origins (remove in production)
+    "http://localhost:3000" $http_origin;
+    "http://localhost:5173" $http_origin;
+    "http://127.0.0.1:3000" $http_origin;
+}
+
+# === CORS PREFLIGHT HANDLING (place in http context) ===
+map $request_method $cors_preflight {
+    default 0;
+    OPTIONS 1;
+}
+
+# === CONNECTION LIMITING FOR WEBSOCKETS (place in http context) ===
+limit_conn_zone $binary_remote_addr zone=ws_conn:10m;
+
+# === CACHING FOR MCP TOOLS (place in http context) ===
+proxy_cache_path /var/cache/nginx/mcp levels=1:2 keys_zone=mcp_cache:10m max_size=100m inactive=10m;
 
 server {
     listen 443 ssl http2;
     server_name gateway.lanonasis.com;
 
-    # SSL
+    # === SSL CONFIGURATION (HARDENED) ===
     ssl_certificate /etc/letsencrypt/live/gateway.lanonasis.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/gateway.lanonasis.com/privkey.pem;
 
-    # Logging
+    # TLS Protocol Versions - only modern protocols
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # Cipher suites - strong, modern ciphers only
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305';
+    ssl_prefer_server_ciphers off;
+
+    # Session caching for performance
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+
+    # OCSP Stapling
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    # === SECURITY HEADERS ===
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # === LOGGING ===
     access_log /var/log/nginx/gateway_access.json gateway_json;
     error_log /var/log/nginx/gateway_error.log warn;
 
-    # Global CORS
-    add_header 'Access-Control-Allow-Origin' '$http_origin' always;
+    # === GLOBAL CORS (with validated origin whitelist) ===
+    # Only origins in the whitelist get reflected - others get empty header
+    add_header 'Access-Control-Allow-Origin' '$cors_origin' always;
     add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
-    add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, X-Request-ID' always;
+    add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, X-Request-ID, X-API-Key' always;
+    # Only set credentials header when origin is allowed
     add_header 'Access-Control-Allow-Credentials' 'true' always;
 
-    # Request ID
-    set $request_id $request_id;
+    # === REQUEST ID TRACKING ===
+    # $request_id is auto-generated by nginx 1.11.0+, no need to set it
     add_header 'X-Request-ID' $request_id always;
 
-    # Health check (aggregated)
-    location /health {
-        # Phase 1: Simple check
-        return 200 '{"status":"ok","gateway":"nginx","timestamp":"$time_iso8601"}';
-        add_header Content-Type application/json;
+    # === CORS PREFLIGHT HANDLING ===
+    # Handle OPTIONS requests at server level for consistency
+    if ($cors_preflight) {
+        add_header 'Access-Control-Allow-Origin' '$cors_origin';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, X-Request-ID, X-API-Key';
+        add_header 'Access-Control-Allow-Credentials' 'true';
+        add_header 'Access-Control-Max-Age' 86400;
+        add_header 'Content-Length' 0;
+        return 204;
     }
+
+    # === REQUEST BODY SIZE LIMITS ===
+    client_max_body_size 10M;  # Default for most APIs
+
+    # === HEALTH CHECK (aggregated) ===
+    location /health {
+        # Content-Type must come BEFORE return directive
+        add_header Content-Type application/json always;
+        return 200 '{"status":"ok","gateway":"nginx","timestamp":"$time_iso8601"}';
+    }
+
+    # === API STATUS ===
+    location /api/v1/status {
+        add_header Content-Type application/json always;
+        return 200 '{"gateway":"nginx","version":"1.0.0","upstreams":["auth_service","api_gateway","mcp_server"]}';
+    }
+}
+
+# HTTP to HTTPS redirect
+server {
+    listen 80;
+    server_name gateway.lanonasis.com;
+    return 301 https://$server_name$request_uri;
 }
 ```
 
@@ -181,22 +279,50 @@ location /api/v1/auth/ {
 }
 
 # Specific auth endpoints
-location = /api/v1/auth/login { ... }
-location = /api/v1/auth/register { ... }
-location = /api/v1/auth/refresh { ... }
-location = /api/v1/auth/logout { ... }
-location = /api/v1/auth/verify { ... }
-location = /api/v1/auth/forgot-password { ... }
-location = /api/v1/auth/reset-password { ... }
+location = /api/v1/auth/login {
+    limit_req zone=auth burst=5 nodelay;
+    proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
+location = /api/v1/auth/register {
+    limit_req zone=auth burst=3 nodelay;
+    proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
+location = /api/v1/auth/refresh {
+    limit_req zone=auth burst=10 nodelay;
+    proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
+location = /api/v1/auth/logout {
+    proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
+location = /api/v1/auth/verify {
+    proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
+location = /api/v1/auth/forgot-password {
+    limit_req zone=auth burst=3 nodelay;
+    proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
+location = /api/v1/auth/reset-password {
+    limit_req zone=auth burst=3 nodelay;
+    proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
 
 # OAuth2 flows
 location /api/v1/auth/oauth/ {
     proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
 }
 
 # Session management
 location /api/v1/sessions/ {
     proxy_pass http://auth_service;
+    include /etc/nginx/snippets/proxy-headers.conf;
 }
 ```
 
@@ -207,6 +333,28 @@ location /api/v1/sessions/ {
 - [ ] Add brute-force protection (fail2ban integration)
 - [ ] Test OAuth2 flows through gateway
 - [ ] Update client SDKs with new endpoints
+
+#### Fail2ban Integration for Brute-Force Protection
+
+Create `/etc/fail2ban/filter.d/nginx-gateway-auth.conf`:
+```ini
+[Definition]
+failregex = ^.*"client_ip":"<HOST>".*"uri":"/api/v1/auth/(login|register)".*"status":401.*$
+            ^.*"client_ip":"<HOST>".*"uri":"/api/v1/auth/(login|register)".*"status":403.*$
+ignoreregex =
+```
+
+Create `/etc/fail2ban/jail.d/nginx-gateway.conf`:
+```ini
+[nginx-gateway-auth]
+enabled = true
+port = http,https
+filter = nginx-gateway-auth
+logpath = /var/log/nginx/gateway_access.json
+maxretry = 5
+findtime = 300
+bantime = 3600
+```
 
 ---
 
@@ -227,31 +375,42 @@ location /api/v1/memory/ {
 # Adapters
 location /api/adapters {
     proxy_pass http://api_gateway;
-}
-
-location ~ ^/api/execute/(?<adapter>[^/]+)/(?<tool>[^/]+)$ {
-    limit_req zone=api burst=30 nodelay;
-    proxy_pass http://api_gateway/api/execute/$adapter/$tool;
     include /etc/nginx/snippets/proxy-headers.conf;
 }
 
-# Intelligence API
+# Simplified adapter execution (regex capture not needed)
+location /api/execute/ {
+    limit_req zone=api burst=30 nodelay;
+    proxy_pass http://api_gateway;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
+
+# Intelligence API - needs longer timeout for AI calls
 location /api/v1/intelligence/ {
     limit_req zone=api burst=20 nodelay;
     proxy_pass http://api_gateway;
-    proxy_read_timeout 120s;  # AI calls can be slow
+    proxy_read_timeout 120s;
+    include /etc/nginx/snippets/proxy-headers.conf;
 }
 
 # Search
 location /api/v1/search/ {
     proxy_pass http://api_gateway;
+    include /etc/nginx/snippets/proxy-headers.conf;
+}
+
+# Bulk operations - allow larger payloads
+location /api/v1/memory/bulk {
+    client_max_body_size 50M;
+    proxy_pass http://api_gateway;
+    include /etc/nginx/snippets/proxy-headers.conf;
 }
 ```
 
 #### Tasks
 - [ ] Inventory all memory/intelligence routes
 - [ ] Set appropriate timeouts (AI calls need longer)
-- [ ] Implement request body size limits
+- [ ] Implement request body size limits (configured above)
 - [ ] Add caching headers where appropriate
 - [ ] Test adapter execution through gateway
 - [ ] Performance baseline comparison
@@ -265,14 +424,22 @@ location /api/v1/search/ {
 ```nginx
 # === MCP SERVER (:4000-4001) ===
 
-# MCP WebSocket
+# MCP WebSocket - with connection limiting
 location /mcp/ws {
+    # Limit concurrent WebSocket connections per IP
+    limit_conn ws_conn 10;
+
     proxy_pass http://mcp_server;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
-    proxy_read_timeout 86400s;  # Keep alive for 24h
-    proxy_send_timeout 86400s;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Request-ID $request_id;
+
+    # Reasonable timeouts - rely on app-level ping/pong for keepalive
+    proxy_read_timeout 3600s;   # 1 hour (adjust based on monitoring)
+    proxy_send_timeout 3600s;
 }
 
 # MCP Server-Sent Events
@@ -280,9 +447,14 @@ location /mcp/sse {
     proxy_pass http://mcp_server;
     proxy_http_version 1.1;
     proxy_set_header Connection "";
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Request-ID $request_id;
     proxy_buffering off;
     proxy_cache off;
     chunked_transfer_encoding off;
+
+    # SSE connections can be long-lived
+    proxy_read_timeout 3600s;
 }
 
 # MCP REST endpoints
@@ -291,20 +463,24 @@ location /mcp/ {
     include /etc/nginx/snippets/proxy-headers.conf;
 }
 
-# MCP Tool Discovery
+# MCP Tool Discovery - with caching
 location /mcp/tools {
     proxy_pass http://mcp_server;
+    proxy_cache mcp_cache;
     proxy_cache_valid 200 5m;  # Cache tool list for 5 mins
+    add_header X-Cache-Status $upstream_cache_status;
+    include /etc/nginx/snippets/proxy-headers.conf;
 }
 ```
 
 #### Tasks
 - [ ] Test WebSocket upgrade through Nginx
 - [ ] Configure SSE with proper buffering disabled
-- [ ] Implement connection limits for WS
+- [ ] Implement connection limits for WS (configured above)
 - [ ] Add MCP-specific logging
 - [ ] Test with Claude Desktop / AI clients
 - [ ] Monitor connection pooling
+- [ ] Implement app-level ping/pong for WebSocket keepalive
 
 ---
 
@@ -351,17 +527,21 @@ proxy_read_timeout 60s;
 ```
 
 ### `/etc/nginx/snippets/cors.conf`
+> **Note:** CORS is now handled at the server level using maps. This snippet is
+> provided for reference but the map-based approach in gateway.conf is preferred.
+
 ```nginx
-if ($request_method = 'OPTIONS') {
-    add_header 'Access-Control-Allow-Origin' '$http_origin';
-    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
-    add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, X-Request-ID, X-API-Key';
-    add_header 'Access-Control-Allow-Credentials' 'true';
-    add_header 'Access-Control-Max-Age' 86400;
-    add_header 'Content-Length' 0;
-    add_header 'Content-Type' 'text/plain';
-    return 204;
-}
+# CORS handling using validated origin from map
+# This approach avoids the problematic "if" directive
+
+# Headers are set globally in server block using $cors_origin
+# which only contains the origin if it's in the whitelist
+
+# For locations that need specific CORS handling:
+add_header 'Access-Control-Allow-Origin' '$cors_origin' always;
+add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, X-Request-ID, X-API-Key' always;
+add_header 'Access-Control-Allow-Credentials' 'true' always;
 ```
 
 ---
@@ -370,23 +550,30 @@ if ($request_method = 'OPTIONS') {
 
 ### Log Analysis
 ```bash
-# Real-time traffic
-tail -f /var/log/nginx/gateway_access.json | jq .
+# NOTE: Using jq -R 'fromjson?' handles potentially malformed lines gracefully
 
-# Errors only
-tail -f /var/log/nginx/gateway_access.json | jq 'select(.status >= 400)'
+# Real-time traffic (tolerates malformed lines)
+tail -f /var/log/nginx/gateway_access.json | jq -R 'fromjson?'
+
+# Errors only (HTTP status >= 400)
+tail -f /var/log/nginx/gateway_access.json | jq -R 'fromjson? | select(.status >= 400)'
 
 # Slow requests (>1s)
-cat /var/log/nginx/gateway_access.json | jq 'select(.response_time > 1)'
+cat /var/log/nginx/gateway_access.json | jq -R 'fromjson? | select(.response_time > 1)'
 
 # Requests per upstream
-cat /var/log/nginx/gateway_access.json | jq -r '.upstream' | sort | uniq -c
+cat /var/log/nginx/gateway_access.json | jq -R 'fromjson? | .upstream' | sort | uniq -c
+
+# Error rate by endpoint
+cat /var/log/nginx/gateway_access.json | jq -R 'fromjson? | select(.status >= 400) | .uri' | sort | uniq -c | sort -rn
 ```
 
 ### Health Check Script
 ```bash
 #!/bin/bash
 # /usr/local/bin/gateway-health.sh
+
+CURL_TIMEOUT=5  # Fail fast on unresponsive services
 
 ENDPOINTS=(
     "http://127.0.0.1:3001/health"
@@ -395,7 +582,7 @@ ENDPOINTS=(
 )
 
 for endpoint in "${ENDPOINTS[@]}"; do
-    status=$(curl -s -o /dev/null -w "%{http_code}" "$endpoint")
+    status=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$CURL_TIMEOUT" "$endpoint")
     if [ "$status" != "200" ]; then
         echo "UNHEALTHY: $endpoint returned $status"
         exit 1
@@ -413,14 +600,33 @@ exit 0
 Once gateway is stable, the admin dashboard will connect to:
 
 ### Gateway Management Endpoints
-```
+```http
 GET  /admin/gateway/status      # Overall gateway health
 GET  /admin/gateway/upstreams   # Backend service status
 GET  /admin/gateway/routes      # Route configuration
 GET  /admin/gateway/metrics     # Request counts, latency
-POST /admin/gateway/reload      # Reload nginx config
 GET  /admin/gateway/logs        # Recent log entries
 ```
+
+> ⚠️ **SECURITY WARNING: Config Reload Endpoint**
+>
+> The `POST /admin/gateway/reload` endpoint has been **removed from the public API**.
+>
+> **Why:** Exposing nginx config reload via HTTP is extremely dangerous:
+> - Attackers could inject malicious configurations
+> - A bad config could cause complete gateway outage
+> - No way to validate config before apply
+>
+> **Instead, use CI/CD pipeline:**
+> 1. Push config changes to git
+> 2. CI validates with `nginx -t`
+> 3. If valid, deploy and reload via SSH
+> 4. Rollback automatically on failure
+>
+> For emergency reloads, use SSH with proper authentication:
+> ```bash
+> ssh gateway.lanonasis.com 'sudo nginx -t && sudo systemctl reload nginx'
+> ```
 
 ### Dashboard Features (Post-Gateway)
 - Real-time traffic visualization
@@ -452,6 +658,23 @@ GET  /admin/gateway/logs        # Recent log entries
 3. **Feature flags** - DNS-level switching capability
 4. **Rollback ready** - One command to restore old configs
 5. **Monitoring first** - Alerting in place before cutover
+6. **Security validation** - All configs tested with `nginx -t` before deployment
+
+---
+
+## Security Checklist
+
+Before going live, verify:
+
+- [ ] CORS origin whitelist configured (no `$http_origin` reflection)
+- [ ] SSL hardening applied (TLS 1.2+, strong ciphers)
+- [ ] Security headers present (HSTS, X-Frame-Options, etc.)
+- [ ] Rate limiting zones in http context (not server)
+- [ ] No admin/reload endpoints exposed
+- [ ] fail2ban configured for auth endpoints
+- [ ] WebSocket connection limits in place
+- [ ] Health check script has timeouts
+- [ ] Logs using proper JSON escaping
 
 ---
 
