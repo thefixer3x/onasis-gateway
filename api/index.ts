@@ -1,4 +1,16 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { IncomingMessage, ServerResponse } from 'http';
+
+type VercelRequest = IncomingMessage & {
+  method?: string;
+  url?: string;
+  body?: unknown;
+};
+
+type VercelResponse = ServerResponse & {
+  status: (code: number) => VercelResponse;
+  json: (body: unknown) => VercelResponse;
+  setHeader: (name: string, value: string) => void;
+};
 
 // Mock adapters data for now (will connect to Neon later)
 const mockAdapters = [
