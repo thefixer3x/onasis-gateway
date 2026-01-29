@@ -590,4 +590,148 @@ if (mode === 'lazy') {
 
 ---
 
+## Plan Hardening Patch (Reality Alignment + Fewer Moving Parts)
+
+### 1) Repo Reality Alignment (No New Service)
+**Constraint:** Avoid introducing a separate “mcp-server” process unless required.
+
+**Update:**
+- The MCP Discovery Layer should live **inside the existing gateway runtime** (e.g., `gateways/unified-gateway/...`) so it shares:
+  - auth middleware
+  - adapter loading lifecycle
+  - logging + tracing
+  - deploy/runtime configuration
+
+**Result:** one deployment unit, one process, one port. No extra breakpoints.
+
+---
+
+### 2) Single Source of Truth Rule (Registry is a Cache, Not Truth)
+**Risk:** `operations.json` can drift from the live adapter tool catalog.
+
+**Rule:**
+- **Canonical truth = in-memory adapter tool catalog** loaded at startup.
+- `operations.json` is optional and treated as a **cache artifact**.
+
+**Implementation expectation:**
+- At startup:
+  1) load adapters → build in-memory tool catalog
+  2) build registry from the in-memory catalog
+  3) (optional) write `operations.json` if enabled
+
+**Hard requirement:**
+- `gateway.execute` must reject unknown `tool_id` unless explicitly in debug mode.
+
+---
+
+### 3) Lazy Mode Must Actually Hide the 1,604 Tools
+**Problem:** “Additive” can still flood MCP clients if the legacy 1,604 tools remain exposed.
+
+**Rule:**
+- `MCP_TOOL_MODE=lazy` MUST expose only these tools to MCP clients:
+  - `gateway.intent`
+  - `gateway.execute`
+  - `gateway.adapters`
+  - `gateway.tools`
+  - `gateway.reference`
+
+**`MCP_TOOL_MODE=full`** is debug-only and exposes the legacy 1,604 tools.
+
+**Non-negotiable:** Lazy mode is the default.
+
+---
+
+### 4) Execution Must Be Deny-by-Default (Policy Guardrails)
+`gateway.execute` is powerful, so it must enforce policy **server-side**, not “best effort”.
+
+Add policy metadata per operation:
+- `risk_level`: `low|medium|high|destructive`
+- `idempotency_required`: boolean
+- `confirmation_required`: boolean
+- `required_scopes`: string[] (e.g., `["payments:write"]`)
+- `rate_limit_bucket`: string (e.g., `payments_high_risk`)
+
+**Enforcement order in `gateway.execute`:**
+1) Auth + scope check  
+2) Confirmation/idempotency requirements  
+3) Schema validation (strict)  
+4) Adapter call  
+5) Audit log fields (request_id, tool_id, params_hash, actor_id, timestamp)
+
+**Default stance:** if metadata is missing → treat as **high risk** and require safe controls.
+
+---
+
+### 5) Keep “Intent” Boring and Deterministic (v1)
+To reduce fragility, v1 should NOT rely on embeddings or complex heuristics.
+
+**Ranking v1:**
+- exact match on `tool_id` / name
+- tag overlap score
+- keyword overlap score (query vs name/description)
+- adapter boost ONLY when `adapter` is explicitly provided
+- confidence threshold: if below threshold → return 2–3 options + `needs_selection: true`
+
+**Rule:** intent is a resolver, not a guesser.
+
+---
+
+### 6) `gateway.reference` Should Not Become a Second Documentation System
+**Rule:**
+- Reference content is **thin** and gateway-specific:
+  - auth/env vars used by gateway
+  - common error mapping + fixes
+  - safe usage patterns (idempotency, confirmation)
+  - minimal examples
+- All deep docs should link to canonical provider docs.
+
+---
+
+### 7) Contract Tests to Prevent Drift (Foolproof Mechanism)
+Add CI checks (or startup assertions) to guarantee registry matches the live catalog:
+
+**Required checks:**
+- Every registry `tool_id` exists in the live tool catalog
+- Schema required fields are present
+- Risk metadata exists for all operations
+- `operation_count` matches expected count (or matches live tool catalog size)
+
+**Fail-fast:** If contract tests fail → refuse to start in lazy mode (or run in safe degraded mode with intent disabled).
+
+---
+
+## Updated File Layout (Conceptual; map to unified-gateway paths)
+**Discovery module should be part of unified-gateway**, not necessarily a new root folder.
+
+Example mapping:
+- `gateways/unified-gateway/src/mcp/discovery/`
+  - `index.ts|js` (register meta-tools)
+  - `tools/` (intent/execute/adapters/tools/reference)
+  - `registry/` (builder + optional cache writer)
+  - `search/` (ranking logic)
+
+---
+
+## Updated Implementation Order (Min Moving Parts)
+1) **Lazy exposure only**: `MCP_TOOL_MODE=lazy` registers 5 tools only  
+2) **In-memory registry** built from existing adapter catalog (no JSON file required)  
+3) `gateway.execute` with strict policy enforcement + schema validation  
+4) `gateway.adapters` and `gateway.tools` (thin list endpoints)  
+5) `gateway.intent` deterministic ranking + confidence thresholds  
+6) Optional: write `operations.json` as a cache artifact  
+7) Add CI contract tests to prevent registry drift
+
+---
+
+## Acceptance Criteria (No Regression, No Flooding)
+- MCP client tools/list returns **exactly 5 tools** in lazy mode
+- Existing REST execution endpoint remains unchanged
+- 2-call flow works end-to-end:
+  - `gateway.intent` → returns `ready_to_execute`
+  - `gateway.execute` → executes successfully or fails with actionable error
+- High-risk operations require idempotency + appropriate scope
+- Low confidence intent returns options + asks for clarification (does not guess)
+
+---
+
 *Last updated: 2026-01-29*
