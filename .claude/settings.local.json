@@ -12,7 +12,7 @@
   },
   "enabledMcpjsonServers": [
     "supabase",
-    "lanonasis-intelligence",
-    "lanonasis-memory"
-  ]
+    "supabase2"
+  ],
+  "enableAllProjectMcpServers": true
 }
