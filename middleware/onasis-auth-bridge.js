@@ -3,15 +3,20 @@
  * Bridges onasis-gateway with onasis-core authentication system
  */
 
-const fetch = require('node-fetch');
-const jwt = require('jsonwebtoken');
+const fetch = globalThis.fetch
+  ? globalThis.fetch.bind(globalThis)
+  : (...args) => import('node-fetch').then((mod) => (mod.default || mod)(...args));
 
 class OnasisAuthBridge {
   constructor(config = {}) {
     this.config = {
       ...config,
-      authApiUrl: config.authApiUrl || process.env.ONASIS_AUTH_API_URL || 'https://api.lanonasis.com/v1/auth',
-      jwtSecret: config.jwtSecret || process.env.ONASIS_JWT_SECRET || process.env.JWT_SECRET,
+      authApiUrl: config.authApiUrl
+        || process.env.ONASIS_AUTH_API_URL
+        || process.env.AUTH_GATEWAY_URL
+        || 'http://127.0.0.1:4000/v1/auth',
+      sessionPath: config.sessionPath || process.env.ONASIS_AUTH_SESSION_PATH || '/session',
+      apiKeyPath: config.apiKeyPath || process.env.ONASIS_AUTH_APIKEY_PATH || '/api-keys/verify',
       projectScope: config.projectScope || 'lanonasis-maas',
       timeout: config.timeout || 10000,
       retries: config.retries || 2
@@ -86,13 +91,13 @@ class OnasisAuthBridge {
     const apiKey = req.headers['x-api-key'];
     const userId = req.headers['x-user-id'];
 
-    // 1. Try JWT Bearer token first
+    // 1. Try Bearer token first (remote validation)
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       return await this.validateJWTToken(token);
     }
 
-    // 2. Try API key authentication
+    // 2. Try API key authentication (remote validation)
     if (apiKey) {
       return await this.validateAPIKey(apiKey);
     }
@@ -115,34 +120,8 @@ class OnasisAuthBridge {
    */
   async validateJWTToken(token) {
     try {
-      // First try local JWT verification for performance
-      if (this.config.jwtSecret) {
-        try {
-          const decoded = jwt.verify(token, this.config.jwtSecret, {
-            algorithms: ['HS256', 'HS384', 'HS512']
-          });
-          
-          // Check if token is from correct project scope
-          if (decoded.project_scope === this.config.projectScope) {
-            return {
-              authenticated: true,
-              user: {
-                id: decoded.id,
-                email: decoded.email,
-                role: decoded.role,
-                project_scope: decoded.project_scope
-              },
-              method: 'jwt_local',
-              token: token
-            };
-          }
-        } catch (jwtError) {
-          // Fall through to remote validation
-          console.log('Local JWT validation failed, trying remote validation');
-        }
-      }
-      // Remote session validation via onasis-core auth API
-      const response = await this.makeAuthRequest('/session', {
+      // Remote session validation via auth-gateway
+      const response = await this.makeAuthRequest(this.config.sessionPath, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -155,11 +134,11 @@ class OnasisAuthBridge {
         return {
           authenticated: true,
           user: sessionData.user,
-          method: 'jwt_remote',
-          token: token,
-          expires_in: sessionData.expires_in
-        };
-      }
+            method: 'jwt_remote',
+            token: token,
+            expires_in: sessionData.expires_in
+          };
+        }
 
       return {
         authenticated: false,
@@ -184,19 +163,22 @@ class OnasisAuthBridge {
    */
   async validateAPIKey(apiKey) {
     try {
-      // For now, implement basic API key validation
-      // This should integrate with the vendor_api_keys table in onasis-core
-      
-      // Mock validation - in production this would query the database
-      if (apiKey.startsWith('lmk_') && apiKey.length > 20) {
+      const response = await this.makeAuthRequest(this.config.apiKeyPath, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Project-Scope': this.config.projectScope
+        },
+        body: JSON.stringify({ api_key: apiKey })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
         return {
           authenticated: true,
-          user: {
-            id: 'api_user',
-            type: 'api_key',
-            key_prefix: apiKey.substring(0, 8) + '...'
-          },
-          method: 'api_key'
+          user: data.user || null,
+          method: 'api_key',
+          key_prefix: apiKey.substring(0, 8) + '...'
         };
       }
 
@@ -204,7 +186,7 @@ class OnasisAuthBridge {
         authenticated: false,
         user: null,
         method: 'api_key_invalid',
-        error: 'Invalid API key format'
+        error: `API key validation failed: ${response.status}`
       };
 
     } catch (error) {
@@ -325,8 +307,9 @@ class OnasisAuthBridge {
         });
       }
 
-      res.status(response.status).json(responseData);
-      res.status(response.status).json(responseData);
+      if (!res.headersSent) {
+        return res.status(response.status).json(responseData);
+      }
 
     } catch (error) {
       console.error('Auth proxy error:', error);

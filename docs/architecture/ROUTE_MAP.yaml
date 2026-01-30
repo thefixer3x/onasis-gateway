@@ -1,0 +1,215 @@
+version: 1
+updated: 2026-01-29
+owner: onasis-gateway
+
+domains:
+  primary:
+    - gateway.lanonasis.com
+  future_cutover:
+    - api.landonnet.com
+
+upstreams:
+  central_gateway:
+    host: 127.0.0.1
+    port: 3000
+  auth_gateway:
+    host: 127.0.0.1
+    port: 4000
+  enterprise_mcp:
+    host: 127.0.0.1
+    port: 3001
+  mcp_core_http:
+    host: 127.0.0.1
+    port: 3001
+  mcp_core_ws:
+    host: 127.0.0.1
+    port: 3002
+  mcp_core_sse:
+    host: 127.0.0.1
+    port: 3003
+  supabase_edge:
+    host: lanonasis.supabase.co
+    base_path: /functions/v1
+  supabase_intel_edge:
+    host: mxtsdgkwzjzlttpotole.supabase.co
+    base_path: /functions/v1
+
+route_groups:
+  auth_gateway:
+    description: Authoritative auth + OAuth discovery + sessions
+    upstream: auth_gateway
+    routes:
+      - path: /v1/auth/*
+      - path: /api/v1/auth/*
+      - path: /oauth/*
+      - path: /register
+      - path: /.well-known/*
+      - path: /web/*
+      - path: /admin/*
+      - path: /mcp/*
+      - path: /auth/cli-login
+
+  central_gateway_root:
+    description: Central gateway root + health + adapters
+    upstream: central_gateway
+    routes:
+      - path: /
+      - path: /health
+      - path: /health/full
+      - path: /api/adapters/*
+      - path: /api/tools/*
+      - path: /api/services/*
+
+  mcp_core:
+    description: MCP core transport endpoints
+    routes:
+      - path: /ws
+        upstream: mcp_core_ws
+      - path: /mcp/ws
+        upstream: mcp_core_ws
+      - path: /sse
+        upstream: mcp_core_sse
+      - path: /api/v1/events
+        upstream: mcp_core_sse
+      - path: /api/v1/*
+        upstream: mcp_core_http
+
+  enterprise_mcp:
+    description: Enterprise MCP prototype (mcp1.lanonasis.com)
+    upstream: enterprise_mcp
+    routes:
+      - path: /api/mcp/enterprise/*
+
+  maas_supabase_edge:
+    description: MaaS public REST API (authoritative contract)
+    upstream: supabase_edge
+    source_of_truth:
+      openapi: lan-onasis-monorepo/apps/onasis-core/docs/supabase-api/SUPABASE_REST_API_OPENAPI.yaml
+      direct_routes: lan-onasis-monorepo/apps/onasis-core/docs/supabase-api/DIRECT_API_ROUTES.md
+    routes:
+      # Memory
+      - path: /api/v1/memory
+        target: /memory-create
+        methods: [POST]
+      - path: /api/v1/memories
+        target: /memory-create
+        methods: [POST]
+      - path: /api/v1/memory/:id
+        target: /memory-get
+        methods: [GET, DELETE]
+      - path: /api/v1/memory/list
+        target: /memory-list
+        methods: [GET, POST]
+      - path: /api/v1/memories/list
+        target: /memory-list
+        methods: [GET, POST]
+      - path: /api/v1/memory/search
+        target: /memory-search
+        methods: [POST]
+      - path: /api/v1/memories/search
+        target: /memory-search
+        methods: [POST]
+      - path: /api/v1/memory/stats
+        target: /memory-stats
+        methods: [GET, POST]
+      - path: /api/v1/memories/stats
+        target: /memory-stats
+        methods: [GET, POST]
+      - path: /api/v1/memory/update
+        target: /memory-update
+        methods: [POST, PUT, PATCH]
+      - path: /api/v1/memory/delete
+        target: /memory-delete
+        methods: [POST, DELETE]
+      - path: /api/v1/memory/bulk/delete
+        target: /memory-bulk-delete
+        methods: [POST, DELETE]
+      - path: /api/v1/memory/health
+        target: /system-health
+        methods: [GET]
+
+      # Intelligence
+      - path: /api/v1/intelligence/health-check
+        target: /intelligence-health-check
+        upstream: supabase_intel_edge
+        methods: [GET]
+      - path: /api/v1/intelligence/health
+        target: /intelligence-health-check
+        upstream: supabase_intel_edge
+        methods: [GET]
+      - path: /api/v1/intelligence/suggest-tags
+        target: /intelligence-suggest-tags
+        upstream: supabase_intel_edge
+        methods: [POST]
+      - path: /api/v1/intelligence/find-related
+        target: /intelligence-find-related
+        upstream: supabase_intel_edge
+        methods: [POST]
+      - path: /api/v1/intelligence/detect-duplicates
+        target: /intelligence-detect-duplicates
+        upstream: supabase_intel_edge
+        methods: [POST]
+      - path: /api/v1/intelligence/extract-insights
+        target: /intelligence-extract-insights
+        upstream: supabase_intel_edge
+        methods: [POST]
+      - path: /api/v1/intelligence/analyze-patterns
+        target: /intelligence-analyze-patterns
+        upstream: supabase_intel_edge
+        methods: [POST]
+
+      # API keys
+      - path: /api/v1/keys
+        target: /api-key-create
+        methods: [POST]
+      - path: /api/v1/keys/create
+        target: /api-key-create
+        methods: [POST]
+      - path: /api/v1/keys/list
+        target: /api-key-list
+        methods: [GET]
+      - path: /api/v1/keys/rotate
+        target: /api-key-rotate
+        methods: [POST]
+      - path: /api/v1/keys/revoke
+        target: /api-key-revoke
+        methods: [POST]
+      - path: /api/v1/keys/delete
+        target: /api-key-delete
+        methods: [DELETE, POST]
+
+      # Projects, org, config, system
+      - path: /api/v1/projects
+        target: /project-create
+        methods: [POST]
+      - path: /api/v1/projects/create
+        target: /project-create
+        methods: [POST]
+      - path: /api/v1/projects/list
+        target: /project-list
+        methods: [GET]
+      - path: /api/v1/organization
+        target: /organization-info
+        methods: [GET]
+      - path: /api/v1/org
+        target: /organization-info
+        methods: [GET]
+      - path: /api/v1/org/info
+        target: /organization-info
+        methods: [GET]
+      - path: /api/v1/config
+        target: /config-get
+        methods: [GET]
+      - path: /api/v1/config/get
+        target: /config-get
+        methods: [GET]
+      - path: /api/v1/config/set
+        target: /config-set
+        methods: [POST]
+      - path: /api/v1/auth/status
+        target: /auth-status
+        methods: [GET]
+
+notes:
+  - The MaaS route list is derived from SUPABASE_REST_API_OPENAPI.yaml and DIRECT_API_ROUTES.md.
+  - Additional edge functions exist but are not exposed in this plan until explicitly added.
