@@ -29,6 +29,7 @@
   "author": "API Integration Team",
   "license": "MIT",
   "dependencies": {
+    "@genkit-ai/mcp": "^1.28.0",
     "@netlify/functions": "^5.1.2",
     "@supabase/supabase-js": "^2.93.2",
     "@types/pg": "^8.16.0",
