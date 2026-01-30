@@ -5,7 +5,9 @@
  * Tests onasis-core auth bridge with onasis-gateway
  */
 
-const fetch = require('node-fetch');
+const fetch = globalThis.fetch
+  ? globalThis.fetch.bind(globalThis)
+  : (...args) => import('node-fetch').then((mod) => (mod.default || mod)(...args));
 const jwt = require('jsonwebtoken');
 
 class AuthIntegrationTester {
