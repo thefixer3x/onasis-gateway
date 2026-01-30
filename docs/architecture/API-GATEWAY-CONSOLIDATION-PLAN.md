@@ -1,9 +1,9 @@
 # API Gateway Consolidation Plan
 
-> **Objective:** Replace 300+ fragmented routing rules across multiple platforms with a single centralized Nginx API Gateway on VPS.
+> **Objective:** Replace fragmented routing across multiple platforms with a single centralized Nginx API Gateway on VPS, and onboard MaaS via adapters generated from OpenAPI + direct edge function routes.
 
 **Feature Branch:** `feature/centralized-api-gateway`
-**Target Domain:** `gateway.lanonasis.com`
+**Target Domain:** `gateway.lanonasis.com` (future cutover: `api.landonnet.com`)
 **VPS:** Hostinger (see credentials vault for access details)
 
 ---
@@ -21,14 +21,14 @@
 | CORS implementations | 5+ versions | Scattered across all backends |
 | Rate limiting strategies | 6+ different | Inconsistent across services |
 
-### Current Backend Services
+### Current Backend Services (Authoritative)
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| Onasis Gateway (Bun) | 3001 | Primary API gateway, adapter execution |
-| Auth Service | 3003 | Authentication, JWT, sessions |
-| MCP Server | 4000-4001 | Model Context Protocol for AI agents |
-| Legacy Express | 8080 | Fallback/legacy endpoints |
+| Central Gateway | 3000 | Primary API gateway, adapter execution, service orchestration |
+| Auth Gateway | 4000 | Auth system (JWT, OAuth2/PKCE, sessions, API keys, MCP OAuth discovery) |
+| Enterprise MCP | 3001 | Enterprise MCP prototype (mcp1.lanonasis.com) |
+| MCP Core (MaaS) | 3001-3003 | Full MaaS MCP HTTP/WS/SSE (mcp.lanonasis.com, monorepo) |
 
 ### Problems This Causes
 
@@ -41,7 +41,7 @@
 
 ---
 
-## Target State: Single Gateway
+## Target State: Single Gateway + MaaS Adapter Layer
 
 ```text
                     ┌─────────────────────────────────────────┐
@@ -61,9 +61,15 @@
           │                        │                        │
           ▼                        ▼                        ▼
    ┌──────────────┐      ┌──────────────┐        ┌──────────────┐
-   │ Auth Service │      │ API Gateway  │        │  MCP Server  │
-   │    :3003     │      │    :3001     │        │ :4000-4001   │
+   │ Auth Gateway │      │ Central GW   │        │ MCP / MaaS   │
+   │    :4000     │      │    :3000     │        │ :3001-3003   │
    └──────────────┘      └──────────────┘        └──────────────┘
+                                   │
+                                   ▼
+                           ┌────────────────┐
+                           │ MaaS Adapters  │
+                           │ (OpenAPI-gen)  │
+                           └────────────────┘
 ```
 
 ### Gateway Features
@@ -74,13 +80,47 @@
 - **Structured JSON logging** - Every request logged with context
 - **Request tracing** - `X-Request-ID` propagated through all services
 - **Health aggregation** - Single `/health` endpoint checks all backends
+- **MaaS adapter layer** - Generated from OpenAPI + Direct API route registry
 
 ---
 
-## Migration Phases
+## MaaS Onboarding via OpenAPI (Authoritative)
+
+**Primary sources:**
+- `lan-onasis-monorepo/apps/onasis-core/docs/supabase-api/SUPABASE_REST_API_OPENAPI.yaml`
+- `lan-onasis-monorepo/apps/onasis-core/docs/supabase-api/DIRECT_API_ROUTES.md`
+
+**Strategy:**
+1. Use OpenAPI as the canonical contract for `/api/v1/*` MaaS endpoints.
+2. Use Direct API routes to map each logical endpoint to its exact edge function target.
+3. Generate gateway adapters that proxy to Supabase edge functions with correct method, path, and auth headers.
+4. Keep Netlify redirects as fallback during shadow mode; cut over to Nginx once parity is verified.
+
+---
+
+## Migration Phases (Updated)
+
+### Phase 0: Truth & Route Inventory (Week 0)
+**Goal:** Freeze the authoritative route map and MaaS contract sources
+
+#### Tasks
+- [ ] Confirm ports and domains in this document (central-gateway:3000, auth-gateway:4000, enterprise-mcp:3001, mcp-core:3001-3003).
+- [ ] Create a canonical route map file (single source of truth) listing:
+  - Auth routes → auth-gateway
+  - MaaS routes → Supabase edge functions (from OpenAPI + Direct API routes)
+  - MCP routes → mcp-core/enterprise-mcp
+- [ ] Enumerate all `/api/v1/*` endpoints from the OpenAPI spec.
+- [ ] Validate edge function targets for each endpoint from Direct API routes.
+- [ ] Lock a CORS origin whitelist and auth header policy.
+
+#### Deliverables
+- `ROUTE_MAP.yaml` (authoritative mapping)
+- `MAAS_ADAPTERS.md` (adapter generation plan)
+
+---
 
 ### Phase 1: Foundation (Week 1)
-**Goal:** Gateway infrastructure, health checks, basic routing
+**Goal:** Gateway infrastructure, health checks, basic routing + MaaS adapter scaffolding
 
 #### Prerequisites
 > **IMPORTANT:** Create snippet files BEFORE `gateway.conf` to avoid nginx startup failures.
@@ -104,6 +144,7 @@ sudo touch /etc/nginx/snippets/cors.conf
 - [ ] Implement `/health` aggregated endpoint
 - [ ] Implement `/api/v1/status` gateway status
 - [ ] Set up log rotation
+- [ ] Add MaaS adapter scaffolding in central-gateway (service registry + route table)
 
 #### Deliverables
 ```nginx
@@ -333,6 +374,7 @@ location /api/v1/sessions/ {
 - [ ] Add brute-force protection (fail2ban integration)
 - [ ] Test OAuth2 flows through gateway
 - [ ] Update client SDKs with new endpoints
+- [ ] Reduce `onasis-auth-bridge.js` to auth-gateway introspection only (no local JWT validation)
 
 #### Fail2ban Integration for Brute-Force Protection
 
@@ -358,12 +400,12 @@ bantime = 3600
 
 ---
 
-### Phase 3: Memory & Intelligence APIs (Week 3)
-**Goal:** Migrate core API gateway routes
+### Phase 3: MaaS & Intelligence APIs (Week 3)
+**Goal:** Migrate MaaS from Netlify redirects to adapter-driven gateway routing
 
 #### Routes to Migrate
 ```nginx
-# === API GATEWAY (:3001) ===
+# === CENTRAL GATEWAY (:3000) ===
 
 # Memory API
 location /api/v1/memory/ {
@@ -414,6 +456,7 @@ location /api/v1/memory/bulk {
 - [ ] Add caching headers where appropriate
 - [ ] Test adapter execution through gateway
 - [ ] Performance baseline comparison
+- [ ] Validate every OpenAPI path maps to a Direct API edge function target
 
 ---
 
@@ -422,7 +465,7 @@ location /api/v1/memory/bulk {
 
 #### Routes to Migrate
 ```nginx
-# === MCP SERVER (:4000-4001) ===
+# === MCP CORE (:3001-3003) ===
 
 # MCP WebSocket - with connection limiting
 location /mcp/ws {
@@ -568,6 +611,26 @@ cat /var/log/nginx/gateway_access.json | jq -R 'fromjson? | .upstream' | sort | 
 cat /var/log/nginx/gateway_access.json | jq -R 'fromjson? | select(.status >= 400) | .uri' | sort | uniq -c | sort -rn
 ```
 
+### Health Endpoints (Gateway + Full Upstream Check)
+
+**Gateway basic health**
+```bash
+curl https://gateway.lanonasis.com/health
+```
+
+**Full upstream aggregation**
+```bash
+curl https://gateway.lanonasis.com/health/full
+```
+
+**Local override (central-gateway)**
+```bash
+HEALTH_AUTH_URL="http://127.0.0.1:4000/health" \
+HEALTH_MCP_CORE_URL="http://127.0.0.1:3001/health" \
+HEALTH_ENTERPRISE_MCP_URL="http://127.0.0.1:3001/health" \
+curl http://127.0.0.1:3000/health/full
+```
+
 ### Health Check Script
 ```bash
 #!/bin/bash
@@ -678,11 +741,12 @@ Before going live, verify:
 
 ---
 
-## Next Steps
+## Next Steps (Updated)
 
 1. **Immediate:** Create feature branch `feature/centralized-api-gateway`
-2. **This week:** Phase 1 foundation tasks
-3. **Ongoing:** Update this doc as we progress
+2. **This week:** Phase 0 route inventory + MaaS adapter plan
+3. **Next:** Phase 1 foundation tasks + adapter scaffolding
+4. **Ongoing:** Update this doc as we progress
 
 ---
 

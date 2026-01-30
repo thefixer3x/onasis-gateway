@@ -12,6 +12,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const fetch = globalThis.fetch
+  ? globalThis.fetch.bind(globalThis)
+  : (...args) => import('node-fetch').then((mod) => (mod.default || mod)(...args));
 const AbstractedAPIEndpoints = require('./api/abstracted-endpoints');
 const OnasisAuthBridge = require('./middleware/onasis-auth-bridge');
 
@@ -47,14 +50,10 @@ class MCPServer {
     this.abstractedAPI = new AbstractedAPIEndpoints();
     
     // Initialize authentication bridge
-    if (!process.env.ONASIS_JWT_SECRET && !process.env.JWT_SECRET) {
-      console.error('❌ FATAL: JWT_SECRET is required for authentication');
-      throw new Error('Missing required JWT_SECRET configuration');
-    }
-
     this.authBridge = new OnasisAuthBridge({
-      authApiUrl: process.env.ONASIS_AUTH_API_URL || 'https://api.lanonasis.com/v1/auth',
-      jwtSecret: process.env.ONASIS_JWT_SECRET || process.env.JWT_SECRET,
+      authApiUrl: process.env.AUTH_GATEWAY_URL
+        || process.env.ONASIS_AUTH_API_URL
+        || 'http://127.0.0.1:4000/v1/auth',
       projectScope: process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas'
     });
 
@@ -62,6 +61,7 @@ class MCPServer {
     
     this.setupMiddleware();
     this.startTime = Date.now();
+    this.healthTargets = this.parseHealthTargets(process.env.HEALTH_TARGETS);
   }
 
   setupMiddleware() {
@@ -123,6 +123,20 @@ class MCPServer {
         adapters: Object.keys(MOCK_ADAPTERS).length,
         totalTools: Object.values(MOCK_ADAPTERS).reduce((sum, adapter) => sum + adapter.tools, 0),
         version: '1.0.0'
+      });
+    });
+
+    // Full health check (aggregate)
+    this.app.get('/health/full', async (req, res) => {
+      const startedAt = Date.now();
+      const services = await this.checkHealthTargets();
+      const ok = services.every((service) => service.ok);
+
+      res.status(ok ? 200 : 503).json({
+        status: ok ? 'healthy' : 'degraded',
+        timestamp: new Date().toISOString(),
+        duration_ms: Date.now() - startedAt,
+        services
       });
     });
 
@@ -323,6 +337,87 @@ class MCPServer {
         path: req.path
       });
     });
+  }
+
+  /**
+   * Parse HEALTH_TARGETS env var or use defaults.
+   * Format: JSON array of { name, url }
+   */
+  getDefaultHealthTargets() {
+    return [
+      {
+        name: 'auth-gateway',
+        url: process.env.HEALTH_AUTH_URL || 'http://127.0.0.1:4000/health'
+      },
+      {
+        name: 'mcp-core',
+        url: process.env.HEALTH_MCP_CORE_URL || 'http://127.0.0.1:3001/health'
+      },
+      {
+        name: 'enterprise-mcp',
+        url: process.env.HEALTH_ENTERPRISE_MCP_URL || 'http://127.0.0.1:3001/health'
+      }
+    ];
+  }
+
+  parseHealthTargets(rawTargets) {
+    if (!rawTargets) {
+      return this.getDefaultHealthTargets();
+    }
+
+    try {
+      const parsed = JSON.parse(rawTargets);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((entry) => entry && entry.name && entry.url);
+      }
+    } catch (error) {
+      console.warn('Invalid HEALTH_TARGETS JSON, falling back to defaults:', error.message);
+    }
+
+    return this.getDefaultHealthTargets();
+  }
+
+  /**
+   * Check all configured health targets.
+   */
+  async checkHealthTargets() {
+    const timeoutMs = Number(process.env.HEALTH_TIMEOUT_MS || 4000);
+    const targets = this.healthTargets || [];
+
+    const checks = targets.map(async (target) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      const startedAt = Date.now();
+
+      try {
+        const response = await fetch(target.url, {
+          method: 'GET',
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json' }
+        });
+        clearTimeout(timeout);
+
+        return {
+          name: target.name,
+          url: target.url,
+          ok: response.ok,
+          status: response.status,
+          latency_ms: Date.now() - startedAt
+        };
+      } catch (error) {
+        clearTimeout(timeout);
+        return {
+          name: target.name,
+          url: target.url,
+          ok: false,
+          status: 0,
+          latency_ms: Date.now() - startedAt,
+          error: error.message
+        };
+      }
+    });
+
+    return Promise.all(checks);
   }
 
   /**
