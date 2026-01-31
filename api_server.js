@@ -8,10 +8,10 @@ const fs = require('fs');
 const path = require('path');
 
 // Import core modules
-const BaseClient = require('../core/base-client');
-const VersionManager = require('../core/versioning/version-manager');
-const ComplianceManager = require('../core/security/compliance-manager');
-const MetricsCollector = require('../core/monitoring/metrics-collector');
+const BaseClient = require('./core/base-client');
+const VersionManager = require('./core/versioning/version-manager');
+const ComplianceManager = require('./core/security/compliance-manager');
+const MetricsCollector = require('./core/monitoring/metrics-collector');
 
 /**
  * API Gateway Server
@@ -93,7 +93,7 @@ class APIGateway {
    * Load all services from the services directory
    */
   loadServices() {
-    const servicesDir = path.join(__dirname, '../services');
+    const servicesDir = path.join(__dirname, 'services');
     
     if (!fs.existsSync(servicesDir)) {
       console.warn('Services directory not found:', servicesDir);
@@ -198,10 +198,11 @@ class APIGateway {
       res.json(service);
     });
 
-    // Service proxy endpoint
-    this.app.all('/api/services/:serviceName/*', async (req, res) => {
-      const { serviceName } = req.params;
-      const endpoint = req.params[0];
+    // Service proxy endpoint - using separate handler for path-to-regexp v8 compatibility
+    const serviceProxyHandler = async (req, res) => {
+      const serviceName = req.params.serviceName || req.params[0];
+      const pathSegments = req.path.split('/').slice(4); // Remove /api/services/:serviceName
+      const endpoint = pathSegments.join('/');
       
       req.service = serviceName;
       req.endpoint = endpoint;
