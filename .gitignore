@@ -20,6 +20,7 @@ logs/
 # Build
 dist/
 build/
+coverage/
 
 # IDE
 .vscode/
