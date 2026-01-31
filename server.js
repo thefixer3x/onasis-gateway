@@ -48,7 +48,7 @@ class MCPServer {
     this.port = process.env.PORT || 3001; // Avoid conflict with logistics on 3000
     this.adapters = new Map();
     this.abstractedAPI = new AbstractedAPIEndpoints();
-    
+
     // Initialize authentication bridge
     this.authBridge = new OnasisAuthBridge({
       authApiUrl: process.env.AUTH_GATEWAY_URL
@@ -58,7 +58,7 @@ class MCPServer {
     });
 
     console.log('✅ Authentication bridge initialized');
-    
+
     this.setupMiddleware();
     this.startTime = Date.now();
     this.healthTargets = this.parseHealthTargets(process.env.HEALTH_TARGETS);
@@ -74,7 +74,7 @@ class MCPServer {
 
     // Performance
     this.app.use(compression());
-    
+
     // Rate limiting
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
@@ -101,13 +101,13 @@ class MCPServer {
     });
     // Add abstracted API routes
     this.app.use('/', this.abstractedAPI.getRouter());
-    
+
     // Authentication health check
     this.app.get('/api/auth-health', async (req, res) => {
       const healthStatus = await this.authBridge.healthCheck();
       res.json(healthStatus);
     });
-    
+
     // Health check
     this.app.get('/health', (req, res) => {
       const uptime = Math.floor((Date.now() - this.startTime) / 1000);
@@ -170,7 +170,7 @@ class MCPServer {
     // List all tools (with optional authentication for user context)
     this.app.get('/api/tools', this.authBridge.authenticate({ required: false, allowAnonymous: true }), (req, res) => {
       const totalTools = Object.values(MOCK_ADAPTERS).reduce((sum, adapter) => sum + adapter.tools, 0);
-      
+
       res.json({
         total: totalTools,
         adapters: Object.keys(MOCK_ADAPTERS).length,
@@ -182,7 +182,7 @@ class MCPServer {
     this.app.get('/api/adapters/:name', this.authBridge.authenticate({ required: false, allowAnonymous: true }), (req, res) => {
       const adapterName = req.params.name;
       const adapter = MOCK_ADAPTERS[adapterName];
-      
+
       if (!adapter) {
         return res.status(404).json({ error: 'Adapter not found' });
       }
@@ -197,36 +197,36 @@ class MCPServer {
     });
 
     // Execute tool (requires authentication)
-    this.app.post('/api/adapters/:adapter/tools/:tool', 
+    this.app.post('/api/adapters/:adapter/tools/:tool',
       this.authBridge.authenticate({ required: true }),
       this.authBridge.injectUserContext(),
       (req, res) => {
-      const { adapter, tool } = req.params;
-      const args = req.body;
+        const { adapter, tool } = req.params;
+        const args = req.body;
 
-      if (!MOCK_ADAPTERS[adapter]) {
-        return res.status(404).json({ error: 'Adapter not found' });
-      }
-
-      // Placeholder response - will be replaced with actual tool execution
-      res.json({
-        success: true,
-        adapter: adapter,
-        tool: tool,
-        args: args,
-        user: req.adapterContext ? {
-          userId: req.adapterContext.userId,
-          projectScope: req.adapterContext.projectScope,
-          authMethod: req.adapterContext.authMethod
-        } : null,
-        result: {
-          message: `Tool ${tool} executed successfully on ${adapter} for user ${req.user?.id || 'unknown'}`,
-          timestamp: new Date().toISOString(),
-          status: 'completed',
-          authenticated: req.auth?.authenticated || false
+        if (!MOCK_ADAPTERS[adapter]) {
+          return res.status(404).json({ error: 'Adapter not found' });
         }
+
+        // Placeholder response - will be replaced with actual tool execution
+        res.json({
+          success: true,
+          adapter: adapter,
+          tool: tool,
+          args: args,
+          user: req.adapterContext ? {
+            userId: req.adapterContext.userId,
+            projectScope: req.adapterContext.projectScope,
+            authMethod: req.adapterContext.authMethod
+          } : null,
+          result: {
+            message: `Tool ${tool} executed successfully on ${adapter} for user ${req.user?.id || 'unknown'}`,
+            timestamp: new Date().toISOString(),
+            status: 'completed',
+            authenticated: req.auth?.authenticated || false
+          }
+        });
       });
-    });
 
     // Server-Sent Events endpoint for real-time notifications
     this.app.get('/api/sse', this.authenticateSSE.bind(this), (req, res) => {
@@ -241,7 +241,7 @@ class MCPServer {
 
       const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const userId = req.user?.id || req.headers['x-user-id'];
-      
+
       console.log(`🔗 SSE client connected: ${clientId} (user: ${userId})`);
 
       // Send initial connection event
@@ -278,14 +278,14 @@ class MCPServer {
     // SSE authentication status endpoint
     this.app.post('/api/sse/auth', (req, res) => {
       const { apiKey, eventTypes } = req.body;
-      
+
       if (!apiKey) {
         return res.status(400).json({ error: 'API key required' });
       }
 
       // Validate API key (simplified)
       const isValid = this.validateApiKey(apiKey);
-      
+
       if (isValid) {
         // Broadcast auth success to user's SSE connections
         this.broadcastToUser(req.headers['x-user-id'], 'auth_success', {
@@ -293,7 +293,7 @@ class MCPServer {
           eventTypes: eventTypes || ['memory.*', 'system.*'],
           timestamp: new Date().toISOString()
         });
-        
+
         res.json({ success: true, message: 'API key validated' });
       } else {
         res.status(401).json({ error: 'Invalid API key' });
@@ -303,16 +303,16 @@ class MCPServer {
     // Memory service events webhook (for SSE relay)
     this.app.post('/api/webhooks/memory', (req, res) => {
       const { event_type, data, user_id } = req.body;
-      
+
       console.log(`📨 Memory webhook received: ${event_type} for user ${user_id}`);
-      
+
       // Relay to SSE clients
       this.broadcastToUser(user_id, event_type, {
         ...data,
         timestamp: new Date().toISOString(),
         source: 'memory_service'
       });
-      
+
       res.json({ success: true, message: 'Webhook processed and relayed via SSE' });
     });
 
@@ -422,17 +422,17 @@ class MCPServer {
     // Simple authentication - check for API key or user ID
     const apiKey = req.headers['x-api-key'] || req.query.apiKey;
     const userId = req.headers['x-user-id'] || req.query.userId;
-    
+
     if (apiKey && this.validateApiKey(apiKey)) {
       req.user = { id: userId || 'anonymous', authenticated: true };
       return next();
     }
-    
+
     if (userId) {
       req.user = { id: userId, authenticated: false };
       return next();
     }
-    
+
     // Allow anonymous connections for now
     req.user = { id: 'anonymous', authenticated: false };
     next();
@@ -443,7 +443,7 @@ class MCPServer {
    */
   validateApiKey(apiKey) {
     if (!apiKey) return false;
-    
+
     // Check for Onasis Gateway format: onasis_[base64]
     const onasisFormat = /^onasis_[A-Za-z0-9+/]+=*$/;
     if (onasisFormat.test(apiKey)) return true;
@@ -470,9 +470,9 @@ class MCPServer {
    */
   broadcastToUser(userId, event, data) {
     if (!this.sseClients || !userId) return;
-    
+
     let sentCount = 0;
-    
+
     for (const [clientId, client] of this.sseClients.entries()) {
       if (client.userId === userId) {
         try {
@@ -485,7 +485,7 @@ class MCPServer {
         }
       }
     }
-    
+
     console.log(`📤 Broadcasted ${event} to ${sentCount} clients for user ${userId}`);
   }
 
@@ -494,9 +494,9 @@ class MCPServer {
    */
   broadcastToAll(event, data) {
     if (!this.sseClients) return;
-    
+
     let sentCount = 0;
-    
+
     for (const [clientId, client] of this.sseClients.entries()) {
       try {
         this.sendSSEEvent(client.res, event, data);
@@ -507,7 +507,7 @@ class MCPServer {
         this.sseClients.delete(clientId);
       }
     }
-    
+
     console.log(`📤 Broadcasted ${event} to ${sentCount} clients`);
   }
 
@@ -516,14 +516,14 @@ class MCPServer {
    */
   getSSEStats() {
     if (!this.sseClients) return { total: 0, users: {} };
-    
+
     const stats = { total: this.sseClients.size, users: {} };
-    
+
     for (const client of this.sseClients.values()) {
       const userId = client.userId || 'anonymous';
       stats.users[userId] = (stats.users[userId] || 0) + 1;
     }
-    
+
     return stats;
   }
 
@@ -531,10 +531,10 @@ class MCPServer {
     try {
       console.log('🚀 Starting MCP Server...');
       console.log(`📦 Loading ${Object.keys(MOCK_ADAPTERS).length} adapters...`);
-      
+
       // TODO: Load actual adapters when TypeScript is compiled
       // const { ADAPTER_REGISTRY } = require('./dist/src/adapters/index.js');
-      
+
       this.app.listen(this.port, () => {
         console.log(`✅ MCP Server running on port ${this.port}`);
         console.log(`🔗 Health check: http://localhost:${this.port}/health`);
