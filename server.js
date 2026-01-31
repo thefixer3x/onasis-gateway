@@ -93,7 +93,7 @@ class MCPServer {
       next();
     });
     // Authentication routes - proxy to onasis-core auth API
-    this.app.use('/api/auth/*', (req, res, next) => {
+    this.app.use('/api/auth', (req, res, next) => {
       this.authBridge.proxyAuthRequest(req, res).catch(err => {
         console.error('Auth proxy error:', err);
         next(err);
@@ -101,11 +101,6 @@ class MCPServer {
     });
     // Add abstracted API routes
     this.app.use('/', this.abstractedAPI.getRouter());
-    
-    // Authentication routes - proxy to onasis-core auth API
-    this.app.use('/api/auth/*', (req, res) => {
-      this.authBridge.proxyAuthRequest(req, res);
-    });
     
     // Authentication health check
     this.app.get('/api/auth-health', async (req, res) => {
