@@ -8,6 +8,7 @@
     "start": "bun run bun-neon-server.ts",
     "dev": "bun --watch bun-neon-server.ts",
     "node-start": "node server.js",
+    "start:railway": "node api-gateway/server.js",
     "generate-adapters": "bun run scripts/generate-adapters.js",
     "health-check": "bun run scripts/health-check.js",
     "deploy": "./scripts/deploy.sh",
