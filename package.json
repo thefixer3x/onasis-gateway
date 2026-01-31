@@ -13,7 +13,7 @@
     "health-check": "bun run scripts/health-check.js",
     "deploy": "./scripts/deploy.sh",
     "db:setup": "bun run scripts/setup-neon-db.ts",
-    "lint": "eslint src/**/*.ts",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/**/*.ts",
     "clean": "rm -rf dist && rm -rf src/adapters/generated",
     "registry:build": "bun run src/generators/registry-generator.ts",
     "health": "bun run src/utils/health-check.ts",
@@ -131,7 +131,12 @@
   },
   "eslintConfig": {
     "extends": [
-      "standard"
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
     ],
     "env": {
       "node": true,
