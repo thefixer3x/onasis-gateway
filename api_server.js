@@ -23,12 +23,12 @@ class APIGateway {
     this.port = process.env.PORT || 3000;
     this.services = new Map();
     this.clients = new Map();
-    
+
     // Initialize core components
     this.versionManager = new VersionManager();
     this.complianceManager = new ComplianceManager();
     this.metricsCollector = new MetricsCollector();
-    
+
     this.setupMiddleware();
     this.loadServices();
     this.setupRoutes();
@@ -71,7 +71,7 @@ class APIGateway {
     // Metrics middleware
     this.app.use((req, res, next) => {
       const start = Date.now();
-      
+
       res.on('finish', () => {
         const duration = Date.now() - start;
         this.metricsCollector.recordRequest({
@@ -84,7 +84,7 @@ class APIGateway {
           version: req.version || 'v1'
         });
       });
-      
+
       next();
     });
   }
@@ -94,7 +94,7 @@ class APIGateway {
    */
   loadServices() {
     const servicesDir = path.join(__dirname, 'services');
-    
+
     if (!fs.existsSync(servicesDir)) {
       console.warn('Services directory not found:', servicesDir);
       return;
@@ -112,7 +112,7 @@ class APIGateway {
         for (const configFile of configFiles) {
           const configPath = path.join(servicePath, configFile);
           const serviceConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-          
+
           // Register service with version manager
           this.versionManager.registerVersion(
             serviceConfig.name,
@@ -203,7 +203,7 @@ class APIGateway {
       const serviceName = req.params.serviceName || req.params[0];
       const pathSegments = req.path.split('/').slice(4); // Remove /api/services/:serviceName
       const endpoint = pathSegments.join('/');
-      
+
       req.service = serviceName;
       req.endpoint = endpoint;
 
@@ -266,7 +266,7 @@ class APIGateway {
 
       } catch (error) {
         console.error(`API Gateway error for ${serviceName}/${endpoint}:`, error.message);
-        
+
         this.metricsCollector.recordError({
           service: serviceName,
           endpoint,
@@ -298,7 +298,7 @@ class APIGateway {
 
       // Activate service (implementation depends on requirements)
       service.active = true;
-      
+
       res.json({
         message: 'Service activated',
         service: serviceName,
@@ -319,7 +319,7 @@ class APIGateway {
 
       // Deactivate service
       service.active = false;
-      
+
       res.json({
         message: 'Service deactivated',
         service: serviceName,
@@ -330,11 +330,11 @@ class APIGateway {
     // Webhook endpoints
     this.app.post('/api/webhooks/:serviceName', async (req, res) => {
       const { serviceName } = req.params;
-      
+
       try {
         // Process webhook
         const result = await this.processWebhook(serviceName, req.body, req.headers);
-        
+
         res.json({
           message: 'Webhook processed',
           service: serviceName,
@@ -379,11 +379,11 @@ class APIGateway {
   async processWebhook(serviceName, payload, headers) {
     // Webhook processing logic
     console.log(`Processing webhook for ${serviceName}`);
-    
+
     // Validate webhook signature if required
     // Process payload
     // Trigger any necessary actions
-    
+
     return { processed: true, timestamp: new Date().toISOString() };
   }
 
@@ -417,7 +417,7 @@ class APIGateway {
     // Global error handler
     this.app.use((error, req, res, next) => {
       console.error('Global error handler:', error);
-      
+
       res.status(500).json({
         error: 'Internal server error',
         message: error.message,
