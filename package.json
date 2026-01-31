@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "start": "node api-gateway/server.js",
-    "start:railway": "node api-gateway/server.js",
+    "start": "node server.js",
+    "start:railway": "node server.js",
+    "start:api-gateway": "node api-gateway/server.js",
     "start:bun": "bun run bun-neon-server.ts",
     "dev": "bun --watch bun-neon-server.ts",
     "node-start": "node server.js",
