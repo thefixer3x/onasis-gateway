@@ -279,10 +279,11 @@ class UnifiedGateway {
         // List all API services
         this.app.get('/api/services', (req, res) => {
             const services = Array.from(this.services.values()).map(service => ({
-                name: service.info.name,
-                version: service.info.version,
-                description: service.info.description,
-                baseUrl: service.servers?.[0]?.url
+                name: service.info?.name || service.name || service.display_name,
+                version: service.info?.version || service.version || '1.0.0',
+                description: service.info?.description || service.description || '',
+                category: service.category || 'general',
+                baseUrl: service.servers?.[0]?.url || service.base_url || service.baseURL || ''
             }));
             res.json({ services, count: services.length });
         });
