@@ -23,6 +23,39 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+const DEFAULT_MCP_ADAPTERS = {
+    'stripe-api-2024-04-10': { tools: 457, auth: 'bearer' },
+    'ngrok-api': { tools: 217, auth: 'bearer' },
+    'shutterstock-api': { tools: 109, auth: 'oauth2' },
+    'paystack': { tools: 117, auth: 'bearer' },
+    'flutterwave-v3': { tools: 108, auth: 'bearer' },
+    'bap': { tools: 92, auth: 'apikey' },
+    'google-analytics-api-v3': { tools: 88, auth: 'apikey' },
+    'hostinger-api': { tools: 85, auth: 'bearer' },
+    'open-banking-api': { tools: 58, auth: 'apikey' },
+    'business-api': { tools: 52, auth: 'bearer' },
+    'merchant-api': { tools: 49, auth: 'apikey' },
+    '7-wise-multicurrency-account-mca-platform-api-s': { tools: 47, auth: 'apikey' },
+    'sayswitch-api-integration': { tools: 43, auth: 'bearer' },
+    'xpress-wallet-for-merchants': { tools: 40, auth: 'bearer' },
+    'ngrok-examples': { tools: 19, auth: 'apikey' },
+    'multi-currency-account': { tools: 9, auth: 'apikey' },
+    'api-testing-basics': { tools: 8, auth: 'apikey' },
+    'edoc-external-app-integration-for-clients': { tools: 6, auth: 'apikey' }
+};
+
+const buildDefaultMcpCatalog = () => ([
+    { id: 'supabase-edge-functions', type: 'supabase', enabled: true },
+    ...Object.entries(DEFAULT_MCP_ADAPTERS).map(([name, config]) => ({
+        id: name,
+        type: 'mock',
+        source: 'mock',
+        enabled: true,
+        toolCount: config.tools,
+        auth: config.auth
+    }))
+]);
+
 // Import components from both servers
 const BaseClient = require('./core/base-client');
 const VersionManager = require('./core/versioning/version-manager');
@@ -58,11 +91,13 @@ class UnifiedGateway {
 
         this.startTime = Date.now();
         this.healthTargets = this.parseHealthTargets(process.env.HEALTH_TARGETS);
+        this.serviceCatalog = this.loadServiceCatalog();
+        this.adaptersReady = null;
 
         console.log('🚀 Initializing Unified Gateway (API + MCP)...');
         this.setupMiddleware();
         this.loadAPIServices();
-        this.loadMCPAdapters();
+        this.adaptersReady = this.loadMCPAdapters();
         this.setupRoutes();
         this.setupErrorHandling();
     }
@@ -128,7 +163,7 @@ class UnifiedGateway {
                     method: req.method,
                     statusCode: res.statusCode,
                     duration,
-                    responseSize: res.get('content-length') || 0
+                    responseSize: parseInt(res.get('content-length') || '0', 10)
                 });
             });
 
@@ -147,42 +182,75 @@ class UnifiedGateway {
             return;
         }
 
-        const serviceDirs = fs.readdirSync(servicesDir)
-            .filter(dir => fs.statSync(path.join(servicesDir, dir)).isDirectory());
+        const catalogServices = Array.isArray(this.serviceCatalog?.apiServices)
+            ? this.serviceCatalog.apiServices.filter(service => service.enabled !== false)
+            : [];
 
         let loadedCount = 0;
-        for (const serviceDir of serviceDirs) {
-            try {
-                const servicePath = path.join(servicesDir, serviceDir);
-                const configFiles = fs.readdirSync(servicePath)
-                    .filter(file => file.endsWith('.json') && file !== 'catalog.json');
+        const loadFromConfig = (configPath) => {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+            const serviceName = config.info?.name || config.name || config.display_name;
+            const serviceVersion = config.info?.version || config.version || '1.0.0';
+            const baseURL = config.servers?.[0]?.url || config.base_url || config.baseURL || '';
 
-                for (const configFile of configFiles) {
-                    const config = JSON.parse(
-                        fs.readFileSync(path.join(servicePath, configFile), 'utf-8')
-                    );
+            if (!serviceName) return null;
 
-                    // Support both OpenAPI format (info.name) and custom format (name)
-                    const serviceName = config.info?.name || config.name || config.display_name;
-                    const serviceVersion = config.info?.version || config.version || '1.0.0';
-                    const baseURL = config.servers?.[0]?.url || config.base_url || config.baseURL || '';
+            this.services.set(serviceName, config);
+            const client = new BaseClient({
+                baseURL: baseURL,
+                version: serviceVersion,
+                service: serviceName
+            });
+            this.clients.set(serviceName, client);
+            loadedCount++;
+            console.log(`✅ Loaded API service: ${serviceName}`);
+            return;
+        };
 
-                    if (serviceName) {
-                        this.services.set(serviceName, config);
+        if (catalogServices.length > 0) {
+            for (const service of catalogServices) {
+                try {
+                    const configPath = service.configPath
+                        ? path.isAbsolute(service.configPath)
+                            ? service.configPath
+                            : path.join(__dirname, service.configPath)
+                        : null;
 
-                        const client = new BaseClient({
-                            baseURL: baseURL,
-                            version: serviceVersion,
-                            service: serviceName
-                        });
-                        this.clients.set(serviceName, client);
-
-                        loadedCount++;
-                        console.log(`✅ Loaded API service: ${serviceName}`);
+                    if (configPath && fs.existsSync(configPath)) {
+                        loadFromConfig(configPath);
+                        continue;
                     }
+
+                    if (service.directory) {
+                        const servicePath = path.join(servicesDir, service.directory);
+                        if (fs.existsSync(servicePath)) {
+                            const configFiles = fs.readdirSync(servicePath)
+                                .filter(file => file.endsWith('.json') && file !== 'catalog.json');
+                            for (const configFile of configFiles) {
+                                loadFromConfig(path.join(servicePath, configFile));
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`❌ Failed to load service ${service.name || service.directory}:`, error.message);
                 }
-            } catch (error) {
-                console.error(`❌ Failed to load service ${serviceDir}:`, error.message);
+            }
+        } else {
+            const serviceDirs = fs.readdirSync(servicesDir)
+                .filter(dir => fs.statSync(path.join(servicesDir, dir)).isDirectory());
+
+            for (const serviceDir of serviceDirs) {
+                try {
+                    const servicePath = path.join(servicesDir, serviceDir);
+                    const configFiles = fs.readdirSync(servicePath)
+                        .filter(file => file.endsWith('.json') && file !== 'catalog.json');
+
+                    for (const configFile of configFiles) {
+                        loadFromConfig(path.join(servicePath, configFile));
+                    }
+                } catch (error) {
+                    console.error(`❌ Failed to load service ${serviceDir}:`, error.message);
+                }
             }
         }
 
@@ -192,33 +260,95 @@ class UnifiedGateway {
     /**
      * Load MCP adapters (mock for now)
      */
-    loadMCPAdapters() {
-        const MOCK_ADAPTERS = {
-            'stripe-api-2024-04-10': { tools: 457, auth: 'bearer' },
-            'ngrok-api': { tools: 217, auth: 'bearer' },
-            'shutterstock-api': { tools: 109, auth: 'oauth2' },
-            'paystack': { tools: 117, auth: 'bearer' },
-            'flutterwave-v3': { tools: 108, auth: 'bearer' },
-            'bap': { tools: 92, auth: 'apikey' },
-            'google-analytics-api-v3': { tools: 88, auth: 'apikey' },
-            'hostinger-api': { tools: 85, auth: 'bearer' },
-            'open-banking-api': { tools: 58, auth: 'apikey' },
-            'business-api': { tools: 52, auth: 'bearer' },
-            'merchant-api': { tools: 49, auth: 'apikey' },
-            '7-wise-multicurrency-account-mca-platform-api-s': { tools: 47, auth: 'apikey' },
-            'sayswitch-api-integration': { tools: 43, auth: 'bearer' },
-            'xpress-wallet-for-merchants': { tools: 40, auth: 'bearer' },
-            'ngrok-examples': { tools: 19, auth: 'apikey' },
-            'multi-currency-account': { tools: 9, auth: 'apikey' },
-            'api-testing-basics': { tools: 8, auth: 'apikey' },
-            'edoc-external-app-integration-for-clients': { tools: 6, auth: 'apikey' }
+    async loadMCPAdapters() {
+        const catalogAdapters = Array.isArray(this.serviceCatalog?.mcpAdapters) && this.serviceCatalog.mcpAdapters.length > 0
+            ? this.serviceCatalog.mcpAdapters.filter(adapter => adapter.enabled !== false)
+            : buildDefaultMcpCatalog();
+
+        const adapterFactories = {
+            'supabase-edge-functions': async ({ gateway }) => {
+                const SupabaseAdapter = require('./src/adapters/supabase-edge-functions-adapter.js');
+                const supabaseAdapter = new SupabaseAdapter();
+
+                const localDirectRoutes = path.join(__dirname, 'docs/architecture/supabase-api/DIRECT_API_ROUTES.md');
+                const localDatabaseGuide = path.join(__dirname, 'docs/architecture/supabase-api/DATABASE_REORGANIZATION_GUIDE.md');
+                const monorepoDirectRoutes = path.join(
+                    __dirname,
+                    '../lan-onasis-monorepo/apps/onasis-core/docs/supabase-api/DIRECT_API_ROUTES.md'
+                );
+                const monorepoDatabaseGuide = path.join(
+                    __dirname,
+                    '../lan-onasis-monorepo/apps/onasis-core/docs/supabase-api/DATABASE_REORGANIZATION_GUIDE.md'
+                );
+
+                const envRoutes = process.env.SUPABASE_DIRECT_ROUTES_PATH || process.env.SUPABASE_ROUTES_PATHS || '';
+                const candidates = [
+                    envRoutes,
+                    localDirectRoutes,
+                    localDatabaseGuide,
+                    monorepoDirectRoutes,
+                    monorepoDatabaseGuide
+                ]
+                    .filter(Boolean)
+                    .flatMap(entry => entry.split(',').map(part => part.trim()).filter(Boolean));
+
+                const resolved = candidates.filter(candidate => fs.existsSync(candidate));
+                const routesFilePath = resolved.join(',');
+
+                await supabaseAdapter.initialize({
+                    supabaseUrl: process.env.SUPABASE_URL,
+                    supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+                    supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+                    routesFilePath,
+                    discoveryMode: 'auto',
+                    cacheTimeout: 300,
+                    authPassthrough: true,
+                    uaiIntegration: {
+                        enabled: true,
+                        tokenHeader: 'Authorization'
+                    }
+                });
+
+                gateway.adapters.set('supabase-edge-functions', supabaseAdapter);
+
+                const catalogEntry = gateway.serviceCatalog?.mcpAdapters?.find(
+                    entry => entry.id === 'supabase-edge-functions'
+                );
+                if (catalogEntry) {
+                    catalogEntry.toolCount = supabaseAdapter.tools.length;
+                    catalogEntry.functions = supabaseAdapter.listFunctions?.() || [];
+                }
+
+                console.log(`✅ Loaded Supabase Edge Functions Adapter (${supabaseAdapter.tools.length} functions discovered)`);
+            },
+            supabase: async (context) => adapterFactories['supabase-edge-functions'](context)
         };
 
-        Object.entries(MOCK_ADAPTERS).forEach(([name, config]) => {
-            this.adapters.set(name, config);
-        });
+        for (const adapterEntry of catalogAdapters) {
+            if (!adapterEntry || !adapterEntry.id) continue;
 
-        const totalTools = Object.values(MOCK_ADAPTERS).reduce((sum, a) => sum + a.tools, 0);
+            const factory =
+                adapterFactories[adapterEntry.id] ||
+                (adapterEntry.type && adapterFactories[adapterEntry.type]);
+
+            if (factory) {
+                try {
+                    await factory({ gateway: this, adapterEntry });
+                } catch (error) {
+                    console.warn(`⚠️ ${adapterEntry.id} adapter failed to load:`, error.message);
+                }
+                continue;
+            }
+
+            if (adapterEntry.type === 'mock' || adapterEntry.source === 'mock') {
+                this.adapters.set(adapterEntry.id, {
+                    tools: adapterEntry.toolCount || adapterEntry.tools || 0,
+                    auth: adapterEntry.auth || adapterEntry.authType || 'apikey'
+                });
+            }
+        }
+
+        const totalTools = this.getTotalTools();
         console.log(`⚡ Loaded ${this.adapters.size} MCP adapters (${totalTools} tools)`);
     }
 
@@ -227,7 +357,8 @@ class UnifiedGateway {
      */
     setupRoutes() {
         // ==================== ROOT & DISCOVERY ====================
-        this.app.get('/', (req, res) => {
+        this.app.get('/', async (req, res) => {
+            await this.ensureAdaptersReady();
             res.json({
                 name: 'Unified Gateway',
                 version: '1.0.0',
@@ -240,7 +371,7 @@ class UnifiedGateway {
                     mcp: {
                         description: 'MCP Server - Tool aggregation and execution',
                         adapters: this.adapters.size,
-                        tools: Array.from(this.adapters.values()).reduce((sum, a) => sum + a.tools, 0),
+                        tools: this.getTotalTools(),
                         baseUrl: '/mcp'
                     }
                 },
@@ -253,8 +384,22 @@ class UnifiedGateway {
         });
 
         // ==================== HEALTH CHECKS ====================
-        this.app.get('/health', (req, res) => {
+        this.app.get('/health', async (req, res) => {
+            await this.ensureAdaptersReady();
             const uptime = Math.floor((Date.now() - this.startTime) / 1000);
+
+            // Get Supabase adapter status
+            const supabaseAdapter = this.adapters.get('supabase-edge-functions');
+            let supabaseStatus = { available: false };
+
+            if (supabaseAdapter && supabaseAdapter.getStatus) {
+                try {
+                    supabaseStatus = await supabaseAdapter.getStatus();
+                } catch (error) {
+                    supabaseStatus = { available: false, error: error.message };
+                }
+            }
+
             res.json({
                 status: 'healthy',
                 uptime,
@@ -267,7 +412,8 @@ class UnifiedGateway {
                     mcp: {
                         status: 'online',
                         adapters: this.adapters.size,
-                        tools: Array.from(this.adapters.values()).reduce((sum, a) => sum + a.tools, 0)
+                        tools: this.getTotalTools(),
+                        supabase: supabaseStatus
                     }
                 },
                 version: '1.0.0'
@@ -286,6 +432,11 @@ class UnifiedGateway {
                 baseUrl: service.servers?.[0]?.url || service.base_url || service.baseURL || ''
             }));
             res.json({ services, count: services.length });
+        });
+
+        // Service catalog (source of truth)
+        this.app.get('/api/catalog', (req, res) => {
+            res.json(this.serviceCatalog || { apiServices: [], mcpAdapters: [] });
         });
 
         // Get specific service details
@@ -363,35 +514,50 @@ class UnifiedGateway {
         this.app.use('/', this.abstractedAPI.getRouter());
 
         // MCP health check
-        this.app.get('/mcp/health', (req, res) => {
+        this.app.get('/mcp/health', async (req, res) => {
+            await this.ensureAdaptersReady();
             res.json({
                 status: 'healthy',
                 server: 'unified-mcp',
                 adapters: this.adapters.size,
-                tools: Array.from(this.adapters.values()).reduce((sum, a) => sum + a.tools, 0),
+                tools: this.getTotalTools(),
                 timestamp: new Date().toISOString()
             });
         });
 
         // MCP tools listing
-        this.app.post('/mcp', (req, res) => {
+        this.app.post('/mcp', async (req, res) => {
+            await this.ensureAdaptersReady();
             const { method, params } = req.body;
 
             if (method === 'tools/list') {
                 const tools = [];
-                this.adapters.forEach((adapter, name) => {
-                    for (let i = 0; i < adapter.tools; i++) {
-                        tools.push({
-                            name: `${name}_tool_${i + 1}`,
-                            description: `Tool ${i + 1} from ${name}`,
-                            inputSchema: {
-                                type: 'object',
-                                properties: {},
-                                required: []
+
+                // Collect tools from all adapters
+                for (const [name, adapter] of this.adapters.entries()) {
+                    try {
+                        if (adapter.listTools && typeof adapter.listTools === 'function') {
+                            const adapterTools = await adapter.listTools();
+                            tools.push(...adapterTools);
+                        } else {
+                            // Fallback for mock adapters
+                            const count = this.getAdapterToolCount(adapter);
+                            for (let i = 0; i < count; i++) {
+                                tools.push({
+                                    name: `${name}_tool_${i + 1}`,
+                                    description: `Tool ${i + 1} from ${name}`,
+                                    inputSchema: {
+                                        type: 'object',
+                                        properties: {},
+                                        required: []
+                                    }
+                                });
                             }
-                        });
+                        }
+                    } catch (error) {
+                        console.error(`Error listing tools from ${name}:`, error.message);
                     }
-                });
+                }
 
                 return res.json({
                     jsonrpc: '2.0',
@@ -455,7 +621,7 @@ class UnifiedGateway {
             console.log(`🔗 Port: ${this.port}`);
             console.log(`📊 API Services: ${this.services.size}`);
             console.log(`⚡ MCP Adapters: ${this.adapters.size}`);
-            console.log(`🛠️  Total MCP Tools: ${Array.from(this.adapters.values()).reduce((sum, a) => sum + a.tools, 0)}`);
+            console.log(`🛠️  Total MCP Tools: ${this.getTotalTools()}`);
             console.log('\n📍 Endpoints:');
             console.log(`   - Health: http://localhost:${this.port}/health`);
             console.log(`   - API Gateway: http://localhost:${this.port}/api/services`);
@@ -463,6 +629,71 @@ class UnifiedGateway {
             console.log(`   - Discovery: http://localhost:${this.port}/`);
             console.log('='.repeat(60) + '\n');
         });
+    }
+
+    loadServiceCatalog() {
+        const catalogPath = path.join(__dirname, 'services', 'catalog.json');
+        if (fs.existsSync(catalogPath)) {
+            try {
+                const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
+                if (!catalog.apiServices) catalog.apiServices = [];
+                if (!catalog.mcpAdapters) catalog.mcpAdapters = [];
+                return catalog;
+            } catch (error) {
+                console.warn(`⚠️ Failed to read service catalog: ${error.message}`);
+            }
+        }
+
+        const servicesDir = path.join(__dirname, 'services');
+        const apiServices = [];
+
+        if (fs.existsSync(servicesDir)) {
+            const serviceDirs = fs.readdirSync(servicesDir)
+                .filter(dir => fs.statSync(path.join(servicesDir, dir)).isDirectory());
+
+            for (const serviceDir of serviceDirs) {
+                const servicePath = path.join(servicesDir, serviceDir);
+                const configFiles = fs.readdirSync(servicePath)
+                    .filter(file => file.endsWith('.json') && file !== 'catalog.json');
+
+                for (const configFile of configFiles) {
+                    apiServices.push({
+                        name: configFile.replace('.json', ''),
+                        directory: serviceDir,
+                        configPath: path.relative(__dirname, path.join(servicePath, configFile)),
+                        enabled: true
+                    });
+                }
+            }
+        }
+
+        return {
+            version: '1.0.0',
+            generated: new Date().toISOString(),
+            apiServices,
+            mcpAdapters: buildDefaultMcpCatalog()
+        };
+    }
+
+    getAdapterToolCount(adapter) {
+        if (!adapter) return 0;
+        if (Array.isArray(adapter.tools)) return adapter.tools.length;
+        if (typeof adapter.tools === 'number') return adapter.tools;
+        if (typeof adapter.toolCount === 'number') return adapter.toolCount;
+        return 0;
+    }
+
+    getTotalTools() {
+        let total = 0;
+        for (const adapter of this.adapters.values()) {
+            total += this.getAdapterToolCount(adapter);
+        }
+        return total;
+    }
+
+    async ensureAdaptersReady() {
+        if (!this.adaptersReady) return;
+        await this.adaptersReady;
     }
 }
 
