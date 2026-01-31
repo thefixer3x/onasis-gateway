@@ -1,0 +1,152 @@
+{
+  "name": "onasis-gateway",
+  "version": "1.0.0",
+  "description": "MCP service adapters generated from Postman collections",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "start": "node api-gateway/server.js",
+    "start:railway": "node api-gateway/server.js",
+    "start:bun": "bun run bun-neon-server.ts",
+    "dev": "bun --watch bun-neon-server.ts",
+    "node-start": "node server.js",
+    "generate-adapters": "bun run scripts/generate-adapters.js",
+    "health-check": "bun run scripts/health-check.js",
+    "deploy": "./scripts/deploy.sh",
+    "db:setup": "bun run scripts/setup-neon-db.ts",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/**/*.ts",
+    "clean": "rm -rf dist && rm -rf src/adapters/generated",
+    "registry:build": "bun run src/generators/registry-generator.ts",
+    "health": "bun run src/utils/health-check.ts",
+    "postbuild": "bun run registry:build"
+  },
+  "keywords": [
+    "microservices",
+    "mcp",
+    "postman",
+    "webhook",
+    "payment",
+    "fintech"
+  ],
+  "author": "API Integration Team",
+  "license": "MIT",
+  "dependencies": {
+    "@genkit-ai/mcp": "^1.28.0",
+    "@netlify/functions": "^5.1.2",
+    "@supabase/supabase-js": "^2.93.2",
+    "@types/pg": "^8.16.0",
+    "axios": "^1.13.4",
+    "bcryptjs": "^3.0.3",
+    "bull": "^4.16.5",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "eventsource": "^4.1.0",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "lodash": "^4.17.23",
+    "moment": "^2.30.1",
+    "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
+    "pg": "^8.17.2",
+    "playwright": "^1.58.0",
+    "prom-client": "^15.1.3",
+    "redis": "^5.10.0",
+    "semver": "^7.7.3",
+    "uuid": "^13.0.0",
+    "winston": "^3.19.0",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.4",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
+    "bun-types": "^1.3.7",
+    "diff": "4.0.4",
+    "eslint": "^9.39.2",
+    "form-data": "4.0.5",
+    "glob": "10.5.0",
+    "jest": "^30.2.0",
+    "js-yaml": "3.14.2",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "ts-node": {
+      "diff": "4.0.4"
+    },
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "3.14.2"
+    },
+    "@types/axios": {
+      "axios": "1.13.4"
+    },
+    "axios": {
+      "form-data": "4.0.5"
+    },
+    "bull": {
+      "lodash": "4.17.23"
+    },
+    "@jest/reporters": {
+      "glob": "10.5.0"
+    },
+    "jest-config": {
+      "glob": "10.5.0"
+    },
+    "jest-runtime": {
+      "glob": "10.5.0"
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/api-service-warehouse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/api-service-warehouse/issues"
+  },
+  "homepage": "https://github.com/your-org/api-service-warehouse#readme",
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!node_modules/**",
+      "!coverage/**",
+      "!jest.config.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "env": {
+      "node": true,
+      "jest": true
+    },
+    "rules": {
+      "no-console": "warn",
+      "prefer-const": "error",
+      "no-unused-vars": "error"
+    }
+  }
+}

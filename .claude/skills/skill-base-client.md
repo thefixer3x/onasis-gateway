@@ -1,3 +1,8 @@
+---
+name: base-client-guardian
+description: Guardrails for edits to core/base-client.js covering auth injection, retries, circuit breaker behavior, and request/response events. Use when modifying the universal API client or its auth/retry/error handling.
+---
+
 # Skill: Base Client Guardian
 
 ## Purpose & Scope
