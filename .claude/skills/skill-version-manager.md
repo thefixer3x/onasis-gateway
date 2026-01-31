@@ -1,3 +1,8 @@
+---
+name: version-manager-guardian
+description: Guardrails for edits to core/versioning/version-manager.js covering semver validation, deprecation, migrations, and compatibility rules. Use when changing version registration or migration handling.
+---
+
 # Skill: Version Manager Guardian
 
 ## Purpose & Scope

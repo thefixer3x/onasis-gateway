@@ -1,3 +1,8 @@
+---
+name: behavior-memory-integration
+description: Guidance for integrating @lanonasis/mem-intel-sdk workflow memory storage/recall and related API usage. Use when implementing behavior pattern capture, search, or mem-intel auth flows.
+---
+
 # Skill: Behavior Memory Integration
 
 ## Purpose & Scope

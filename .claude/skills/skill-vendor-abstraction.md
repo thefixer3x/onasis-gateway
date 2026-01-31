@@ -1,43 +1,37 @@
-# Skill: Vendor Abstraction Guardian
+---
+name: vendor-abstraction-guardian
+description: Guardrails for edits to core/abstraction/vendor-abstraction.js that preserve vendor isolation, mappings, fallback selection, and stable client-facing schemas. Use when adding/removing vendors, operations, or schema fields in the vendor abstraction layer.
+---
 
-## Purpose & Scope
+# Vendor Abstraction Guardian
 
-This skill applies when modifying the **Vendor Abstraction Layer** (`core/abstraction/vendor-abstraction.js`).
+## Operating Constraints
+- Work only in `core/abstraction/vendor-abstraction.js`.
+- Keep vendor specifics hidden behind client-facing schemas.
 
-The Vendor Abstraction Layer provides:
-- Isolation between client requests and vendor-specific implementations
-- Schema validation for client inputs
-- Transform functions to convert client input to vendor format
-- Multi-vendor support with fallback capabilities
-- Category-based service organization (payment, banking, infrastructure)
-
-## Critical Rules - NEVER Do
+## Non-Negotiables (Never Do)
 
 ### Schema Isolation
-- **NEVER** expose vendor-specific field names in client schema
-  - Client schema uses: `firstName`, `lastName`
-  - Vendor may use: `first_name`, `last_name` (hidden from client)
-- **NEVER** let vendor response leak directly to client without transformation
-- **NEVER** add vendor-specific validation in client schema
+- Never expose vendor-specific field names in client schema.
+- Never return vendor responses directly to clients without transform.
+- Never encode vendor-specific validation into client schema.
 
 ### Vendor Selection
-- **NEVER** hardcode vendor selection logic in business code
-- **NEVER** remove a vendor without 30-day deprecation notice
-- **NEVER** make vendor selection observable from client input
-- **NEVER** expose vendor identifiers in client-facing responses
+- Never hardcode vendor selection in business logic.
+- Never remove a vendor without a 30‑day deprecation.
+- Never let client input reveal vendor selection.
+- Never expose vendor IDs in client responses.
 
 ### Schema Stability
-- **NEVER** add required fields to existing client schemas (breaking change)
-- **NEVER** remove fields from existing client schemas
-- **NEVER** change field types in existing client schemas
-- **NEVER** rename fields in existing client schemas
+- Never add required fields to existing client schemas.
+- Never remove/rename fields or change types.
 
 ### Category Management
-- **NEVER** remove a category without migrating all operations
-- **NEVER** merge categories (maintain separation of concerns)
-- **NEVER** duplicate operations across categories
+- Never remove categories without migrating all operations.
+- Never merge categories.
+- Never duplicate operations across categories.
 
-## Required Patterns - MUST Follow
+## Required Patterns (Must Follow)
 
 ### Client Schema Definition
 ```javascript
@@ -207,7 +201,7 @@ vendors: {
 Before any changes to this file:
 
 ```bash
-# 1. Run abstraction tests
+# 1. Run abstraction tests (if present)
 npm test -- --grep "VendorAbstraction"
 
 # 2. Verify schema validation
