@@ -162,18 +162,23 @@ class UnifiedGateway {
                         fs.readFileSync(path.join(servicePath, configFile), 'utf-8')
                     );
 
-                    if (config.info?.name) {
-                        this.services.set(config.info.name, config);
+                    // Support both OpenAPI format (info.name) and custom format (name)
+                    const serviceName = config.info?.name || config.name || config.display_name;
+                    const serviceVersion = config.info?.version || config.version || '1.0.0';
+                    const baseURL = config.servers?.[0]?.url || config.base_url || config.baseURL || '';
+
+                    if (serviceName) {
+                        this.services.set(serviceName, config);
 
                         const client = new BaseClient({
-                            baseURL: config.servers?.[0]?.url || '',
-                            version: config.info.version,
-                            service: config.info.name
+                            baseURL: baseURL,
+                            version: serviceVersion,
+                            service: serviceName
                         });
-                        this.clients.set(config.info.name, client);
+                        this.clients.set(serviceName, client);
 
                         loadedCount++;
-                        console.log(`✅ Loaded API service: ${config.info.name}`);
+                        console.log(`✅ Loaded API service: ${serviceName}`);
                     }
                 }
             } catch (error) {
