@@ -1,19 +1,15 @@
-# Skill: Compliance Manager Guardian
+---
+name: compliance-manager-guardian
+description: Guardrails for edits to core/security/compliance-manager.js that preserve PCI/GDPR/PSD2/SOX/HIPAA controls (masking, encryption, SCA, consent checks, and audit logging). Use when changing compliance validators, security handling, or audit flows.
+---
 
-## Purpose & Scope
+# Compliance Manager Guardian
 
-This skill applies when modifying the **Compliance Manager** (`core/security/compliance-manager.js`).
+## Operating Constraints
+- Work only in `core/security/compliance-manager.js`.
+- Preserve regulatory guarantees for PCI-DSS, GDPR, PSD2, SOX, and HIPAA.
 
-The Compliance Manager provides:
-- PCI-DSS data protection (card data masking, encryption)
-- GDPR compliance (pseudonymization, consent management, data minimization)
-- PSD2 compliance (Strong Customer Authentication)
-- SOX audit trail requirements
-- HIPAA health data protection
-- Multi-regulation validation framework
-- Secure audit logging
-
-## Critical Rules - NEVER Do
+## Non-Negotiables (Never Do)
 
 ### Compliance Validators
 - **NEVER** disable or bypass compliance validators
@@ -54,7 +50,7 @@ The Compliance Manager provides:
 - **NEVER** rollback security fixes without security team approval
 - **NEVER** lower security levels in production
 
-## Required Patterns - MUST Follow
+## Required Patterns (Must Follow)
 
 ### Card Number Masking
 ```javascript
@@ -74,8 +70,8 @@ maskCardNumber(cardNumber) {
 // MUST use AES-256-GCM
 encryptSensitiveData(data) {
     const algorithm = 'aes-256-gcm';  // DO NOT change
-    const key = process.env.ENCRYPTION_KEY;
-    const iv = crypto.randomBytes(16);
+    // Prefer @onasis/security-sdk for encryption primitives
+    // Do not downgrade algorithms or omit auth tags
 
     const cipher = crypto.createCipher(algorithm, key);
     cipher.setAAD(Buffer.from('compliance-encryption'));
@@ -225,7 +221,7 @@ this.logAuditEntry('NEW_COMPLIANCE_ACTION', {
 Before any changes to this file:
 
 ```bash
-# 1. Run compliance tests
+# 1. Run compliance tests (if present)
 npm test -- --grep "ComplianceManager"
 
 # 2. Verify card masking

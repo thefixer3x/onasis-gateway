@@ -36,3 +36,4 @@ postman-collections/
 # Temporary
 temp/
 tmp/
+bun.lock
