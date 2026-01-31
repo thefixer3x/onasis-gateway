@@ -9,7 +9,7 @@
     "start:unified": "node unified_gateway.js",
     "start:api": "node api_server.js",
     "start:mcp": "node mcp_server.js",
-    "start:railway": "node mcp_server.js",
+    "start:railway": "node unified_gateway.js",
     "start:bun": "bun run bun-neon-server.ts",
     "dev": "bun --watch bun-neon-server.ts",
     "generate-adapters": "bun run scripts/generate-adapters.js",
