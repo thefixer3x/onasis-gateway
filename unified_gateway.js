@@ -566,6 +566,56 @@ class UnifiedGateway {
                 });
             }
 
+            // Handle tools/call method
+            if (method === 'tools/call') {
+                const { name: toolName, arguments: toolArgs } = params || {};
+                
+                if (!toolName) {
+                    return res.status(400).json({
+                        jsonrpc: '2.0',
+                        error: { code: -32602, message: 'Missing tool name' },
+                        id: req.body.id
+                    });
+                }
+
+                // Find the adapter that has this tool
+                for (const [adapterName, adapter] of this.adapters.entries()) {
+                    try {
+                        if (adapter.callTool && typeof adapter.callTool === 'function') {
+                            // Check if this adapter has the tool
+                            const tools = adapter.tools || [];
+                            const hasTool = Array.isArray(tools) 
+                                ? tools.some(t => t.name === toolName)
+                                : false;
+                            
+                            if (hasTool || adapterName === 'supabase-edge-functions') {
+                                const result = await adapter.callTool(toolName, toolArgs || {});
+                                return res.json({
+                                    jsonrpc: '2.0',
+                                    result: { content: [{ type: 'text', text: JSON.stringify(result) }] },
+                                    id: req.body.id
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        if (error.message && !error.message.includes('not found')) {
+                            console.error(`Error calling tool ${toolName} from ${adapterName}:`, error.message);
+                            return res.status(500).json({
+                                jsonrpc: '2.0',
+                                error: { code: -32000, message: error.message },
+                                id: req.body.id
+                            });
+                        }
+                    }
+                }
+
+                return res.status(404).json({
+                    jsonrpc: '2.0',
+                    error: { code: -32601, message: `Tool '${toolName}' not found` },
+                    id: req.body.id
+                });
+            }
+
             res.status(400).json({
                 jsonrpc: '2.0',
                 error: {
