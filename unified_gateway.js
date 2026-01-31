@@ -569,7 +569,7 @@ class UnifiedGateway {
             // Handle tools/call method
             if (method === 'tools/call') {
                 const { name: toolName, arguments: toolArgs } = params || {};
-                
+
                 if (!toolName) {
                     return res.status(400).json({
                         jsonrpc: '2.0',
@@ -584,10 +584,10 @@ class UnifiedGateway {
                         if (adapter.callTool && typeof adapter.callTool === 'function') {
                             // Check if this adapter has the tool
                             const tools = adapter.tools || [];
-                            const hasTool = Array.isArray(tools) 
+                            const hasTool = Array.isArray(tools)
                                 ? tools.some(t => t.name === toolName)
                                 : false;
-                            
+
                             if (hasTool || adapterName === 'supabase-edge-functions') {
                                 const result = await adapter.callTool(toolName, toolArgs || {});
                                 return res.json({
