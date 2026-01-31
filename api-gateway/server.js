@@ -3,7 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -63,7 +63,7 @@ class APIGateway {
 
     // Request ID middleware
     this.app.use((req, res, next) => {
-      req.id = uuidv4();
+      req.id = crypto.randomUUID();
       res.setHeader('X-Request-ID', req.id);
       next();
     });
