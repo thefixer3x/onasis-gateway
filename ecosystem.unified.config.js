@@ -37,7 +37,10 @@ module.exports = {
 
             // Health monitoring
             health_check_grace_period: 3000,
-            health_check_fatal_exceptions: true
+            health_check_fatal_exceptions: true,
+
+            // VPS specific settings
+            
         }
     ]
 };

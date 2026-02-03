@@ -22,6 +22,11 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const vpsMonitor = require('./vps/monitor');
+
+const fetch = globalThis.fetch
+    ? globalThis.fetch.bind(globalThis)
+    : (...args) => import('node-fetch').then((mod) => (mod.default || mod)(...args));
 
 const DEFAULT_MCP_ADAPTERS = {
     'stripe-api-2024-04-10': { tools: 457, auth: 'bearer' },
@@ -88,6 +93,12 @@ class UnifiedGateway {
                 || 'http://127.0.0.1:4000/v1/auth',
             projectScope: process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas'
         });
+
+        this.authGatewayUrl = process.env.AUTH_GATEWAY_URL
+            || process.env.ONASIS_AUTH_GATEWAY_URL
+            || 'http://127.0.0.1:4000';
+        this.projectScope = process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas';
+        this.vpsMonitorToken = process.env.VPS_MONITOR_TOKEN || null;
 
         this.startTime = Date.now();
         this.healthTargets = this.parseHealthTargets(process.env.HEALTH_TARGETS);
@@ -352,6 +363,77 @@ class UnifiedGateway {
         console.log(`⚡ Loaded ${this.adapters.size} MCP adapters (${totalTools} tools)`);
     }
 
+    buildAuthVerifyUrl() {
+        const base = (this.authGatewayUrl || '').replace(/\/+$/, '');
+        if (!base) {
+            return null;
+        }
+
+        if (base.endsWith('/v1/auth')) {
+            return `${base}/verify`;
+        }
+
+        if (base.endsWith('/v1')) {
+            return `${base}/auth/verify`;
+        }
+
+        return `${base}/v1/auth/verify`;
+    }
+
+    async verifyVpsAuth(req, requireAdmin = true) {
+        const authHeader = req.headers.authorization || req.headers.Authorization;
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return { ok: false, status: 401, error: 'Missing authorization token' };
+        }
+
+        const token = authHeader.replace('Bearer ', '');
+
+        if (this.vpsMonitorToken && token === this.vpsMonitorToken) {
+            return {
+                ok: true,
+                user: { id: 'monitor', role: 'admin' },
+                isAdmin: true,
+                method: 'monitor_token'
+            };
+        }
+
+        const verifyUrl = this.buildAuthVerifyUrl();
+        if (!verifyUrl) {
+            return { ok: false, status: 500, error: 'Auth gateway URL not configured' };
+        }
+
+        try {
+            const response = await fetch(verifyUrl, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'X-Project-Scope': this.projectScope
+                }
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                return { ok: false, status: 401, error: data.error || 'Unauthorized' };
+            }
+
+            const payload = data.payload || data.user || data;
+            const role = payload?.role || payload?.user?.role;
+            const permissions = payload?.permissions || payload?.user?.permissions || [];
+            const isAdmin = role === 'admin' || permissions.includes('admin');
+
+            if (requireAdmin && !isAdmin) {
+                return { ok: false, status: 403, error: 'Admin access required' };
+            }
+
+            return { ok: true, user: payload, isAdmin, method: 'auth_gateway' };
+        } catch (error) {
+            return { ok: false, status: 502, error: 'Auth gateway unavailable' };
+        }
+    }
+
     /**
      * Setup routes for both API Gateway and MCP Server
      */
@@ -437,6 +519,140 @@ class UnifiedGateway {
         // Service catalog (source of truth)
         this.app.get('/api/catalog', (req, res) => {
             res.json(this.serviceCatalog || { apiServices: [], mcpAdapters: [] });
+        });
+
+        // ==================== VPS MONITORING ROUTES ====================
+        this.app.get('/api/vps/health', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const target = vpsMonitor.resolveTarget(req.query.target || req.query.targetId);
+                const targets = vpsMonitor.getTargets();
+                const defaultTargetId = vpsMonitor.getDefaultTargetId();
+
+                const health = await vpsMonitor.getHealth(target);
+
+                const response = {
+                    success: true,
+                    data: health,
+                    timestamp: new Date().toISOString(),
+                    targets: targets.map((t) => ({
+                        id: t.id,
+                        name: t.name,
+                        mode: t.mode,
+                        host: t.host
+                    })),
+                    defaultTargetId
+                };
+
+                return res.json(response);
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to fetch VPS health',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        this.app.get('/api/vps/services', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const target = vpsMonitor.resolveTarget(req.query.target || req.query.targetId);
+                const services = await vpsMonitor.getServices(target);
+                return res.json({
+                    success: true,
+                    data: { services },
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to fetch VPS services',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        this.app.post('/api/vps/services', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const { action, serviceName, targetId } = req.body || {};
+                const target = vpsMonitor.resolveTarget(targetId);
+                const data = await vpsMonitor.manageService(target, action, serviceName);
+
+                return res.json({
+                    success: true,
+                    data,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to manage VPS service',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        this.app.get('/api/vps/logs', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const target = vpsMonitor.resolveTarget(req.query.target || req.query.targetId);
+                const data = await vpsMonitor.getLogs(target, req.query.service, req.query.lines);
+
+                return res.json({
+                    success: true,
+                    data,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to fetch VPS logs',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        this.app.post('/api/vps/command', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const { commandKey, targetId } = req.body || {};
+                const target = vpsMonitor.resolveTarget(targetId);
+                const data = await vpsMonitor.executeAllowedCommand(target, commandKey);
+
+                return res.json({
+                    success: true,
+                    data,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to execute VPS command',
+                    timestamp: new Date().toISOString()
+                });
+            }
         });
 
         // Get specific service details
