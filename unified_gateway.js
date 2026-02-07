@@ -99,6 +99,13 @@ class UnifiedGateway {
             || 'http://127.0.0.1:4000';
         this.projectScope = process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas';
         this.vpsMonitorToken = process.env.VPS_MONITOR_TOKEN || null;
+        this.aiRouterUrl = process.env.AI_ROUTER_URL || '';
+        this.aiRouterTimeoutMs = parseInt(process.env.AI_ROUTER_TIMEOUT_MS || '12000', 10);
+        this.supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+        this.supabaseAiChatUrl = process.env.SUPABASE_AI_CHAT_URL
+            || (process.env.SUPABASE_URL
+                ? `${process.env.SUPABASE_URL.replace(/\/+$/, '')}/functions/v1/ai-chat`
+                : '');
 
         this.startTime = Date.now();
         this.healthTargets = this.parseHealthTargets(process.env.HEALTH_TARGETS);
@@ -119,6 +126,7 @@ class UnifiedGateway {
     setupMiddleware() {
         // Security
         this.app.use(helmet());
+        this.app.disable('x-powered-by');
         this.app.use(cors({
             origin: process.env.CORS_ORIGIN || process.env.ALLOWED_ORIGINS?.split(',') || '*',
             credentials: true
@@ -130,6 +138,14 @@ class UnifiedGateway {
         // Body parsing
         this.app.use(express.json({ limit: '10mb' }));
         this.app.use(express.urlencoded({ extended: true }));
+
+        // Block dotfile probing early
+        this.app.use((req, res, next) => {
+            if (req.path && req.path.startsWith('/.')) {
+                return res.status(404).json({ error: 'Not Found' });
+            }
+            next();
+        });
 
         // Request ID middleware
         this.app.use((req, res, next) => {
@@ -503,6 +519,92 @@ class UnifiedGateway {
         });
 
         // ==================== API GATEWAY ROUTES ====================
+
+        // AI chat (primary: AIServiceRouter, fallback: Supabase edge function)
+        this.app.post('/api/v1/ai-chat', async (req, res) => {
+            const requestId = req.id || crypto.randomUUID();
+            const body = req.body || {};
+
+            const forwardHeaders = {
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization }),
+                ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
+                'X-Request-ID': requestId
+            };
+
+            const tryPrimary = async () => {
+                if (!this.aiRouterUrl) return null;
+                const base = this.aiRouterUrl.replace(/\/+$/, '');
+                const url = `${base}/api/v1/ai-chat`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: forwardHeaders,
+                    body: JSON.stringify(body),
+                    timeout: this.aiRouterTimeoutMs
+                });
+                return response;
+            };
+
+            const tryFallback = async () => {
+                if (!this.supabaseAiChatUrl) return null;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-Request-ID': requestId,
+                    ...(this.supabaseAnonKey && {
+                        Authorization: `Bearer ${this.supabaseAnonKey}`,
+                        apikey: this.supabaseAnonKey
+                    })
+                };
+                const response = await fetch(this.supabaseAiChatUrl, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body),
+                    timeout: this.aiRouterTimeoutMs
+                });
+                return response;
+            };
+
+            const sendResponse = async (response, source) => {
+                const contentType = response.headers.get('content-type') || '';
+                const rawText = await response.text();
+                let payload = rawText;
+                if (contentType.includes('application/json')) {
+                    try {
+                        payload = JSON.parse(rawText);
+                    } catch {
+                        payload = { error: 'Invalid JSON response', raw: rawText };
+                    }
+                }
+                res.setHeader('X-AI-Route', source);
+                return res.status(response.status).send(payload);
+            };
+
+            try {
+                const primaryResponse = await tryPrimary();
+                if (primaryResponse && primaryResponse.ok) {
+                    return await sendResponse(primaryResponse, 'ai-router');
+                }
+            } catch (error) {
+                console.warn('AI router unavailable, falling back', error.message);
+            }
+
+            try {
+                const fallbackResponse = await tryFallback();
+                if (fallbackResponse) {
+                    return await sendResponse(fallbackResponse, 'supabase');
+                }
+                return res.status(502).json({
+                    error: 'AI router unavailable and no fallback configured',
+                    requestId
+                });
+            } catch (error) {
+                return res.status(502).json({
+                    error: 'AI router unavailable and fallback failed',
+                    message: error.message,
+                    requestId
+                });
+            }
+        });
 
         // List all API services
         this.app.get('/api/services', (req, res) => {
