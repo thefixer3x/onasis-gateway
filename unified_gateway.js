@@ -66,7 +66,9 @@ const getRateLimitKey = (req) => {
     const authHeader = req.headers.authorization || req.headers.Authorization || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader;
     const apiKey = req.headers['x-api-key'] || '';
-    const ip = req.ip || (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+    const ip = typeof rateLimit.ipKeyGenerator === 'function'
+        ? rateLimit.ipKeyGenerator(req)
+        : (req.ip || (req.headers['x-forwarded-for'] || '').split(',')[0].trim());
     const seed = sessionId || token || apiKey || ip || 'anonymous';
     return crypto.createHash('sha256').update(seed).digest('hex').substring(0, 32);
 };
