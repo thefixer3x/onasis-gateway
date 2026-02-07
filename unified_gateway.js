@@ -28,6 +28,59 @@ const fetch = globalThis.fetch
     ? globalThis.fetch.bind(globalThis)
     : (...args) => import('node-fetch').then((mod) => (mod.default || mod)(...args));
 
+const parseCsv = (value) => (value || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+const allowedOrigins = [
+    ...parseCsv(process.env.ALLOWED_ORIGINS),
+    ...parseCsv(process.env.CORS_ORIGIN)
+];
+const allowedOriginSuffixes = parseCsv(process.env.ALLOWED_ORIGIN_SUFFIXES || 'lanonasis.com');
+const allowLocalhost = (process.env.CORS_ALLOW_LOCALHOST || 'true') === 'true';
+
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
+    try {
+        const url = new URL(origin);
+        const hostname = url.hostname;
+        if (allowLocalhost && (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1')) {
+            return true;
+        }
+        if (allowedOrigins.includes(origin)) {
+            return true;
+        }
+        return allowedOriginSuffixes.some((suffix) => (
+            hostname === suffix || hostname.endsWith(`.${suffix}`)
+        ));
+    } catch (error) {
+        return false;
+    }
+};
+
+const corsOriginCallback = (origin, callback) => callback(null, isAllowedOrigin(origin));
+
+const getRateLimitKey = (req) => {
+    const sessionId = req.headers['x-session-id'] || '';
+    const authHeader = req.headers.authorization || req.headers.Authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader;
+    const apiKey = req.headers['x-api-key'] || '';
+    const ip = req.ip || (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+    const seed = sessionId || token || apiKey || ip || 'anonymous';
+    return crypto.createHash('sha256').update(seed).digest('hex').substring(0, 32);
+};
+
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 10000) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(timeout);
+    }
+};
+
 const DEFAULT_MCP_ADAPTERS = {
     'stripe-api-2024-04-10': { tools: 457, auth: 'bearer' },
     'ngrok-api': { tools: 217, auth: 'bearer' },
@@ -101,6 +154,7 @@ class UnifiedGateway {
         this.vpsMonitorToken = process.env.VPS_MONITOR_TOKEN || null;
         this.aiRouterUrl = process.env.AI_ROUTER_URL || '';
         this.aiRouterTimeoutMs = parseInt(process.env.AI_ROUTER_TIMEOUT_MS || '12000', 10);
+        this.authGatewayTimeoutMs = parseInt(process.env.AUTH_GATEWAY_TIMEOUT_MS || '8000', 10);
         this.supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
         this.supabaseAiChatUrl = process.env.SUPABASE_AI_CHAT_URL
             || (process.env.SUPABASE_URL
@@ -127,8 +181,11 @@ class UnifiedGateway {
         // Security
         this.app.use(helmet());
         this.app.disable('x-powered-by');
+        if (process.env.TRUST_PROXY !== undefined) {
+            this.app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? true : process.env.TRUST_PROXY);
+        }
         this.app.use(cors({
-            origin: process.env.CORS_ORIGIN || process.env.ALLOWED_ORIGINS?.split(',') || '*',
+            origin: corsOriginCallback,
             credentials: true
         }));
 
@@ -158,13 +215,19 @@ class UnifiedGateway {
         const apiLimiter = rateLimit({
             windowMs: 15 * 60 * 1000,
             max: 100,
-            message: 'Too many API requests'
+            message: 'Too many API requests',
+            keyGenerator: getRateLimitKey,
+            standardHeaders: true,
+            legacyHeaders: false
         });
 
         const mcpLimiter = rateLimit({
             windowMs: 15 * 60 * 1000,
             max: 1000,
-            message: 'Too many MCP requests'
+            message: 'Too many MCP requests',
+            keyGenerator: getRateLimitKey,
+            standardHeaders: true,
+            legacyHeaders: false
         });
 
         this.app.use('/api/', apiLimiter);
@@ -420,14 +483,14 @@ class UnifiedGateway {
         }
 
         try {
-            const response = await fetch(verifyUrl, {
+            const response = await fetchWithTimeout(verifyUrl, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'X-Project-Scope': this.projectScope
                 }
-            });
+            }, this.authGatewayTimeoutMs);
 
             const data = await response.json().catch(() => ({}));
 
@@ -536,12 +599,11 @@ class UnifiedGateway {
                 if (!this.aiRouterUrl) return null;
                 const base = this.aiRouterUrl.replace(/\/+$/, '');
                 const url = `${base}/api/v1/ai-chat`;
-                const response = await fetch(url, {
+                const response = await fetchWithTimeout(url, {
                     method: 'POST',
                     headers: forwardHeaders,
-                    body: JSON.stringify(body),
-                    timeout: this.aiRouterTimeoutMs
-                });
+                    body: JSON.stringify(body)
+                }, this.aiRouterTimeoutMs);
                 return response;
             };
 
@@ -555,12 +617,11 @@ class UnifiedGateway {
                         apikey: this.supabaseAnonKey
                     })
                 };
-                const response = await fetch(this.supabaseAiChatUrl, {
+                const response = await fetchWithTimeout(this.supabaseAiChatUrl, {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify(body),
-                    timeout: this.aiRouterTimeoutMs
-                });
+                    body: JSON.stringify(body)
+                }, this.aiRouterTimeoutMs);
                 return response;
             };
 
@@ -961,10 +1022,11 @@ class UnifiedGateway {
         // Global error handler
         this.app.use((err, req, res, next) => {
             console.error('Global error:', err);
+            const expose = (process.env.EXPOSE_ERROR_MESSAGES || 'false') === 'true';
 
             res.status(err.status || 500).json({
                 error: 'Internal Server Error',
-                message: err.message,
+                ...(expose && err.message ? { message: err.message } : {}),
                 requestId: req.id
             });
         });
