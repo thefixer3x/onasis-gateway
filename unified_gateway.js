@@ -466,19 +466,17 @@ class UnifiedGateway {
     }
 
     buildAuthVerifyUrl() {
-        const base = (this.authGatewayUrl || '').replace(/\/+$/, '');
-        if (!base) {
+        const raw = (this.authGatewayUrl || '').replace(/\/+$/, '');
+        if (!raw) {
             return null;
         }
 
-        if (base.endsWith('/v1/auth')) {
-            return `${base}/verify`;
-        }
+        // Strip any existing /v1/auth or /v1 suffix to get the bare host:port
+        const base = raw
+            .replace(/\/v1\/auth$/, '')
+            .replace(/\/v1$/, '');
 
-        if (base.endsWith('/v1')) {
-            return `${base}/auth/verify`;
-        }
-
+        // Always append the canonical path exactly once
         return `${base}/v1/auth/verify`;
     }
 

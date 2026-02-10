@@ -177,6 +177,19 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "ISO currency codes"
+        },
+        "adapterPath": {
+          "type": "string",
+          "description": "Relative path to the adapter module (e.g. src/adapters/paystack-adapter.js)"
+        },
+        "functionName": {
+          "type": "string",
+          "description": "Factory function or class name exported by the adapter module"
+        },
+        "executable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this adapter can execute real operations (has callTool)"
         }
       }
     },
