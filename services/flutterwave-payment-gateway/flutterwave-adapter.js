@@ -29,6 +29,10 @@ const applyFlutterwaveDefaults = (action, params) => {
 class FlutterwaveAdapter extends BaseMCPAdapter {
   constructor(config = {}) {
     const functionName = config.functionName || 'flutterwave';
+    const client = config.client || new UniversalSupabaseClient({
+      serviceName: 'flutterwave',
+      functionName
+    });
 
     super({
       id: 'flutterwave-v3',
@@ -36,10 +40,7 @@ class FlutterwaveAdapter extends BaseMCPAdapter {
       description: 'Pan-African payments via Supabase Edge Functions (flutterwave)',
       category: 'payments',
       capabilities: ['payments', 'wallets', 'mobile_money', 'virtual_cards'],
-      client: new UniversalSupabaseClient({
-        serviceName: 'flutterwave',
-        functionName
-      }),
+      client,
       ...config
     });
   }
@@ -228,4 +229,3 @@ class FlutterwaveAdapter extends BaseMCPAdapter {
 }
 
 module.exports = FlutterwaveAdapter;
-
