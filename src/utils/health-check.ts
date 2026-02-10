@@ -5,13 +5,18 @@
  * Validates all services and system components
  */
 
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
+import fs from 'fs';
+import path from 'path';
+import axios from 'axios';
+import { fileURLToPath } from 'url';
 
-class HealthChecker {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, '../..');
+
+export default class HealthChecker {
     constructor() {
-        this.servicesDir = path.join(__dirname, '../services');
+        this.servicesDir = path.join(repoRoot, 'services');
         this.catalogPath = path.join(this.servicesDir, 'catalog.json');
         this.results = {
             timestamp: new Date().toISOString(),
@@ -169,7 +174,7 @@ class HealthChecker {
                     
                     configChecks.push(configCheck);
                     
-                } catch (parseError) {
+                } catch {
                     configChecks.push({
                         service: serviceInfo.name,
                         status: 'invalid',
@@ -209,16 +214,16 @@ class HealthChecker {
         const check = this.results.checks.dependencies;
         
         try {
-            const packageJsonPath = path.join(__dirname, '../package.json');
-            const gatewayPackagePath = path.join(__dirname, '../api-gateway/package.json');
-            const mcpPackagePath = path.join(__dirname, '../mcp-server/package.json');
+            const packageJsonPath = path.join(repoRoot, 'package.json');
+            const gatewayPackagePath = path.join(repoRoot, 'api-gateway/package.json');
+            const mcpPackagePath = path.join(repoRoot, 'mcp-server/package.json');
             
             const dependencyChecks = [];
             
             // Check main package.json
             if (fs.existsSync(packageJsonPath)) {
                 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-                const nodeModulesPath = path.join(__dirname, '../node_modules');
+                const nodeModulesPath = path.join(repoRoot, 'node_modules');
                 
                 dependencyChecks.push({
                     component: 'main',
@@ -232,7 +237,7 @@ class HealthChecker {
             // Check API Gateway dependencies
             if (fs.existsSync(gatewayPackagePath)) {
                 const gatewayPackage = JSON.parse(fs.readFileSync(gatewayPackagePath, 'utf8'));
-                const gatewayNodeModules = path.join(__dirname, '../api-gateway/node_modules');
+                const gatewayNodeModules = path.join(repoRoot, 'api-gateway/node_modules');
                 
                 dependencyChecks.push({
                     component: 'api-gateway',
@@ -246,7 +251,7 @@ class HealthChecker {
             // Check MCP Server dependencies
             if (fs.existsSync(mcpPackagePath)) {
                 const mcpPackage = JSON.parse(fs.readFileSync(mcpPackagePath, 'utf8'));
-                const mcpNodeModules = path.join(__dirname, '../mcp-server/node_modules');
+                const mcpNodeModules = path.join(repoRoot, 'mcp-server/node_modules');
                 
                 dependencyChecks.push({
                     component: 'mcp-server',
@@ -289,8 +294,8 @@ class HealthChecker {
         const check = this.results.checks.apiGateway;
         
         try {
-            const gatewayPath = path.join(__dirname, '../api-gateway/index.js');
-            const gatewayPackagePath = path.join(__dirname, '../api-gateway/package.json');
+            const gatewayPath = path.join(repoRoot, 'api-gateway/index.js');
+            const gatewayPackagePath = path.join(repoRoot, 'api-gateway/package.json');
             
             check.details.gatewayFile = fs.existsSync(gatewayPath);
             check.details.packageFile = fs.existsSync(gatewayPackagePath);
@@ -336,8 +341,8 @@ class HealthChecker {
         const check = this.results.checks.mcpServer;
         
         try {
-            const mcpPath = path.join(__dirname, '../mcp-server/index.js');
-            const mcpPackagePath = path.join(__dirname, '../mcp-server/package.json');
+            const mcpPath = path.join(repoRoot, 'mcp-server/index.js');
+            const mcpPackagePath = path.join(repoRoot, 'mcp-server/package.json');
             
             check.details.mcpFile = fs.existsSync(mcpPath);
             check.details.packageFile = fs.existsSync(mcpPackagePath);
@@ -465,7 +470,7 @@ class HealthChecker {
     }
 
     async saveResults() {
-        const logsDir = path.join(__dirname, '../logs');
+        const logsDir = path.join(repoRoot, 'logs');
         if (!fs.existsSync(logsDir)) {
             fs.mkdirSync(logsDir, { recursive: true });
         }
@@ -481,7 +486,8 @@ class HealthChecker {
 }
 
 // CLI Usage
-if (require.main === module) {
+const isMain = !!(process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename));
+if (isMain) {
     const checker = new HealthChecker();
     
     checker.runAllChecks()
@@ -502,5 +508,3 @@ if (require.main === module) {
             process.exit(1);
         });
 }
-
-module.exports = HealthChecker;
