@@ -1,11 +1,20 @@
+# Nixpacks configuration for Railway deployment
 # Force Node.js runtime, disable Bun detection
+
 providers = ["node"]
 
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_20", "npm"]
 
 [phases.install]
-cmds = ["npm install --omit=dev --legacy-peer-deps"]
+cmds = ["npm ci --omit=dev --legacy-peer-deps || npm install --omit=dev --legacy-peer-deps"]
+
+[phases.build]
+# No build phase needed - using pre-compiled JS
 
 [start]
-cmd = "npm run start:railway"
+cmd = "node unified_gateway.js"
+
+[variables]
+NODE_ENV = "production"
+MCP_TOOL_MODE = "lazy"
