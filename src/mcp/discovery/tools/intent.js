@@ -1,5 +1,5 @@
 /**
- * gateway.intent - Natural Language to Action
+ * gateway-intent - Natural Language to Action
  *
  * Transforms natural language intent into structured, executable action options.
  * Returns everything needed to execute - no follow-up schema lookups required.
@@ -33,8 +33,8 @@ class GatewayIntent {
                     message: 'No operations match your query',
                     suggestions: [
                         'Try different keywords',
-                        'Use gateway.adapters to see available services',
-                        'Use gateway.tools with a specific adapter to browse operations'
+                        'Use gateway-adapters to see available services',
+                        'Use gateway-tools with a specific adapter to browse operations'
                     ]
                 },
                 search_context: searchResult
@@ -77,11 +77,11 @@ class GatewayIntent {
         // Determine next step
         let nextStep;
         if (searchResult.needs_selection) {
-            nextStep = 'Multiple good matches found. Review alternatives and select the best fit, then call gateway.execute.';
+            nextStep = 'Multiple good matches found. Review alternatives and select the best fit, then call gateway-execute.';
         } else if (missingInputs.length > 0) {
-            nextStep = `Gather required params (${top.required_params.join(', ')}), then call gateway.execute with tool_id and params.`;
+            nextStep = `Gather required params (${top.required_params.join(', ')}), then call gateway-execute with tool_id and params.`;
         } else {
-            nextStep = 'Call gateway.execute with tool_id and params.';
+            nextStep = 'Call gateway-execute with tool_id and params.';
         }
 
         return {

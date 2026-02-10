@@ -94,7 +94,7 @@ class MCPDiscoveryLayer {
             },
             {
                 name: 'gateway-execute',
-                description: 'Execute a specific tool. Use gateway.intent first to find the right tool_id. Includes risk enforcement and validation.',
+                description: 'Execute a specific tool. Use gateway-intent first to find the right tool_id. Includes risk enforcement and validation.',
                 inputSchema: {
                     type: 'object',
                     properties: {

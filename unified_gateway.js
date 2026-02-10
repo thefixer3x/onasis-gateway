@@ -1005,8 +1005,8 @@ class UnifiedGateway {
                         });
                     }
 
-                    // Check if it's a meta-tool (gateway.*)
-                    if (toolName.startsWith('gateway.')) {
+                    // Check if it's a meta-tool (gateway-*)
+                    if (toolName.startsWith('gateway-')) {
                         try {
                             const result = await this.discoveryLayer.callTool(toolName, toolArgs || {});
                             return res.json({
@@ -1028,7 +1028,7 @@ class UnifiedGateway {
                         jsonrpc: '2.0',
                         error: {
                             code: -32601,
-                            message: `Tool '${toolName}' not found. In lazy mode, use gateway.intent to discover tools and gateway.execute to run them.`
+                            message: `Tool '${toolName}' not found. In lazy mode, use gateway-intent to discover tools and gateway-execute to run them.`
                         },
                         id: req.body.id
                     });
