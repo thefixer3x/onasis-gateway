@@ -114,7 +114,7 @@ class GatewayExecute {
 
         try {
             // Find the adapter
-            const adapter = this.gateway-adapters.get(adapterId);
+            const adapter = this.gateway.adapters.get(adapterId);
 
             if (!adapter) {
                 return {
@@ -122,7 +122,7 @@ class GatewayExecute {
                     error: {
                         code: 'ADAPTER_NOT_FOUND',
                         message: `Adapter '${adapterId}' not found`,
-                        available_adapters: Array.from(this.gateway-adapters.keys())
+                        available_adapters: Array.from(this.gateway.adapters.keys())
                     }
                 };
             }
