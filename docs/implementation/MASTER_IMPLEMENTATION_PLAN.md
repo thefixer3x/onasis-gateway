@@ -1,79 +1,82 @@
-# 🏗️ Master Implementation Plan: Onasis Gateway Complete Integration
+# Master Implementation Plan: Onasis Gateway Complete Integration
 
 **Project:** Onasis Gateway - Unified API Gateway + MCP Server
 **Repository:** https://github.com/thefixer3x/onasis-gateway
 **Project Board:** https://github.com/users/thefixer3x/projects/2
 **Date:** 2026-02-10
-**Status:** 🔴 PLANNING → EXECUTION
+**Revised:** 2026-02-10 (v2 -- incorporates gap analysis + preflight strategy)
+**Status:** PLANNING -> EXECUTION
 
 ---
 
-## 🎯 Executive Summary
+## Revision Notes (v2)
+
+This plan supersedes the original 7-phase plan. Key changes:
+
+1. **Added Phase 0.5** -- Scaffolding, preflight checks, and known bug fixes that must happen before Phase 1 can execute. The original plan assumed directories and working code paths that do not exist.
+2. **Added Phase 1.5** -- Quick-win payment adapter activation (Paystack + Flutterwave) immediately after core infrastructure, proving the system works end-to-end before wiring up all services.
+3. **Moved UniversalSupabaseClient to `core/`** -- Keeps all client infrastructure alongside `base-client.js` where it belongs.
+4. **All new adapters are CommonJS (.js)** -- The gateway runs Node.js without a TypeScript build step. Existing `.ts` adapter files are reference material for tool definitions, not runtime code.
+5. **AdapterRegistry integrates with existing OperationRegistry** -- One registry system, not two competing ones.
+6. **Fixed confirmed bugs** -- `execute.js` subtraction bug, BaseClient config key mismatch, auth URL normalization.
+
+---
+
+## Executive Summary
 
 ### The Core Problem
 
-**We have THREE disconnected systems that should be ONE unified gateway:**
+Three disconnected systems that should be one unified gateway:
 
 ```
-❌ CURRENT STATE (Broken):
+CURRENT STATE (Broken):
 
-┌─────────────────────┐     ┌──────────────────────┐     ┌────────────────────────┐
-│  MCP Adapters       │     │  Service Clients     │     │  Supabase Edge Funcs   │
-│  (Mock placeholders)│─✗─  │  (Wrong URLs)        │─✗─  │  (82 deployed, unused) │
-│  1,604 fake tools   │     │  Point to external   │     │  Real backends ready   │
-└─────────────────────┘     └──────────────────────┘     └────────────────────────┘
++---------------------+     +----------------------+     +------------------------+
+|  MCP Adapters       |     |  Service Clients     |     |  Supabase Edge Funcs   |
+|  (Mock placeholders)|-X-  |  (Wrong URLs)        |-X-  |  (82 deployed, unused) |
+|  1,604 fake tools   |     |  Point to external   |     |  Real backends ready   |
++---------------------+     +----------------------+     +------------------------+
 
-✅ TARGET STATE (Working):
+TARGET STATE (Working):
 
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                           ONASIS GATEWAY (Port 3000)                         │
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                      MCP DISCOVERY LAYER (5 meta-tools)             │   │
-│  │  gateway-intent → gateway-execute → gateway-adapters → etc          │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                      ↓                                       │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                   UNIFIED ADAPTER REGISTRY                           │   │
-│  │                                                                      │   │
-│  │  ┌──────────────┐  ┌───────────────┐  ┌────────────────┐          │   │
-│  │  │ Supabase     │  │ Auth Gateway  │  │ Internal       │          │   │
-│  │  │ Adapter      │  │ Adapter       │  │ Services       │          │   │
-│  │  │ (82 funcs)   │  │ (OAuth,JWT)   │  │ (Memory,AI,etc)│          │   │
-│  │  └──────────────┘  └───────────────┘  └────────────────┘          │   │
-│  │                                                                      │   │
-│  │  ┌──────────────┐  ┌───────────────┐  ┌────────────────┐          │   │
-│  │  │ Payment      │  │ Banking       │  │ Verification   │          │   │
-│  │  │ Services     │  │ Services      │  │ Services       │          │   │
-│  │  │ (Paystack,   │  │ (Providus,    │  │ (KYC/KYB)      │          │   │
-│  │  │  Flutterwave)│  │  SaySwitch)   │  │                │          │   │
-│  │  └──────────────┘  └───────────────┘  └────────────────┘          │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                      ↓                                       │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                      CORE INFRASTRUCTURE                             │   │
-│  │  • BaseClient (HTTP + Auth + Retry + Circuit Breaker)               │   │
-│  │  • VendorAbstraction (Multi-provider routing)                       │   │
-│  │  • MetricsCollector (Performance monitoring)                        │   │
-│  │  • ComplianceManager (Security & audit)                             │   │
-│  │  • VersionManager (API versioning)                                  │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                      ↓
-                    ┌─────────────────────────────────────┐
-                    │    SUPABASE EDGE FUNCTIONS          │
-                    │    (Single Source of Truth)         │
-                    │                                     │
-                    │  • Memory API (9 functions)         │
-                    │  • Payments (20 functions)          │
-                    │  • AI & Chat (12 functions)         │
-                    │  • Auth (5 functions)               │
-                    │  • Intelligence (6 functions)       │
-                    │  • EDOC (11 functions)              │
-                    │  • System (11 functions)            │
-                    │                                     │
-                    │  Total: 82 Edge Functions           │
-                    └─────────────────────────────────────┘
++------------------------------------------------------------------------------+
+|                        ONASIS GATEWAY (Port 3000)                            |
+|                                                                              |
+|  +---------------------------------------------------------------------+   |
+|  |                   MCP DISCOVERY LAYER (5 meta-tools)                 |   |
+|  |  gateway-intent -> gateway-execute -> gateway-adapters -> etc        |   |
+|  +---------------------------------------------------------------------+   |
+|                                    |                                         |
+|  +---------------------------------------------------------------------+   |
+|  |                     ADAPTER REGISTRY                                 |   |
+|  |                                                                      |   |
+|  |  +------------+  +-------------+  +--------------+  +----------+   |   |
+|  |  | Supabase   |  | Auth        |  | Payment      |  | Banking  |   |   |
+|  |  | Adapter    |  | Gateway     |  | Services     |  | Services |   |   |
+|  |  | (82 funcs) |  | Adapter     |  | (Paystack,   |  | (Providus|   |   |
+|  |  |            |  | (JWT,OAuth) |  |  Flutterwave)|  |  etc.)   |   |   |
+|  |  +------------+  +-------------+  +--------------+  +----------+   |   |
+|  +---------------------------------------------------------------------+   |
+|                                    |                                         |
+|  +---------------------------------------------------------------------+   |
+|  |                     CORE INFRASTRUCTURE                              |   |
+|  |  BaseClient (HTTP + Auth + Retry + Circuit Breaker)                 |   |
+|  |  UniversalSupabaseClient (extends BaseClient for Edge Functions)     |   |
+|  |  VendorAbstraction | MetricsCollector | ComplianceManager           |   |
+|  +---------------------------------------------------------------------+   |
++------------------------------------------------------------------------------+
+                                    |
+                  +---------------------------------+
+                  |    SUPABASE EDGE FUNCTIONS      |
+                  |    (Single Source of Truth)      |
+                  |                                  |
+                  |  Memory API (9)  | Payments (20) |
+                  |  AI & Chat (12)  | Auth (5)      |
+                  |  Intelligence (6)| EDOC (11)     |
+                  |  System (11)     | API Keys (5)  |
+                  |                                  |
+                  |  Total: ~80 Edge Functions       |
+                  +---------------------------------+
 ```
 
 ### Key Architectural Principle
@@ -81,201 +84,477 @@
 **Supabase Edge Functions ARE the backend, NOT a duplicate.**
 
 The Gateway is a **routing and orchestration layer** that:
-- ✅ Provides unified MCP interface for AI agents
-- ✅ Manages authentication & authorization
-- ✅ Routes to correct Supabase Edge Function
-- ✅ Provides discovery, rate limiting, caching
-- ✅ Aggregates multiple services
+- Provides unified MCP interface for AI agents
+- Manages authentication and authorization
+- Routes to correct Supabase Edge Function
+- Provides discovery, rate limiting, caching
+- Aggregates multiple services
 
 Edge Functions handle:
-- ✅ Business logic
-- ✅ Database operations
-- ✅ External API calls (Paystack, Stripe, etc.)
-- ✅ Authentication enforcement
-- ✅ Data transformation
+- Business logic
+- Database operations
+- External API calls (Paystack, Stripe, etc.)
+- Authentication enforcement
+- Data transformation
+
+### Runtime Decision
+
+**All new adapter code is CommonJS JavaScript (.js).**
+
+Rationale: The gateway runs on Node.js without a TypeScript compilation step. Existing `.ts` adapter files in `services/` (e.g., `paystack-mcp-adapter.ts`, `verification-mcp-adapter.ts`) are treated as **reference specifications** for tool definitions and schemas. New runnable adapters are `.js` files that the gateway can `require()` directly.
 
 ---
 
-## 📊 Current State Analysis
+## Current State Analysis
 
-### What EXISTS and WORKS ✅
+### What EXISTS and WORKS
 
 1. **Core Infrastructure** (`/core`)
-   - ✅ `BaseClient` - Universal HTTP client with auth, retry, circuit breaker
-   - ✅ `VendorAbstraction` - Multi-provider routing
-   - ✅ `MetricsCollector` - Performance monitoring
-   - ✅ `ComplianceManager` - Security & audit
-   - ✅ `VersionManager` - API versioning
+   - `BaseClient` -- Universal HTTP client with auth, retry, circuit breaker
+   - `VendorAbstraction` -- Multi-provider routing
+   - `MetricsCollector` -- Performance monitoring
+   - `ComplianceManager` -- Security and audit
+   - `VersionManager` -- API versioning
 
-2. **Supabase Edge Functions** (82 deployed & operational)
-   - ✅ Memory API (9 functions)
-   - ✅ Payment integrations (20 functions)
-   - ✅ AI & Chat (12 functions)
-   - ✅ Auth services (5 functions)
-   - ✅ Intelligence API (6 functions)
-   - ✅ EDOC (11 functions)
-   - ✅ System utilities (12 functions)
-   - ✅ API Key management (5 functions)
+2. **Supabase Edge Functions** (~80 deployed and operational)
+   - Memory API (9 functions)
+   - Payment integrations (20 functions)
+   - AI & Chat (12 functions)
+   - Auth services (5 functions)
+   - Intelligence API (6 functions)
+   - EDOC (11 functions)
+   - System utilities (11 functions)
+   - API Key management (5 functions)
 
 3. **MCP Discovery Layer** (5 meta-tools working)
-   - ✅ `gateway-intent` - Natural language → action
-   - ✅ `gateway-execute` - Execute tools
-   - ✅ `gateway-adapters` - List services
-   - ✅ `gateway-tools` - List tools
-   - ✅ `gateway-reference` - Documentation
+   - `gateway-intent` -- Natural language to action
+   - `gateway-execute` -- Execute tools
+   - `gateway-adapters` -- List services
+   - `gateway-tools` -- List tools
+   - `gateway-reference` -- Documentation
 
 4. **Supabase Auto-Discovery** (Working)
-   - ✅ Discovers 82 Edge Functions automatically
-   - ✅ Generates MCP tools dynamically
-   - ✅ Registers in discovery layer
+   - Discovers Edge Functions automatically from DIRECT_API_ROUTES.md
+   - Generates MCP tools dynamically
+   - Registers in discovery layer
 
-### What's BROKEN or INCOMPLETE ❌
+5. **Existing TS Adapter Specs** (reference material, not runnable)
+   - `services/paystack-payment-gateway/paystack-mcp-adapter.ts`
+   - `services/flutterwave-payment-gateway/` (has client, no adapter file)
+   - `services/providus-bank/mcp-adapter.ts`
+   - `services/providus-bank-account/mcp-adapter.ts` + `.js`
+   - `services/verification-service/verification-mcp-adapter.ts`
+   - `services/xpress-wallet-waas/xpress-wallet-mcp-adapter.ts`
 
-1. **Service Adapters** - NOT loaded
+### What's BROKEN or INCOMPLETE
+
+1. **Adapter Loading** -- Only one real factory exists (`supabase-edge-functions`)
    ```javascript
-   // services/catalog.json - 19 mock adapters
-   { "type": "mock", "toolCount": 117 }  // ❌ Just placeholders!
+   // unified_gateway.js:444 -- everything else becomes a mock
+   if (adapterEntry.type === 'mock' || adapterEntry.source === 'mock') {
+       this.adapters.set(adapterEntry.id, {
+           tools: adapterEntry.toolCount || 0,
+           auth: adapterEntry.auth || 'apikey'
+       });
+   }
    ```
 
-2. **Real Adapters** - Exist but NOT connected
-   - ❌ `services/paystack-payment-gateway/paystack-mcp-adapter.ts` (117 tools)
-   - ❌ `services/flutterwave-payment-gateway/flutterwave-mcp-adapter.ts` (107 tools)
-   - ❌ `services/providus-bank/mcp-adapter.ts`
-   - ❌ `services/verification-service/verification-mcp-adapter.ts`
-   - ❌ `services/xpress-wallet-waas/xpress-wallet-mcp-adapter.ts`
-
-3. **Service Clients** - Point to WRONG URLs
+2. **gateway-execute Bug** -- Cannot call any adapter
    ```javascript
-   // paystack-client.js:12
-   this.baseURL = 'https://api.paystack.co';  // ❌ Bypasses our backend!
+   // src/mcp/discovery/tools/execute.js:117
+   const adapter = this.gateway-adapters.get(adapterId);
+   // ^^^ JavaScript subtraction (this.gateway minus adapters), NOT property access
+   // Should be: this.gateway.adapters.get(adapterId)
+   ```
 
+3. **Service Clients** -- Point to WRONG URLs
+   ```javascript
+   // paystack-client.js
+   this.baseURL = 'https://api.paystack.co';  // Bypasses our backend
    // SHOULD BE:
-   this.baseURL = 'https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1';
+   this.baseURL = process.env.SUPABASE_URL + '/functions/v1';
    ```
 
-4. **Missing Services** - Have Edge Functions but NO adapters
-   - ❌ Stripe (7 Edge Functions, no adapter)
-   - ❌ SaySwitch (6 Edge Functions, no adapter)
-   - ❌ OpenAI/Claude/Gemini (6 Edge Functions, no adapters)
-   - ❌ EDOC (11 Edge Functions, no adapters)
+4. **Missing Directories** -- Plan Phase 1/2 reference paths that do not exist
+   - `src/clients/` -- does not exist
+   - `services/auth-gateway/` -- does not exist
+   - `services/ai-router/` -- does not exist
+   - `services/security-service/` -- does not exist
+   - `services/intelligence-api/` -- does not exist
+
+5. **Catalog Structure** -- Lacks fields for real adapter loading
+   ```json
+   // Current: no adapterPath, no functionName, no executable flag
+   { "id": "paystack", "type": "mock", "toolCount": 117 }
+   ```
+
+6. **Auth URL Ambiguity** -- `AUTH_GATEWAY_URL` interpreted inconsistently
+   - Sometimes treated as base URL, sometimes as `/v1/auth` endpoint
+   - `buildAuthVerifyUrl()` has heuristic guessing logic
 
 ---
 
-## 🎯 Implementation Phases
+## Implementation Phases
 
-### Phase 0: Architecture & Planning ✅ (THIS DOCUMENT)
+### Phase 0: Architecture & Planning (COMPLETE)
+
 **Duration:** 1 day
-**Status:** IN PROGRESS
-
-#### Objectives
-- [x] Deep codebase analysis
-- [ ] Create master implementation plan
-- [ ] Define clear architecture
-- [ ] Set up project tracking
+**Status:** DONE
 
 #### Deliverables
-1. ✅ `MASTER_IMPLEMENTATION_PLAN.md` (this document)
-2. ⏳ `ARCHITECTURE.md` (system architecture diagram)
-3. ⏳ GitHub Issues created in project board
-4. ⏳ Service inventory and categorization
+1. `MASTER_IMPLEMENTATION_PLAN.md` (this document, v2)
+2. `ARCHITECTURE.md` (system architecture)
+3. `GITHUB_ISSUES.md` (issue templates for project board)
+4. `api-gateway-codemap.md` (codebase analysis)
+5. `MISSING_LINK_ANALYSIS.md` (gap analysis)
 
 ---
 
-### Phase 1: Core Adapter System
-**Duration:** 2-3 days
+### Phase 0.5: Scaffolding + Preflight + Bug Fixes (NEW)
+
+**Duration:** 0.5-1 day
 **Dependencies:** None
 **Risk:** Low
-**Priority:** 🔴 CRITICAL
+**Priority:** CRITICAL -- blocks all subsequent phases
 
-#### Objectives
-Build the **universal adapter foundation** that all services will use.
+This phase eliminates structural and environment blockers so Phase 1 is purely "implement code" rather than "discover missing folders and broken code paths".
 
-#### Tasks
+#### Task 0.5.1: Create Missing Directory Structure
 
-**1.1: Create Universal Supabase Client**
+Create directories that Phase 1 and Phase 2 reference:
+
+```
+mkdir -p services/auth-gateway
+mkdir -p services/ai-router
+mkdir -p services/security-service
+mkdir -p services/intelligence-api
+```
+
+Note: `src/clients/` is NOT created. UniversalSupabaseClient goes in `core/` alongside `base-client.js`.
+
+**Acceptance Criteria:**
+- All directories referenced by Phase 1 and Phase 2 tasks exist
+- Each new service directory has a minimal `README.md` for git tracking
+
+#### Task 0.5.2: Create Preflight Script
+
+New file: `scripts/preflight.js`
+
+Verifies before gateway startup:
+- Required env vars are present:
+  - `SUPABASE_URL` (required)
+  - `SUPABASE_ANON_KEY` (required)
+  - `SUPABASE_SERVICE_ROLE_KEY` (optional, warn if absent)
+  - `AUTH_GATEWAY_URL` or `ONASIS_AUTH_API_URL` (optional, warn if absent)
+- Supabase Edge Functions reachable:
+  - `GET ${SUPABASE_URL}/functions/v1/system-health` with `apikey: SUPABASE_ANON_KEY`
+- Auth Gateway reachable (if URL configured):
+  - `GET ${AUTH_GATEWAY_URL}/health`
+- Emits clear "ready / not ready" report
+
+**Acceptance Criteria:**
+- `npm run preflight` or `node scripts/preflight.js` produces actionable output
+- Non-zero exit code if critical vars missing (SUPABASE_URL, SUPABASE_ANON_KEY)
+- Warnings (not failures) for optional services not reachable
+
+#### Task 0.5.3: Normalize Auth Gateway URL Semantics
+
+Current: `buildAuthVerifyUrl()` in `unified_gateway.js:468-483` uses heuristic string matching.
+
+Standardize to:
+- `authGatewayBaseUrl` -- e.g., `http://127.0.0.1:4000`
+- `authGatewayApiUrl` -- e.g., `http://127.0.0.1:4000/v1/auth`
+
+Rules:
+- If `AUTH_GATEWAY_URL` ends with `/v1/auth`, treat as `authGatewayApiUrl`, derive base by trimming
+- Otherwise treat as base, derive api url by appending `/v1/auth`
+
+**Files to Modify:**
+- `unified_gateway.js` -- replace `buildAuthVerifyUrl()` with deterministic normalization
+
+**Acceptance Criteria:**
+- Auth proxy routes and token verification hit correct endpoints
+- No "double /v1/auth" or missing path segments
+- Works with both `http://127.0.0.1:4000` and `http://127.0.0.1:4000/v1/auth` as input
+
+#### Task 0.5.4: Fix Known Execution Bugs
+
+**Bug 1: execute.js subtraction operator**
+
+File: `src/mcp/discovery/tools/execute.js:117,125`
+
 ```javascript
-// src/clients/universal-supabase-client.js
+// BROKEN (subtraction):
+const adapter = this.gateway-adapters.get(adapterId);
+// FIX:
+const adapter = this.gateway.adapters.get(adapterId);
+```
+
+Same fix on line 125:
+```javascript
+// BROKEN:
+available_adapters: Array.from(this.gateway-adapters.keys())
+// FIX:
+available_adapters: Array.from(this.gateway.adapters.keys())
+```
+
+**Bug 2: BaseClient config key**
+
+File: `core/base-client.js` accepts `baseUrl` (camelCase) in constructor config at line 16, but `unified_gateway.js:295-301` sometimes passes `baseURL` (uppercase L) when constructing clients from service JSON configs.
+
+Fix: Normalize in BaseClient constructor to accept both:
+```javascript
+baseUrl: config.baseUrl || config.baseURL || '',
+```
+
+**Acceptance Criteria:**
+- `gateway-execute` can locate and call an adapter by ID (tested with supabase-edge-functions)
+- BaseClient accepts both `baseUrl` and `baseURL` without silent failure
+
+#### Task 0.5.5: Update Catalog Schema for Real Adapter Loading
+
+Add optional fields to `schemas/catalog-schema.json` for `mcpAdapters[]`:
+- `adapterPath` (string) -- path to `.js` file that exports adapter class
+- `functionName` (string) -- Supabase Edge Function name for routing
+- `adapterRuntime` (enum: `"cjs"`) -- always CommonJS for now
+- `executable` (boolean) -- `true` for real adapters, `false` for mocks
+
+Do NOT change existing catalog entries yet -- that happens in Phase 1.4.
+
+**Acceptance Criteria:**
+- Schema validates existing catalog (backwards compatible)
+- Schema accepts new fields when provided
+
+#### Files Created/Modified in Phase 0.5
+- Create: `services/auth-gateway/README.md`
+- Create: `services/ai-router/README.md`
+- Create: `services/security-service/README.md`
+- Create: `services/intelligence-api/README.md`
+- Create: `scripts/preflight.js`
+- Modify: `unified_gateway.js` (auth URL normalization, BaseClient config fix)
+- Modify: `src/mcp/discovery/tools/execute.js` (property access fix)
+- Modify: `core/base-client.js` (accept both baseUrl and baseURL)
+- Modify: `schemas/catalog-schema.json` (add optional adapter fields)
+
+---
+
+### Phase 1: Core Adapter System (Foundation)
+
+**Duration:** 2-3 days
+**Dependencies:** Phase 0.5
+**Risk:** Low
+**Priority:** CRITICAL
+
+Build the universal adapter foundation that all services will use.
+
+#### Task 1.1: Create Universal Supabase Client
+
+**File:** `core/universal-supabase-client.js`
+
+Placed in `core/` alongside `base-client.js` where all client infrastructure lives.
+
+```javascript
+// core/universal-supabase-client.js
+const BaseClient = require('./base-client');
+
 class UniversalSupabaseClient extends BaseClient {
   constructor(config) {
     super({
-      name: config.serviceName,
+      name: config.serviceName || 'supabase',
       baseUrl: process.env.SUPABASE_URL + '/functions/v1',
+      timeout: config.timeout || 30000,
+      retryAttempts: config.retryAttempts || 2,
       authentication: {
         type: 'bearer',
         config: {
-          token: process.env.SUPABASE_SERVICE_KEY
+          token: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
         }
-      },
-      ...config
+      }
     });
-    this.functionName = config.functionName;
+    this.defaultFunctionName = config.functionName;
   }
 
-  async call(endpoint, data, options = {}) {
+  /**
+   * Call a Supabase Edge Function.
+   * @param {string} functionName - Edge Function slug (e.g. "paystack", "memory-create")
+   * @param {object} payload - Request body
+   * @param {object} [options] - Additional headers, method override
+   */
+  async call(functionName, payload = {}, options = {}) {
+    const fn = functionName || this.defaultFunctionName;
     return this.request({
-      path: `/${this.functionName}`,
+      path: `/${fn}`,
       method: options.method || 'POST'
     }, {
-      data: { endpoint, ...data },
+      data: payload,
       headers: {
-        'X-API-Key': process.env.SUPABASE_SERVICE_KEY,
+        'apikey': process.env.SUPABASE_ANON_KEY,
+        ...(options.authorization && { 'Authorization': options.authorization }),
+        ...(options.projectScope && { 'X-Project-Scope': options.projectScope }),
         ...options.headers
       }
     });
   }
+
+  async healthCheck() {
+    try {
+      const result = await this.call('system-health', {}, { method: 'GET' });
+      return { healthy: true, data: result };
+    } catch (error) {
+      return { healthy: false, error: error.message };
+    }
+  }
 }
+
+module.exports = UniversalSupabaseClient;
 ```
 
-**1.2: Create Base MCP Adapter Class**
+**Acceptance Criteria:**
+- Extends BaseClient correctly (inherits retry, circuit breaker, auth injection)
+- `call('memory-create', { ... })` reaches the actual Supabase Edge Function
+- `apikey` header always present
+- Auth passthrough works (caller's Authorization forwarded)
+- Unit tests passing
+
+#### Task 1.2: Create Base MCP Adapter Class
+
+**File:** `core/base-mcp-adapter.js`
+
 ```javascript
-// src/adapters/base-mcp-adapter.js
+// core/base-mcp-adapter.js
 class BaseMCPAdapter {
   constructor(config) {
     this.id = config.id;
     this.name = config.name;
-    this.client = config.client; // UniversalSupabaseClient or custom
+    this.version = config.version || '1.0.0';
+    this.description = config.description || '';
+    this.client = config.client; // UniversalSupabaseClient, BaseClient, or custom
     this.tools = [];
-    this.metadata = config.metadata || {};
+    this.metadata = {
+      category: config.category || 'general',
+      capabilities: config.capabilities || [],
+      ...config.metadata
+    };
+    this._initialized = false;
+    this._stats = { calls: 0, errors: 0, lastCall: null };
   }
 
+  /**
+   * Initialize the adapter: load tool definitions, verify connectivity.
+   * Subclasses MUST override this to populate this.tools.
+   */
   async initialize() {
-    // Load tools
-    // Register in discovery layer
-    // Set up health checks
+    throw new Error(`${this.id}: initialize() must be implemented by subclass`);
   }
 
-  async callTool(toolName, args) {
-    // Find tool
-    // Validate args
-    // Execute via client
-    // Return result
+  /**
+   * Execute a tool by name.
+   * Subclasses SHOULD override for custom routing logic.
+   * Default implementation delegates to this.client.call().
+   */
+  async callTool(toolName, args, context = {}) {
+    const tool = this.tools.find(t => t.name === toolName);
+    if (!tool) {
+      throw new Error(`Tool '${toolName}' not found in adapter '${this.id}'`);
+    }
+    this._stats.calls++;
+    this._stats.lastCall = new Date().toISOString();
+    try {
+      return await this.client.call(toolName, args, context);
+    } catch (error) {
+      this._stats.errors++;
+      throw error;
+    }
+  }
+
+  listTools() {
+    return this.tools;
   }
 
   async healthCheck() {
-    return this.client.healthCheck();
+    if (this.client && typeof this.client.healthCheck === 'function') {
+      return this.client.healthCheck();
+    }
+    return { healthy: true, adapter: this.id, note: 'no client health check' };
+  }
+
+  getStats() {
+    return { ...this._stats, toolCount: this.tools.length, initialized: this._initialized };
   }
 }
+
+module.exports = BaseMCPAdapter;
 ```
 
-**1.3: Create Adapter Registry**
+**Acceptance Criteria:**
+- Subclasses can override `initialize()` and `callTool()`
+- Default `callTool()` routes through `this.client.call()`
+- `listTools()` returns tool array in MCP-compatible format
+- `healthCheck()` delegates to client
+- Stats tracking works
+
+#### Task 1.3: Create Adapter Registry
+
+**File:** `src/mcp/adapter-registry.js`
+
+This registry manages adapter lifecycle and provides O(1) tool lookup. It **feeds into** the existing `OperationRegistry` (at `src/mcp/discovery/registry/index.js`) rather than replacing it. The flow is:
+
+```
+AdapterRegistry (manages adapters + tool index)
+       |
+       v
+OperationRegistry (indexes operations for discovery search)
+       |
+       v
+MCPDiscoveryLayer (5 meta-tools use OperationRegistry for queries)
+```
+
 ```javascript
 // src/mcp/adapter-registry.js
 class AdapterRegistry {
   constructor() {
-    this.adapters = new Map();
-    this.toolIndex = new Map();
+    this.adapters = new Map();      // adapterId -> adapter instance
+    this.toolIndex = new Map();     // "adapter:tool" -> { adapterId, tool }
+    this.aliases = new Map();       // normalized aliases for lookup
   }
 
+  /**
+   * Register an adapter: initialize it, index its tools.
+   */
   async register(adapter) {
-    await adapter.initialize();
+    if (!adapter._initialized) {
+      await adapter.initialize();
+      adapter._initialized = true;
+    }
     this.adapters.set(adapter.id, adapter);
 
-    // Index all tools
-    adapter.tools.forEach(tool => {
-      this.toolIndex.set(`${adapter.id}:${tool.name}`, {
-        adapter: adapter.id,
-        tool
-      });
+    // Index all tools with canonical "adapter:tool-name" IDs (kebab-case)
+    for (const tool of adapter.tools) {
+      const canonicalId = `${adapter.id}:${tool.name}`;
+      this.toolIndex.set(canonicalId, { adapterId: adapter.id, tool });
+
+      // Register aliases: snake_case <-> kebab-case
+      const snakeAlias = `${adapter.id}:${tool.name.replace(/-/g, '_')}`;
+      const kebabAlias = `${adapter.id}:${tool.name.replace(/_/g, '-')}`;
+      if (snakeAlias !== canonicalId) this.aliases.set(snakeAlias, canonicalId);
+      if (kebabAlias !== canonicalId) this.aliases.set(kebabAlias, canonicalId);
+    }
+
+    return adapter;
+  }
+
+  /**
+   * Register a mock (non-executable) adapter placeholder.
+   */
+  registerMock(entry) {
+    this.adapters.set(entry.id, {
+      id: entry.id,
+      name: entry.name,
+      tools: [],
+      toolCount: entry.toolCount || 0,
+      is_mock: true,
+      executable: false,
+      metadata: { category: entry.category, authType: entry.authType }
     });
   }
 
@@ -283,740 +562,679 @@ class AdapterRegistry {
     return this.adapters.get(id);
   }
 
-  getTool(toolId) {
-    return this.toolIndex.get(toolId);
+  /**
+   * Resolve a tool ID, including alias resolution.
+   */
+  resolveTool(toolId) {
+    let entry = this.toolIndex.get(toolId);
+    if (!entry) {
+      const canonical = this.aliases.get(toolId);
+      if (canonical) entry = this.toolIndex.get(canonical);
+    }
+    return entry || null;
   }
 
-  async callTool(toolId, args) {
-    const entry = this.getTool(toolId);
-    if (!entry) throw new Error(`Tool not found: ${toolId}`);
+  /**
+   * Execute a tool by canonical or aliased ID.
+   */
+  async callTool(toolId, args, context = {}) {
+    const entry = this.resolveTool(toolId);
+    if (!entry) {
+      throw new Error(`Tool not found: ${toolId}`);
+    }
+    const adapter = this.adapters.get(entry.adapterId);
+    if (!adapter || adapter.is_mock) {
+      throw new Error(`Adapter '${entry.adapterId}' is not executable (mock)`);
+    }
+    return adapter.callTool(entry.tool.name, args, context);
+  }
 
-    const adapter = this.getAdapter(entry.adapter);
-    return adapter.callTool(entry.tool.name, args);
+  /**
+   * Get all adapters as an array (for OperationRegistry.buildFromAdapters).
+   */
+  toAdaptersMap() {
+    return this.adapters;
+  }
+
+  getStats() {
+    const real = [...this.adapters.values()].filter(a => !a.is_mock).length;
+    const mock = [...this.adapters.values()].filter(a => a.is_mock).length;
+    return {
+      totalAdapters: this.adapters.size,
+      realAdapters: real,
+      mockAdapters: mock,
+      indexedTools: this.toolIndex.size,
+      aliases: this.aliases.size
+    };
   }
 }
+
+module.exports = AdapterRegistry;
 ```
 
-**1.4: Update Unified Gateway to Use Registry**
+**Acceptance Criteria:**
+- `register(adapter)` calls `adapter.initialize()` and indexes all tools
+- `resolveTool("paystack:initialize-transaction")` returns in O(1)
+- `resolveTool("paystack:initialize_transaction")` resolves via alias
+- `callTool()` routes to correct adapter without scanning
+- Mock adapters are stored but not executable
+- `toAdaptersMap()` returns the Map that OperationRegistry expects
+
+#### Task 1.4: Integrate Registry into unified_gateway.js
+
+Modify `loadMCPAdapters()` to:
+1. Create `this.adapterRegistry = new AdapterRegistry()`
+2. Keep the existing `supabase-edge-functions` factory (it works)
+3. Add a new factory path for `adapterPath`-based loading
+4. Route mock entries through `registerMock()`
+5. Pass `this.adapterRegistry.toAdaptersMap()` to MCPDiscoveryLayer
+
 ```javascript
-// unified_gateway.js - Replace mock adapter loading
-async loadAdapters() {
-  this.adapterRegistry = new AdapterRegistry();
+// unified_gateway.js -- revised loadMCPAdapters()
+async loadMCPAdapters() {
+    const AdapterRegistry = require('./src/mcp/adapter-registry');
+    this.adapterRegistry = new AdapterRegistry();
 
-  // Load from catalog
-  for (const entry of this.serviceCatalog.mcpAdapters) {
-    if (!entry.enabled) continue;
+    const catalogAdapters = Array.isArray(this.serviceCatalog?.mcpAdapters)
+        && this.serviceCatalog.mcpAdapters.length > 0
+        ? this.serviceCatalog.mcpAdapters.filter(a => a.enabled !== false)
+        : buildDefaultMcpCatalog();
 
-    if (entry.type === 'supabase') {
-      // Supabase auto-discovery adapter (existing)
-      const adapter = new SupabaseAdapter(entry);
-      await this.adapterRegistry.register(adapter);
+    // Existing Supabase factory (keep as-is)
+    const adapterFactories = {
+        'supabase-edge-functions': async ({ gateway, adapterEntry }) => {
+            // ... existing supabase initialization code unchanged ...
+            // After initialization:
+            // gateway.adapterRegistry.adapters.set('supabase-edge-functions', supabaseAdapter);
+        },
+        supabase: async (ctx) => adapterFactories['supabase-edge-functions'](ctx)
+    };
+
+    for (const adapterEntry of catalogAdapters) {
+        if (!adapterEntry || !adapterEntry.id) continue;
+
+        // 1. Check for explicit factory
+        const factory = adapterFactories[adapterEntry.id]
+            || (adapterEntry.type && adapterFactories[adapterEntry.type]);
+        if (factory) {
+            try {
+                await factory({ gateway: this, adapterEntry });
+            } catch (error) {
+                console.warn(`${adapterEntry.id} adapter failed:`, error.message);
+            }
+            continue;
+        }
+
+        // 2. Check for adapterPath (real adapter with JS file)
+        if (adapterEntry.adapterPath) {
+            try {
+                const AdapterClass = require(adapterEntry.adapterPath);
+                const adapter = new AdapterClass(adapterEntry);
+                await this.adapterRegistry.register(adapter);
+                console.log(`Loaded ${adapterEntry.id} (${adapter.tools.length} tools)`);
+            } catch (error) {
+                console.warn(`${adapterEntry.id} adapter failed to load:`, error.message);
+                this.adapterRegistry.registerMock(adapterEntry);
+            }
+            continue;
+        }
+
+        // 3. Mock adapter (fallback)
+        this.adapterRegistry.registerMock(adapterEntry);
     }
-    else if (entry.adapterPath) {
-      // Real service adapters
-      const AdapterClass = require(entry.adapterPath);
-      const adapter = new AdapterClass(entry);
-      await this.adapterRegistry.register(adapter);
+
+    // Backwards compat: keep this.adapters pointing to registry's map
+    this.adapters = this.adapterRegistry.toAdaptersMap();
+
+    const stats = this.adapterRegistry.getStats();
+    console.log(`Loaded ${stats.totalAdapters} adapters (${stats.realAdapters} real, ${stats.mockAdapters} mock, ${stats.indexedTools} tools indexed)`);
+
+    // Initialize MCP Discovery Layer using the registry's adapter map
+    if (this.mcpToolMode === 'lazy') {
+        try {
+            this.discoveryLayer = new MCPDiscoveryLayer(this, this.adapters);
+            console.log('MCP Discovery Layer initialized (5 meta-tools active)');
+        } catch (error) {
+            console.warn(`Discovery Layer failed: ${error.message}`);
+            this.mcpToolMode = 'full';
+        }
     }
-  }
 }
 ```
 
-#### Acceptance Criteria
-- [ ] Universal Supabase Client created and tested
-- [ ] BaseMCPAdapter class created with full interface
-- [ ] AdapterRegistry manages all adapters and tools
-- [ ] Unified Gateway loads adapters from registry
-- [ ] Health checks work for all adapters
-- [ ] Unit tests written and passing
-- [ ] Documentation updated
+**Acceptance Criteria:**
+- Supabase adapter still loads and works (no regression)
+- Adapters with `adapterPath` in catalog are loaded via `require()`
+- Mock adapters stored as non-executable placeholders
+- `this.adapters` still works for existing code that references it
+- Discovery layer initializes with real + mock adapters
+- `gateway-execute` routes through registry's `callTool()`
 
-#### Files to Create/Modify
-- Create: `src/clients/universal-supabase-client.js`
-- Create: `src/adapters/base-mcp-adapter.js`
+#### Task 1.5: Update Catalog with Schema Fields
+
+Add the new fields to existing mock entries that will become real adapters in Phase 1.5+. Leave entries as `"type": "mock"` until their adapter code exists.
+
+Add two entries for the upcoming Phase 1.5 quick-win adapters:
+```json
+{
+  "id": "paystack",
+  "name": "Paystack API",
+  "type": "mock",
+  "adapterPath": null,
+  "functionName": "paystack",
+  "executable": false,
+  "enabled": true,
+  "toolCount": 117,
+  "authType": "bearer",
+  "category": "payments"
+}
+```
+
+The `adapterPath` and `executable` fields are set to `null`/`false` until Phase 1.5 creates the actual adapter files.
+
+**Files to Create/Modify in Phase 1:**
+- Create: `core/universal-supabase-client.js`
+- Create: `core/base-mcp-adapter.js`
 - Create: `src/mcp/adapter-registry.js`
-- Modify: `unified_gateway.js` (adapter loading section)
-- Modify: `services/catalog.json` (add adapterPath fields)
+- Create: `tests/core/universal-supabase-client.test.js`
+- Create: `tests/core/base-mcp-adapter.test.js`
+- Create: `tests/mcp/adapter-registry.test.js`
+- Modify: `unified_gateway.js` (loadMCPAdapters refactor)
+- Modify: `src/mcp/discovery/tools/execute.js` (use registry for tool calls)
+- Modify: `services/catalog.json` (add new fields to entries)
+
+---
+
+### Phase 1.5: Quick-Win Payment Adapters (NEW)
+
+**Duration:** 1-2 days
+**Dependencies:** Phase 1
+**Risk:** Low
+**Priority:** HIGH -- proves the system works end-to-end
+
+Create runnable JS adapters for Paystack and Flutterwave that route through Supabase Edge Functions. This validates the entire stack (catalog -> registry -> adapter -> client -> Edge Function -> external API) before building all remaining adapters.
+
+#### Task 1.5.1: Create Paystack Adapter (JS)
+
+**File:** `services/paystack-payment-gateway/paystack-adapter.js`
+
+Execution model: Calls Supabase Edge Function `paystack` with `{ action: <toolName>, ...params }`.
+
+Tool definitions: Derived from the existing `paystack-mcp-adapter.ts` reference spec.
+
+```javascript
+// services/paystack-payment-gateway/paystack-adapter.js
+const BaseMCPAdapter = require('../../core/base-mcp-adapter');
+const UniversalSupabaseClient = require('../../core/universal-supabase-client');
+
+class PaystackAdapter extends BaseMCPAdapter {
+  constructor(config = {}) {
+    super({
+      id: 'paystack',
+      name: 'Paystack Payment Gateway',
+      description: 'African payment processing via Paystack',
+      category: 'payments',
+      capabilities: ['payments', 'transfers', 'verification', 'subscriptions'],
+      client: new UniversalSupabaseClient({
+        serviceName: 'paystack',
+        functionName: 'paystack'
+      }),
+      ...config
+    });
+  }
+
+  async initialize() {
+    // Core tools -- expand from paystack-mcp-adapter.ts reference
+    this.tools = [
+      { name: 'initialize-transaction', description: 'Initialize a payment transaction', inputSchema: { type: 'object', properties: { email: { type: 'string' }, amount: { type: 'number' }, currency: { type: 'string', default: 'NGN' } }, required: ['email', 'amount'] } },
+      { name: 'verify-transaction', description: 'Verify a transaction by reference', inputSchema: { type: 'object', properties: { reference: { type: 'string' } }, required: ['reference'] } },
+      { name: 'list-transactions', description: 'List transactions', inputSchema: { type: 'object', properties: { perPage: { type: 'number' }, page: { type: 'number' } } } },
+      { name: 'charge-authorization', description: 'Charge a saved card authorization', inputSchema: { type: 'object', properties: { email: { type: 'string' }, amount: { type: 'number' }, authorization_code: { type: 'string' } }, required: ['email', 'amount', 'authorization_code'] } },
+      { name: 'create-customer', description: 'Create a new customer', inputSchema: { type: 'object', properties: { email: { type: 'string' }, first_name: { type: 'string' }, last_name: { type: 'string' } }, required: ['email'] } },
+      { name: 'list-customers', description: 'List customers', inputSchema: { type: 'object', properties: { perPage: { type: 'number' }, page: { type: 'number' } } } },
+      { name: 'create-transfer-recipient', description: 'Create a transfer recipient', inputSchema: { type: 'object', properties: { type: { type: 'string' }, name: { type: 'string' }, account_number: { type: 'string' }, bank_code: { type: 'string' } }, required: ['type', 'name', 'account_number', 'bank_code'] } },
+      { name: 'initiate-transfer', description: 'Initiate a money transfer', inputSchema: { type: 'object', properties: { source: { type: 'string', default: 'balance' }, amount: { type: 'number' }, recipient: { type: 'string' }, reason: { type: 'string' } }, required: ['amount', 'recipient'] } },
+      { name: 'verify-account', description: 'Verify a bank account number', inputSchema: { type: 'object', properties: { account_number: { type: 'string' }, bank_code: { type: 'string' } }, required: ['account_number', 'bank_code'] } },
+      { name: 'list-banks', description: 'List supported banks', inputSchema: { type: 'object', properties: { country: { type: 'string', default: 'nigeria' } } } }
+    ];
+    this._initialized = true;
+  }
+
+  async callTool(toolName, args, context = {}) {
+    this._stats.calls++;
+    this._stats.lastCall = new Date().toISOString();
+    try {
+      // Route through Supabase Edge Function with action dispatch
+      return await this.client.call('paystack', {
+        action: toolName,
+        ...args
+      }, context);
+    } catch (error) {
+      this._stats.errors++;
+      throw error;
+    }
+  }
+}
+
+module.exports = PaystackAdapter;
+```
+
+#### Task 1.5.2: Create Flutterwave Adapter (JS)
+
+**File:** `services/flutterwave-payment-gateway/flutterwave-adapter.js`
+
+Same pattern as Paystack. Calls Edge Function `flutterwave` with `{ action: <toolName>, ...params }`.
+
+#### Task 1.5.3: Update Catalog Entries
+
+Change Paystack and Flutterwave from mock to live:
+
+```json
+{
+  "id": "paystack",
+  "name": "Paystack API",
+  "type": "live",
+  "adapterPath": "./services/paystack-payment-gateway/paystack-adapter.js",
+  "functionName": "paystack",
+  "executable": true,
+  "enabled": true,
+  "toolCount": 10,
+  "authType": "bearer",
+  "category": "payments",
+  "supportedCountries": ["NG", "GH", "ZA", "KE"]
+},
+{
+  "id": "flutterwave-v3",
+  "name": "Flutterwave v3 API",
+  "type": "live",
+  "adapterPath": "./services/flutterwave-payment-gateway/flutterwave-adapter.js",
+  "functionName": "flutterwave",
+  "executable": true,
+  "enabled": true,
+  "toolCount": 10,
+  "authType": "bearer",
+  "category": "payments",
+  "supportedCountries": ["NG", "GH", "KE", "ZA"]
+}
+```
+
+#### Task 1.5.4: End-to-End Validation
+
+Test at least 3 representative tools per adapter through the full stack:
+
+1. `gateway-execute` with `tool_id: "paystack:initialize-transaction"` -- should reach Supabase, which calls Paystack API
+2. `gateway-execute` with `tool_id: "paystack:list-banks"` -- read-only, safe test
+3. `gateway-intent` with `query: "charge a card in Nigeria"` -- should recommend paystack adapter
+
+**Acceptance Criteria:**
+- Calls do NOT hit `api.paystack.co` or `api.flutterwave.com` directly from the gateway
+- Requests route through Supabase Edge Functions
+- At least 3 tools per adapter execute end-to-end
+- `gateway-intent` returns Paystack/Flutterwave results for relevant queries
+- Error responses are structured and actionable
+
+**Files to Create/Modify in Phase 1.5:**
+- Create: `services/paystack-payment-gateway/paystack-adapter.js`
+- Create: `services/flutterwave-payment-gateway/flutterwave-adapter.js`
+- Modify: `services/catalog.json` (update paystack + flutterwave entries)
 
 ---
 
 ### Phase 2: Internal Services Integration
+
 **Duration:** 3-4 days
 **Dependencies:** Phase 1
 **Risk:** Low
-**Priority:** 🔴 CRITICAL
+**Priority:** CRITICAL
 
-#### Objectives
-Connect ALL internal services that are ready to deploy:
-- Auth Gateway
-- AI Router
-- Memory Service
-- Security Service
-- Verification Service
-- Intelligence API
+Connect all internal services that are ready to deploy.
 
-#### Tasks
+#### Task 2.1: Auth Gateway Adapter
 
-**2.1: Auth Gateway Service Adapter**
+**File:** `services/auth-gateway/auth-gateway-adapter.js`
+
+This adapter calls the Auth Gateway upstream service (NOT Supabase). Uses BaseClient directly since auth-gateway is a separate service at `AUTH_GATEWAY_URL`.
+
+Tools: `authenticate-user`, `validate-token`, `refresh-token`, `generate-api-key`, `revoke-api-key`, `list-api-keys`, `get-session`, `logout`
+
+#### Task 2.2: AI Router Adapter
+
+**File:** `services/ai-router/ai-router-adapter.js`
+
+Calls `ai-router` Edge Function OR configured upstream URL depending on environment.
+
+Tools: `chat-completion`, `generate-embedding`, `stream-chat`, `list-models`
+
+#### Task 2.3: Memory Service Adapter
+
+**File:** `services/memory-as-a-service/memory-adapter.js`
+
+Routes to 9 existing memory Edge Functions via UniversalSupabaseClient.
+
+Tools: `create`, `get`, `update`, `delete`, `list`, `search`, `stats`, `bulk-delete`, `health`
+
+Each tool maps to a different Edge Function (e.g., `memory-create`, `memory-get`, etc.).
+
 ```javascript
-// services/auth-gateway/auth-gateway-adapter.js
-class AuthGatewayAdapter extends BaseMCPAdapter {
-  constructor(config) {
-    super({
-      id: 'auth-gateway',
-      name: 'Authentication Gateway',
-      client: new BaseClient({
-        baseUrl: process.env.AUTH_GATEWAY_URL || 'http://localhost:4000',
-        timeout: 10000
-      }),
-      metadata: {
-        category: 'authentication',
-        capabilities: ['jwt', 'oauth2', 'api_keys', 'sessions'],
-        priority: 1 // Critical service
-      }
-    });
-  }
-
-  async initialize() {
-    this.tools = [
-      {
-        name: 'authenticate_user',
-        description: 'Authenticate user with email/password',
-        inputSchema: { /* ... */ }
-      },
-      {
-        name: 'generate_api_key',
-        description: 'Generate new API key for user',
-        inputSchema: { /* ... */ }
-      },
-      {
-        name: 'validate_token',
-        description: 'Validate JWT or API token',
-        inputSchema: { /* ... */ }
-      },
-      // ... more auth tools
-    ];
-  }
-
-  async callTool(toolName, args) {
-    switch (toolName) {
-      case 'authenticate_user':
-        return this.client.request({
-          path: '/auth/login',
-          method: 'POST'
-        }, { data: args });
-
-      case 'generate_api_key':
-        return this.client.request({
-          path: '/api-keys/generate',
-          method: 'POST'
-        }, { data: args });
-
-      // ... implement all tools
-    }
-  }
+async callTool(toolName, args, context = {}) {
+    // Map tool name to Edge Function name
+    const functionName = toolName === 'health' ? 'system-health' : `memory-${toolName}`;
+    return this.client.call(functionName, args, context);
 }
 ```
 
-**2.2: AI Router Service Adapter**
-```javascript
-// services/ai-router/ai-router-adapter.js
-class AIRouterAdapter extends BaseMCPAdapter {
-  constructor(config) {
-    super({
-      id: 'ai-router',
-      name: 'AI Model Router',
-      client: new UniversalSupabaseClient({
-        serviceName: 'ai-router',
-        functionName: 'ai-router'
-      }),
-      metadata: {
-        category: 'ai',
-        capabilities: ['multi_model', 'streaming', 'embeddings'],
-        supportedModels: ['gpt-4', 'claude-3', 'gemini-pro']
-      }
-    });
-  }
+#### Task 2.4: Intelligence API Adapter
 
-  async initialize() {
-    this.tools = [
-      {
-        name: 'chat_completion',
-        description: 'Multi-provider chat completion with auto-routing',
-        inputSchema: { /* ... */ }
-      },
-      {
-        name: 'generate_embedding',
-        description: 'Generate text embeddings',
-        inputSchema: { /* ... */ }
-      },
-      {
-        name: 'stream_chat',
-        description: 'Streaming chat completion',
-        inputSchema: { /* ... */ }
-      }
-    ];
-  }
-}
-```
+**File:** `services/intelligence-api/intelligence-adapter.js`
 
-**2.3: Memory Service Adapter**
-```javascript
-// services/memory-as-a-service/memory-adapter.js
-class MemoryServiceAdapter extends BaseMCPAdapter {
-  constructor(config) {
-    super({
-      id: 'memory-service',
-      name: 'Memory as a Service (MaaS)',
-      client: new UniversalSupabaseClient({
-        serviceName: 'memory-service',
-        functionName: 'memory-create' // Base function
-      }),
-      metadata: {
-        category: 'ai_infrastructure',
-        capabilities: ['vector_search', 'semantic_memory', 'embeddings']
-      }
-    });
-  }
+Routes to 6 intelligence Edge Functions.
 
-  async initialize() {
-    // Import from existing Supabase adapter tools
-    this.tools = [
-      // 9 memory functions already working
-      'memory-create',
-      'memory-get',
-      'memory-update',
-      'memory-delete',
-      'memory-list',
-      'memory-search',
-      'memory-stats',
-      'memory-bulk-delete',
-      'system-health'
-    ].map(func => ({
-      name: func.replace('memory-', ''),
-      description: `Memory ${func.split('-')[1]} operation`,
-      inputSchema: { /* from Supabase discovery */ }
-    }));
-  }
-}
-```
+Tools: `suggest-tags`, `find-related`, `detect-duplicates`, `extract-insights`, `analyze-patterns`, `health-check`
 
-**2.4: Security Service Adapter**
-```javascript
-// services/security-service/security-adapter.js
-class SecurityServiceAdapter extends BaseMCPAdapter {
-  constructor(config) {
-    super({
-      id: 'security-service',
-      name: 'Security & Compliance Service',
-      client: new UniversalSupabaseClient({
-        serviceName: 'security',
-        functionName: 'verify' // Base auth function
-      }),
-      metadata: {
-        category: 'security',
-        capabilities: ['verification', 'compliance', 'audit']
-      }
-    });
-  }
-}
-```
+#### Task 2.5: Security Service Adapter
 
-**2.5: Verification Service Adapter**
-```javascript
-// Already exists: services/verification-service/verification-mcp-adapter.ts
-// Just need to:
-// 1. Update client baseURL to Supabase
-// 2. Register in catalog.json
-// 3. Test integration
-```
+**File:** `services/security-service/security-adapter.js`
 
-**2.6: Intelligence API Adapter**
-```javascript
-// services/intelligence-api/intelligence-adapter.js
-class IntelligenceAdapter extends BaseMCPAdapter {
-  constructor(config) {
-    super({
-      id: 'intelligence-api',
-      name: 'Intelligence & Analytics API',
-      client: new UniversalSupabaseClient({
-        serviceName: 'intelligence',
-        functionName: 'intelligence-suggest-tags'
-      }),
-      metadata: {
-        category: 'ai_intelligence',
-        capabilities: ['tag_suggestions', 'pattern_analysis', 'insights']
-      }
-    });
-  }
+Maps to API key management and verification Edge Functions.
 
-  async initialize() {
-    this.tools = [
-      'suggest-tags',
-      'find-related',
-      'detect-duplicates',
-      'extract-insights',
-      'analyze-patterns',
-      'health-check'
-    ].map(tool => ({ /* ... */ }));
-  }
-}
-```
+Tools: `create-api-key`, `delete-api-key`, `rotate-api-key`, `revoke-api-key`, `list-api-keys`, `verify-token`
 
-**2.7: Update Services Catalog**
-```json
-// services/catalog.json
-{
-  "mcpAdapters": [
-    {
-      "id": "auth-gateway",
-      "name": "Authentication Gateway",
-      "type": "service",
-      "adapterPath": "./services/auth-gateway/auth-gateway-adapter.js",
-      "enabled": true,
-      "priority": 1,
-      "endpoint": "http://localhost:4000"
-    },
-    {
-      "id": "ai-router",
-      "name": "AI Model Router",
-      "type": "supabase_function",
-      "adapterPath": "./services/ai-router/ai-router-adapter.js",
-      "enabled": true,
-      "functionName": "ai-router"
-    },
-    {
-      "id": "memory-service",
-      "name": "Memory as a Service",
-      "type": "supabase_function",
-      "adapterPath": "./services/memory-as-a-service/memory-adapter.js",
-      "enabled": true,
-      "functionName": "memory-create"
-    },
-    // ... more services
-  ]
-}
-```
+#### Task 2.6: Verification Service Adapter
 
-#### Acceptance Criteria
-- [ ] All 6 internal services have functional adapters
-- [ ] Auth Gateway integration tested end-to-end
-- [ ] AI Router handles multi-model requests
-- [ ] Memory Service fully operational via gateway
-- [ ] Security Service integrated and tested
-- [ ] Verification Service connected
-- [ ] Intelligence API working
-- [ ] All services registered in catalog
-- [ ] Integration tests passing
-- [ ] Documentation complete
+**File:** `services/verification-service/verification-adapter.js`
 
-#### Files to Create/Modify
+New `.js` adapter using the existing `verification-mcp-adapter.ts` as reference for tool definitions.
+
+#### Task 2.7: Update Catalog
+
+Add all 6 internal service adapters to `services/catalog.json` with `type: "live"`, `adapterPath`, and `executable: true`.
+
+**Acceptance Criteria:**
+- All 6 internal services have functional `.js` adapters
+- Each adapter has tool list, health check, and uses auth context
+- Memory Service: all 9 functions accessible via gateway
+- Intelligence API: all 6 functions accessible
+- Auth Gateway: token validation and API key management work
+- All services registered in catalog with `type: "live"`
+- Integration tests passing
+
+**Files to Create/Modify in Phase 2:**
 - Create: `services/auth-gateway/auth-gateway-adapter.js`
 - Create: `services/ai-router/ai-router-adapter.js`
 - Create: `services/memory-as-a-service/memory-adapter.js`
-- Create: `services/security-service/security-adapter.js`
 - Create: `services/intelligence-api/intelligence-adapter.js`
-- Modify: `services/verification-service/verification-mcp-adapter.ts`
+- Create: `services/security-service/security-adapter.js`
+- Create: `services/verification-service/verification-adapter.js`
 - Modify: `services/catalog.json`
 
 ---
 
-### Phase 3: Payment Services Integration
-**Duration:** 3-4 days
-**Dependencies:** Phase 1, Phase 2
+### Phase 3: Payment Services (Remaining)
+
+**Duration:** 2-3 days
+**Dependencies:** Phase 1.5 (Paystack + Flutterwave already done)
 **Risk:** Medium
-**Priority:** 🟡 HIGH
+**Priority:** HIGH
 
-#### Objectives
-Connect payment service adapters to Supabase Edge Functions:
-- Paystack
-- Flutterwave
-- Stripe
-- SaySwitch
+#### Task 3.1: Stripe Adapter
 
-#### Tasks
+**File:** `services/---stripe-api--2024-04-10--postman-collection/stripe-adapter.js`
 
-**3.1: Update Paystack Client**
-```javascript
-// services/paystack-payment-gateway/paystack-client.js
-class PayStackClient extends BaseClient {
-  constructor(config = {}) {
-    super({
-      name: 'paystack',
-      // CHANGE THIS:
-      // baseUrl: 'https://api.paystack.co',  // ❌ OLD
-      baseUrl: process.env.SUPABASE_URL + '/functions/v1/paystack',  // ✅ NEW
-      timeout: 30000,
-      authentication: {
-        type: 'bearer',
-        config: {
-          token: process.env.SUPABASE_SERVICE_KEY
-        }
-      }
-    });
-  }
+Routes to `stripe` Edge Function. Tool definitions derived from existing Postman collection.
 
-  async initializeTransaction(data) {
-    // Supabase function handles the actual Paystack API call
-    return this.request({
-      path: '', // Already in baseURL
-      method: 'POST'
-    }, {
-      data: {
-        action: 'initialize_transaction',
-        ...data
-      }
-    });
-  }
-}
-```
+#### Task 3.2: SaySwitch Adapter
 
-**3.2: Update Flutterwave Client**
-```javascript
-// services/flutterwave-payment-gateway/flutterwave-client.js
-// Same pattern as Paystack
-this.baseUrl = process.env.SUPABASE_URL + '/functions/v1/flutterwave';
-```
+**File:** `services/sayswitch-api-integration-postman-collection/sayswitch-adapter.js`
 
-**3.3: Create Stripe Adapter** (currently only has Edge Function)
-```javascript
-// services/stripe-payment-gateway/stripe-adapter.js
-class StripeAdapter extends BaseMCPAdapter {
-  constructor(config) {
-    super({
-      id: 'stripe',
-      name: 'Stripe Payment Processing',
-      client: new UniversalSupabaseClient({
-        serviceName: 'stripe',
-        functionName: 'stripe'
-      }),
-      metadata: {
-        category: 'payments',
-        capabilities: ['payments', 'subscriptions', 'connect', 'issuing'],
-        supportedCountries: ['US', 'GB', 'EU', 'CA', 'AU', 'GLOBAL']
-      }
-    });
-  }
-}
-```
+Routes to `sayswitch` Edge Function.
 
-**3.4: Create SaySwitch Adapter**
-```javascript
-// services/sayswitch/sayswitch-adapter.js
-class SaySwitchAdapter extends BaseMCPAdapter {
-  constructor(config) {
-    super({
-      id: 'sayswitch',
-      name: 'SaySwitch Payment & Bills',
-      client: new UniversalSupabaseClient({
-        serviceName: 'sayswitch',
-        functionName: 'sayswitch'
-      }),
-      metadata: {
-        category: 'payments',
-        capabilities: ['bills', 'transfers', 'payments'],
-        supportedCountries: ['NG']
-      }
-    });
-  }
-}
-```
+#### Task 3.3: BAP Adapter
 
-**3.5: Update Catalog for Payment Services**
-```json
-{
-  "mcpAdapters": [
-    {
-      "id": "paystack",
-      "name": "Paystack Payment Gateway",
-      "type": "supabase_function",
-      "adapterPath": "./services/paystack-payment-gateway/paystack-mcp-adapter.ts",
-      "enabled": true,
-      "toolCount": 117,
-      "functionName": "paystack",
-      "category": "payments",
-      "supportedCountries": ["NG", "GH", "ZA", "KE"]
-    },
-    {
-      "id": "flutterwave",
-      "name": "Flutterwave Payment Gateway",
-      "type": "supabase_function",
-      "adapterPath": "./services/flutterwave-payment-gateway/flutterwave-mcp-adapter.ts",
-      "enabled": true,
-      "toolCount": 107,
-      "functionName": "flutterwave"
-    },
-    {
-      "id": "stripe",
-      "name": "Stripe Payment Processing",
-      "type": "supabase_function",
-      "adapterPath": "./services/stripe-payment-gateway/stripe-adapter.js",
-      "enabled": true,
-      "functionName": "stripe"
-    },
-    {
-      "id": "sayswitch",
-      "name": "SaySwitch Payment & Bills",
-      "type": "supabase_function",
-      "adapterPath": "./services/sayswitch/sayswitch-adapter.js",
-      "enabled": true,
-      "functionName": "sayswitch"
-    }
-  ]
-}
-```
+**File:** `services/bap-postman-collection/bap-adapter.js`
 
-#### Acceptance Criteria
-- [ ] Paystack client updated to use Supabase Edge Function
-- [ ] Flutterwave client updated to use Supabase Edge Function
-- [ ] Stripe adapter created and tested
-- [ ] SaySwitch adapter created and tested
-- [ ] All 4 payment services registered in catalog
-- [ ] End-to-end payment flow tested for each service
-- [ ] Webhook handling verified
-- [ ] Error handling and retries working
-- [ ] Integration tests passing
+Routes to relevant Edge Function.
 
-#### Files to Modify/Create
-- Modify: `services/paystack-payment-gateway/paystack-client.js`
-- Modify: `services/flutterwave-payment-gateway/flutterwave-client.js`
-- Create: `services/stripe-payment-gateway/stripe-adapter.js`
-- Create: `services/sayswitch/sayswitch-adapter.js`
-- Modify: `services/catalog.json`
+#### Task 3.4: Seftec Payment Adapter
+
+**File:** `services/seftec-payment-collection/seftec-adapter.js`
+
+**Acceptance Criteria:**
+- All remaining payment services have adapters
+- Catalog updated from mock to live for each
+- End-to-end payment flows tested
+- Webhook handling verified where applicable
 
 ---
 
 ### Phase 4: Banking & Finance Services
+
 **Duration:** 2-3 days
-**Dependencies:** Phase 1, Phase 3
+**Dependencies:** Phase 1
 **Risk:** Medium
-**Priority:** 🟡 HIGH
+**Priority:** HIGH
 
-#### Objectives
-- Providus Bank
-- Credit-as-a-Service
-- Business API
-- Xpress Wallet (WaaS)
+#### Task 4.1: Providus Bank Adapter (JS)
 
-#### Tasks
+New `.js` adapter using `services/providus-bank/mcp-adapter.ts` as reference.
 
-**4.1: Providus Bank Adapter**
-```javascript
-// Already exists: services/providus-bank/mcp-adapter.ts
-// Update client baseURL to Supabase
-// Test integration
-```
+#### Task 4.2: Credit-as-a-Service Adapter
 
-**4.2: Credit-as-a-Service Adapter**
-```javascript
-// services/credit-as-a-service/credit-adapter.js
-class CreditServiceAdapter extends BaseMCPAdapter {
-  // Lending platform integration
-}
-```
+**File:** `services/credit-as-a-service/credit-adapter.js`
 
-**4.3: Xpress Wallet Adapter**
-```javascript
-// Already exists: services/xpress-wallet-waas/xpress-wallet-mcp-adapter.ts
-// Update and test
-```
+#### Task 4.3: Xpress Wallet Adapter (JS)
 
-#### Acceptance Criteria
-- [ ] All banking services connected to Supabase
-- [ ] Account creation, transfers, balance checks working
-- [ ] Credit API functional
-- [ ] WaaS features operational
-- [ ] Compliance checks in place
-- [ ] Tests passing
+New `.js` adapter using `services/xpress-wallet-waas/xpress-wallet-mcp-adapter.ts` as reference.
+
+#### Task 4.4: Open Banking Adapter
+
+**File:** `services/open-banking-api-postman-collection/open-banking-adapter.js`
+
+**Acceptance Criteria:**
+- All banking services connected via Supabase
+- Account operations, transfers, balance checks working
+- Credit API functional
+- WaaS features operational
 
 ---
 
 ### Phase 5: EDOC & Document Services
-**Duration:** 2-3 days
+
+**Duration:** 1-2 days
 **Dependencies:** Phase 1
 **Risk:** Low
-**Priority:** 🟢 MEDIUM
+**Priority:** MEDIUM
 
-#### Objectives
-Connect EDOC (Electronic Document) services (11 Edge Functions available).
+#### Task 5.1: EDOC Adapter
 
-#### Tasks
+**File:** `services/edoc-external-app-integration---for-clients-postman-collection/edoc-adapter.js`
 
-**5.1: Create EDOC Adapter**
-```javascript
-// services/edoc/edoc-adapter.js
-class EDOCAdapter extends BaseMCPAdapter {
-  constructor(config) {
-    super({
-      id: 'edoc',
-      name: 'Electronic Document Service',
-      client: new UniversalSupabaseClient({
-        serviceName: 'edoc',
-        functionName: 'edoc'
-      }),
-      metadata: {
-        category: 'documents',
-        capabilities: ['consent', 'verification', 'transactions', 'webhooks']
-      }
-    });
-  }
+Routes to 11 EDOC Edge Functions. Tools: `init-consent`, `consent-status`, `delete-consent`, `get-transactions`, `dashboard-data`, `webhook-handler`, etc.
 
-  async initialize() {
-    this.tools = [
-      'init-consent',
-      'consent-status',
-      'delete-consent',
-      'get-transactions',
-      'dashboard-data',
-      'webhook-handler'
-      // ... 11 EDOC functions
-    ].map(tool => ({ /* ... */ }));
-  }
-}
-```
-
-#### Acceptance Criteria
-- [ ] EDOC adapter created
-- [ ] All 11 EDOC functions accessible
-- [ ] Consent management working
-- [ ] Transaction tracking operational
-- [ ] Webhook handling verified
-- [ ] Tests passing
+**Acceptance Criteria:**
+- All 11 EDOC functions accessible
+- Consent management working
+- Transaction tracking operational
 
 ---
 
 ### Phase 6: Testing & Quality Assurance
+
 **Duration:** 3-4 days
 **Dependencies:** All previous phases
 **Risk:** Low
-**Priority:** 🔴 CRITICAL
+**Priority:** CRITICAL
 
-#### Objectives
-Comprehensive testing of entire system.
+#### Task 6.1: Unit Tests (Vitest)
 
-#### Tasks
+- AdapterRegistry: tool ID normalization, alias resolution, adapter execution routing
+- UniversalSupabaseClient: header injection, request shaping, retry behavior
+- BaseMCPAdapter: lifecycle (initialize -> callTool -> healthCheck)
+- Each service adapter: tool list completeness, callTool routing
 
-**6.1: Unit Tests**
-- [ ] Test all adapters
-- [ ] Test UniversalSupabaseClient
-- [ ] Test AdapterRegistry
-- [ ] Test MCP Discovery Layer integration
+#### Task 6.2: Integration Tests
 
-**6.2: Integration Tests**
-- [ ] End-to-end flows for each service
-- [ ] Auth flow testing
-- [ ] Payment flow testing
-- [ ] Memory operations testing
-- [ ] AI routing testing
+- Gateway `/mcp` lazy mode: all 5 meta-tools work
+- `gateway-execute` routes through registry (not adapter iteration)
+- End-to-end flows for each service category
+- Auth flow: token validation -> adapter execution -> response
+- Payment flow: intent -> execute -> Supabase -> external API
 
-**6.3: Load & Performance Tests**
-- [ ] Concurrent request handling
-- [ ] Rate limiting verification
-- [ ] Circuit breaker testing
-- [ ] Latency benchmarks
+#### Task 6.3: Preflight Tests
 
-**6.4: Security & Compliance**
-- [ ] Authentication testing
-- [ ] Authorization testing
-- [ ] API key validation
-- [ ] CORS verification
-- [ ] Audit logging verification
+- Preflight script fails with actionable messaging when env is missing
+- Preflight script passes when environment is correctly configured
 
-#### Acceptance Criteria
-- [ ] 90%+ code coverage
-- [ ] All integration tests passing
-- [ ] Performance benchmarks met
-- [ ] Security audit completed
-- [ ] Load testing completed
-- [ ] Documentation updated
+#### Task 6.4: Load & Performance Tests
+
+- Concurrent request handling
+- Rate limiting verification
+- Circuit breaker testing
+- Latency benchmarks (target: < 500ms p95)
+
+#### Task 6.5: Security Audit
+
+- Authentication testing
+- Authorization and scope enforcement
+- API key validation
+- CORS verification
+- Audit logging verification
+
+**Acceptance Criteria:**
+- 80%+ code coverage for core modules (registry, client, base adapter)
+- All integration tests passing
+- Performance benchmarks met
+- Security audit completed
 
 ---
 
 ### Phase 7: Deployment & Monitoring
+
 **Duration:** 2-3 days
 **Dependencies:** Phase 6
 **Risk:** Medium
-**Priority:** 🔴 CRITICAL
+**Priority:** CRITICAL
 
-#### Objectives
-Deploy to production and set up monitoring.
+#### Task 7.1: Railway Deployment
 
-#### Tasks
+- Update environment variables in Railway
+- Deploy to Railway
+- Verify health checks
+- Run preflight in production environment
+- Test public MCP endpoints
 
-**7.1: Railway Deployment**
-- [ ] Update environment variables
-- [ ] Deploy to Railway
-- [ ] Verify health checks
-- [ ] Test public endpoints
+#### Task 7.2: Monitoring Setup
 
-**7.2: Monitoring Setup**
-- [ ] Set up metrics collection
-- [ ] Configure alerts
-- [ ] Set up logging aggregation
-- [ ] Create dashboards
+- Metrics collection (adapter stats, tool execution times)
+- Alert configuration (error rate > threshold, service down)
+- Logging aggregation
+- Dashboard creation
 
-**7.3: Documentation**
-- [ ] API documentation
-- [ ] Architecture diagrams
-- [ ] Deployment guide
-- [ ] Troubleshooting guide
+#### Task 7.3: Documentation
 
-#### Acceptance Criteria
-- [ ] Gateway deployed and accessible
-- [ ] All services operational
-- [ ] Monitoring dashboards live
-- [ ] Alerts configured
-- [ ] Documentation complete
-- [ ] Team trained
+- API documentation for each adapter
+- Updated architecture diagrams
+- Deployment and operations guide
+- Troubleshooting guide
+
+**Acceptance Criteria:**
+- Gateway deployed and accessible
+- All services operational via MCP
+- Monitoring dashboards live
+- Alerts configured
+- Documentation complete
 
 ---
 
-## 📈 Success Metrics
+## Phase Dependency Graph
+
+```
+Phase 0 (DONE)
+    |
+Phase 0.5 (scaffolding, bugs, preflight)
+    |
+Phase 1 (core: client, adapter, registry)
+    |
+    +---> Phase 1.5 (quick-win: Paystack + Flutterwave)
+    |
+    +---> Phase 2 (internal services)
+    |         |
+    |         +---> Phase 3 (remaining payments)
+    |
+    +---> Phase 4 (banking)
+    |
+    +---> Phase 5 (EDOC)
+    |
+    +---> Phase 6 (testing -- after 1.5 through 5)
+              |
+              Phase 7 (deployment)
+```
+
+Phases 2, 3, 4, and 5 can run in parallel after Phase 1. Phase 6 runs after all adapter phases complete. Phase 7 follows testing.
+
+---
+
+## Success Metrics
 
 ### Before (Current State)
-- **Functional Tools:** 82 (4.9%)
-- **Services Connected:** 1 (Supabase only)
-- **Mock Adapters:** 19 (100% useless)
-- **Coverage:** Internal services only
+| Metric | Value |
+|--------|-------|
+| Functional Tools | 82 (~5% of target) |
+| Services Connected | 1 (Supabase auto-discovery only) |
+| Mock Adapters | 18 (non-executable placeholders) |
+| gateway-execute | Broken (subtraction bug) |
+| Payment routing | Direct to external APIs (bypasses backend) |
 
 ### After (Target State)
-- **Functional Tools:** 2,000+ (100%)
-- **Services Connected:** 25+ (all deployed services)
-- **Real Adapters:** 25+ (100% functional)
-- **Coverage:** All internal + external services
+| Metric | Value |
+|--------|-------|
+| Functional Tools | 200+ real tools (expandable via Edge Function discovery) |
+| Services Connected | 15+ (all deployed services) |
+| Real Adapters | 15+ (executable via registry) |
+| gateway-execute | Routes through AdapterRegistry |
+| Payment routing | Through Supabase Edge Functions |
+| Tool Execution | O(1) lookup via registry + aliases |
 
 ### Key Performance Indicators
-- **Tool Execution Success Rate:** > 99%
-- **Average Response Time:** < 500ms
-- **Uptime:** > 99.9%
-- **Error Rate:** < 0.1%
+- Tool Execution Success Rate: > 99%
+- Average Response Time: < 500ms
+- Uptime: > 99.9%
+- Error Rate: < 0.1%
 
 ---
 
-## 🎯 GitHub Project Board Structure
+## Assumptions and Defaults
+
+- Default mode remains `MCP_TOOL_MODE=lazy`
+- Auth enforced via Auth Gateway by default; `MCP_REQUIRE_AUTH` flag available for local dev without auth
+- Supabase function inventory source of truth is `DIRECT_API_ROUTES.md` (currently lists ~80 functions)
+- All new adapter code is CommonJS JavaScript (`.js`), loadable via `require()`
+- Existing `.ts` files in `services/` are reference specs for tool definitions, not runtime code
+- `toolCount` values in catalog (e.g., 117 for Paystack) represent the full API surface; initial adapters may expose a subset of high-priority tools and expand iteratively
+
+---
+
+## GitHub Project Board Structure
 
 **Columns:**
-1. 📋 Backlog
-2. 🔜 Ready
-3. 🏗️ In Progress
-4. 👀 In Review
-5. ✅ Done
+1. Backlog
+2. Ready
+3. In Progress
+4. In Review
+5. Done
 
 **Labels:**
-- `phase-0` to `phase-7`
-- `priority-critical`, `priority-high`, `priority-medium`, `priority-low`
-- `type-infrastructure`, `type-adapter`, `type-testing`, `type-docs`
-- `service-auth`, `service-payment`, `service-banking`, etc.
+- Phase: `phase-0`, `phase-0.5`, `phase-1`, `phase-1.5`, `phase-2` through `phase-7`
+- Priority: `priority-critical`, `priority-high`, `priority-medium`
+- Type: `type-infrastructure`, `type-adapter`, `type-testing`, `type-bugfix`, `type-docs`
+- Service: `service-auth`, `service-payment`, `service-banking`, `service-memory`, `service-intelligence`, `service-edoc`
 
 ---
 
-## 🚀 Next Steps
+## Next Steps
 
-1. **Review this plan** - Ensure alignment with vision
-2. **Create GitHub issues** - One issue per major task
-3. **Start Phase 1** - Core adapter system
-4. **Weekly check-ins** - Review progress and adjust
-
----
-
-**Let's build this right, end-to-end, once and for all.** 🎯
+1. **Approve this plan** -- confirm alignment with vision
+2. **Execute Phase 0.5** -- scaffolding, bug fixes, preflight (0.5-1 day)
+3. **Execute Phase 1** -- core adapter system (2-3 days)
+4. **Execute Phase 1.5** -- prove it works with Paystack + Flutterwave (1-2 days)
+5. **Create GitHub issues** -- from updated GITHUB_ISSUES.md
+6. **Begin Phase 2+** -- internal services in parallel with remaining payments

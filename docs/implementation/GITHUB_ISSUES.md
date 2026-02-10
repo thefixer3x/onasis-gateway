@@ -1,6 +1,7 @@
-# GitHub Issues for Onasis Gateway Integration
+# GitHub Issues for Onasis Gateway Integration (Revised v2)
 
 **Project Board:** https://github.com/users/thefixer3x/projects/2
+**Revised:** 2026-02-10 (aligned with MASTER_IMPLEMENTATION_PLAN.md v2)
 
 ---
 
@@ -9,149 +10,246 @@
 ### Issue #1: Complete Architecture Documentation
 **Title:** `[Phase 0] Complete Architecture Documentation`
 **Labels:** `phase-0`, `priority-critical`, `type-docs`
-**Assignee:** TBD
-**Milestone:** Phase 0
-
-**Description:**
-Create comprehensive architecture documentation for the Onasis Gateway integration project.
+**Status:** DONE
 
 **Tasks:**
-- [x] Create `MASTER_IMPLEMENTATION_PLAN.md`
+- [x] Create `MASTER_IMPLEMENTATION_PLAN.md` (v1)
 - [x] Create `ARCHITECTURE.md`
-- [ ] Create service inventory spreadsheet
-- [ ] Document all existing Edge Functions
-- [ ] Map adapters to services
-- [ ] Create deployment diagram
-- [ ] Review and approval
-
-**Acceptance Criteria:**
-- All architecture documents complete
-- Diagrams created and reviewed
-- Service mapping verified
-- Team alignment achieved
-
-**Files:**
-- `docs/implementation/MASTER_IMPLEMENTATION_PLAN.md`
-- `docs/implementation/ARCHITECTURE.md`
-- `docs/implementation/SERVICE_INVENTORY.md`
+- [x] Create `api-gateway-codemap.md`
+- [x] Create `MISSING_LINK_ANALYSIS.md`
+- [x] Revise plan to v2 (gap analysis + preflight strategy)
 
 ---
 
-### Issue #2: Create GitHub Project Board Structure
+### Issue #2: Set up Project Board and Labels
 **Title:** `[Phase 0] Set up Project Board and Issue Templates`
 **Labels:** `phase-0`, `priority-high`, `type-infrastructure`
 
-**Description:**
-Set up GitHub project board with proper columns, labels, and automation.
-
 **Tasks:**
-- [ ] Create project board columns
-- [ ] Configure automation rules
-- [ ] Create issue templates
-- [ ] Set up labels
+- [ ] Create project board columns (Backlog, Ready, In Progress, In Review, Done)
+- [ ] Set up labels: `phase-0` through `phase-7`, `phase-0.5`, `phase-1.5`
+- [ ] Add priority labels: `priority-critical`, `priority-high`, `priority-medium`
+- [ ] Add type labels: `type-infrastructure`, `type-adapter`, `type-testing`, `type-bugfix`, `type-docs`
+- [ ] Add service labels: `service-auth`, `service-payment`, `service-banking`, `service-memory`, `service-intelligence`, `service-edoc`
 - [ ] Create milestones for each phase
 
-**Columns:**
-- 📋 Backlog
-- 🔜 Ready
-- 🏗️ In Progress
-- 👀 In Review
-- ✅ Done
+---
 
-**Labels:**
-- Phase: `phase-0` through `phase-7`
-- Priority: `priority-critical`, `priority-high`, `priority-medium`, `priority-low`
-- Type: `type-infrastructure`, `type-adapter`, `type-testing`, `type-docs`
-- Service: `service-auth`, `service-payment`, `service-banking`, etc.
+## Phase 0.5: Scaffolding + Preflight + Bug Fixes (NEW)
+
+### Issue #3: Create Missing Directory Structure
+**Title:** `[Phase 0.5] Create missing service directories and repo scaffolding`
+**Labels:** `phase-0.5`, `priority-critical`, `type-infrastructure`
+
+**Description:**
+Phase 1 and Phase 2 reference directories that do not exist. Create them now so implementation phases are purely "write code".
+
+**Tasks:**
+- [ ] Create `services/auth-gateway/` with README.md
+- [ ] Create `services/ai-router/` with README.md
+- [ ] Create `services/security-service/` with README.md
+- [ ] Create `services/intelligence-api/` with README.md
+
+**Note:** `src/clients/` is NOT created. UniversalSupabaseClient goes in `core/` alongside `base-client.js`.
+
+**Acceptance Criteria:**
+- All directories referenced by Phase 1 and Phase 2 exist
+- Each new directory has a README.md for git tracking
+
+---
+
+### Issue #4: Create Preflight Script
+**Title:** `[Phase 0.5] Create environment preflight check script`
+**Labels:** `phase-0.5`, `priority-critical`, `type-infrastructure`
+
+**Description:**
+Create `scripts/preflight.js` that verifies environment readiness before gateway startup.
+
+**Tasks:**
+- [ ] Check required env vars: `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+- [ ] Warn on optional missing vars: `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_GATEWAY_URL`
+- [ ] Test Supabase connectivity: `GET ${SUPABASE_URL}/functions/v1/system-health`
+- [ ] Test Auth Gateway connectivity (if URL configured)
+- [ ] Emit clear "ready / not ready" report
+- [ ] Add `npm run preflight` script to package.json
+
+**Acceptance Criteria:**
+- `npm run preflight` produces actionable output
+- Non-zero exit code if critical vars missing
+- Warnings (not failures) for optional services
+
+**Files:**
+- Create: `scripts/preflight.js`
+- Modify: `package.json` (add preflight script)
+
+---
+
+### Issue #5: Normalize Auth Gateway URL Semantics
+**Title:** `[Phase 0.5] Fix auth gateway URL normalization`
+**Labels:** `phase-0.5`, `priority-high`, `type-bugfix`
+
+**Description:**
+`buildAuthVerifyUrl()` in `unified_gateway.js:468-483` uses heuristic string matching that can produce wrong URLs. Standardize to deterministic normalization.
+
+**Tasks:**
+- [ ] Normalize `AUTH_GATEWAY_URL` into `authGatewayBaseUrl` and `authGatewayApiUrl`
+- [ ] Replace `buildAuthVerifyUrl()` with deterministic logic
+- [ ] Test with both `http://127.0.0.1:4000` and `http://127.0.0.1:4000/v1/auth` as input
+
+**Acceptance Criteria:**
+- No "double /v1/auth" or missing path segments
+- Auth proxy routes hit correct endpoints
+
+**Files:**
+- Modify: `unified_gateway.js`
+
+---
+
+### Issue #6: Fix Known Execution Bugs
+**Title:** `[Phase 0.5] Fix gateway-execute bug and BaseClient config mismatch`
+**Labels:** `phase-0.5`, `priority-critical`, `type-bugfix`
+
+**Description:**
+Two confirmed bugs block tool execution:
+
+**Bug 1: execute.js subtraction operator (CRITICAL)**
+```
+// Line 117: this.gateway-adapters.get(adapterId)
+// This is JavaScript subtraction, NOT property access
+// Fix: this.gateway.adapters.get(adapterId)
+```
+
+**Bug 2: BaseClient config key mismatch**
+```
+// BaseClient accepts baseUrl (camelCase)
+// Some callers pass baseURL (uppercase L)
+// Fix: accept both in BaseClient constructor
+```
+
+**Tasks:**
+- [ ] Fix `src/mcp/discovery/tools/execute.js` lines 117 and 125
+- [ ] Fix `core/base-client.js` to accept both `baseUrl` and `baseURL`
+- [ ] Test `gateway-execute` can call supabase-edge-functions adapter
+
+**Acceptance Criteria:**
+- `gateway-execute` can locate and call an adapter by ID
+- BaseClient works with both config key formats
+
+**Files:**
+- Modify: `src/mcp/discovery/tools/execute.js`
+- Modify: `core/base-client.js`
+
+---
+
+### Issue #7: Update Catalog Schema for Real Adapter Loading
+**Title:** `[Phase 0.5] Add adapter loading fields to catalog schema`
+**Labels:** `phase-0.5`, `priority-high`, `type-infrastructure`
+
+**Description:**
+Add optional fields to catalog schema so `unified_gateway.js` can load real adapters dynamically.
+
+**New fields for `mcpAdapters[]`:**
+- `adapterPath` (string) -- path to .js file exporting adapter class
+- `functionName` (string) -- Supabase Edge Function name
+- `adapterRuntime` (enum: "cjs") -- always CommonJS
+- `executable` (boolean) -- true for real adapters, false for mocks
+
+**Tasks:**
+- [ ] Update `schemas/catalog-schema.json` with new optional fields
+- [ ] Verify existing catalog.json still validates (backwards compatible)
+
+**Files:**
+- Modify: `schemas/catalog-schema.json`
 
 ---
 
 ## Phase 1: Core Adapter System
 
-### Issue #3: Create Universal Supabase Client
+### Issue #8: Create Universal Supabase Client
 **Title:** `[Phase 1] Implement Universal Supabase Client`
 **Labels:** `phase-1`, `priority-critical`, `type-infrastructure`
-**Milestone:** Phase 1
+**Blocks:** #12, #13, #14, #15, #16
 
 **Description:**
-Create a universal client class that extends `BaseClient` for all Supabase Edge Function calls.
+Create `core/universal-supabase-client.js` that extends `BaseClient` for all Supabase Edge Function calls. Lives in `core/` alongside `base-client.js`.
 
 **Tasks:**
-- [ ] Create `src/clients/universal-supabase-client.js`
-- [ ] Extend `BaseClient` with Supabase-specific logic
-- [ ] Implement authentication header injection
-- [ ] Add error handling and retry logic
+- [ ] Create `core/universal-supabase-client.js` extending BaseClient
+- [ ] Implement `call(functionName, payload, options)` method
+- [ ] Always include `apikey: SUPABASE_ANON_KEY` header
+- [ ] Support auth passthrough (caller's Authorization header)
+- [ ] Support `X-Project-Scope` header forwarding
+- [ ] Implement `healthCheck()` via `system-health` function
 - [ ] Write unit tests
-- [ ] Document usage
 
 **Acceptance Criteria:**
-- Client extends BaseClient properly
-- Automatically adds Supabase auth headers
-- Handles all HTTP methods
-- Retry logic working
-- Tests passing (> 80% coverage)
-- Documentation complete
+- `call('memory-create', {...})` reaches actual Supabase Edge Function
+- Auth headers correctly injected
+- Inherits retry and circuit breaker from BaseClient
+- Tests passing
 
 **Files:**
-- Create: `src/clients/universal-supabase-client.js`
-- Create: `tests/clients/universal-supabase-client.test.js`
-- Update: `docs/clients/README.md`
+- Create: `core/universal-supabase-client.js`
+- Create: `tests/core/universal-supabase-client.test.js`
 
 ---
 
-### Issue #4: Create Base MCP Adapter Class
+### Issue #9: Create Base MCP Adapter Class
 **Title:** `[Phase 1] Implement Base MCP Adapter Class`
 **Labels:** `phase-1`, `priority-critical`, `type-infrastructure`
+**Blocks:** #12, #13, #14, #15, #16
 
 **Description:**
-Create abstract base class that all MCP adapters will extend.
+Create `core/base-mcp-adapter.js` -- abstract base class for all service adapters.
+
+**Contract:**
+- `initialize()` -- subclass MUST override to populate tools
+- `callTool(toolName, args, context)` -- execute a tool (default delegates to client)
+- `listTools()` -- return tool array
+- `healthCheck()` -- delegate to client
+- `getStats()` -- call count, error count, tool count
 
 **Tasks:**
-- [ ] Create `src/adapters/base-mcp-adapter.js`
-- [ ] Define adapter interface
-- [ ] Implement tool management
-- [ ] Add health check methods
-- [ ] Implement stats collection
+- [ ] Create `core/base-mcp-adapter.js`
+- [ ] Implement default callTool routing through client
+- [ ] Add stats tracking
 - [ ] Write unit tests
-- [ ] Create adapter development guide
-
-**Acceptance Criteria:**
-- Base class fully functional
-- Clear interface defined
-- Health checks working
-- Stats collection working
-- Tests passing
-- Developer guide complete
 
 **Files:**
-- Create: `src/adapters/base-mcp-adapter.js`
-- Create: `tests/adapters/base-mcp-adapter.test.js`
-- Create: `docs/adapters/DEVELOPMENT_GUIDE.md`
+- Create: `core/base-mcp-adapter.js`
+- Create: `tests/core/base-mcp-adapter.test.js`
 
 ---
 
-### Issue #5: Implement Adapter Registry
-**Title:** `[Phase 1] Create Adapter Registry System`
+### Issue #10: Create Adapter Registry
+**Title:** `[Phase 1] Implement Adapter Registry with O(1) Tool Lookup`
 **Labels:** `phase-1`, `priority-critical`, `type-infrastructure`
+**Blocks:** #11
 
 **Description:**
-Build the central registry that manages all adapters and provides tool lookup.
+Create `src/mcp/adapter-registry.js` that manages adapter lifecycle and provides O(1) tool lookup with alias resolution.
+
+**Key features:**
+- Register real adapters (calls `initialize()`, indexes tools)
+- Register mock adapters (non-executable placeholders)
+- Tool index: canonical `adapter:tool-name` (kebab-case)
+- Alias resolution: `snake_case` <-> `kebab-case`
+- `callTool(toolId, args)` routes to correct adapter
+- `toAdaptersMap()` feeds into existing OperationRegistry
 
 **Tasks:**
 - [ ] Create `src/mcp/adapter-registry.js`
-- [ ] Implement adapter registration
-- [ ] Create tool index (Map<toolId, adapter>)
-- [ ] Implement tool lookup methods
-- [ ] Add bulk registration
-- [ ] Implement registry health checks
-- [ ] Write comprehensive tests
+- [ ] Implement `register(adapter)` with tool indexing
+- [ ] Implement `registerMock(entry)` for placeholders
+- [ ] Implement `resolveTool(toolId)` with alias resolution
+- [ ] Implement `callTool(toolId, args, context)`
+- [ ] Write unit tests
 
 **Acceptance Criteria:**
-- Registry manages all adapters
-- Fast tool lookup (< 1ms)
-- Thread-safe operations
-- Health checks working
-- Tests passing (> 90% coverage)
+- O(1) tool lookup
+- Alias resolution works (snake_case <-> kebab-case)
+- Mock adapters stored but not executable
+- Integrates with existing OperationRegistry
 
 **Files:**
 - Create: `src/mcp/adapter-registry.js`
@@ -159,441 +257,426 @@ Build the central registry that manages all adapters and provides tool lookup.
 
 ---
 
-### Issue #6: Update Unified Gateway to Use Registry
+### Issue #11: Integrate Registry into unified_gateway.js
 **Title:** `[Phase 1] Integrate Adapter Registry into Gateway`
 **Labels:** `phase-1`, `priority-critical`, `type-infrastructure`
+**Blocked by:** #10
 
 **Description:**
-Replace mock adapter loading with real adapter registry integration.
+Refactor `loadMCPAdapters()` to use AdapterRegistry. Three loading paths:
+1. Explicit factory (supabase-edge-functions -- keep existing)
+2. `adapterPath`-based loading (require JS file, register)
+3. Mock fallback (registerMock)
 
 **Tasks:**
-- [ ] Modify `unified_gateway.js` adapter loading
-- [ ] Remove mock adapter code
-- [ ] Integrate AdapterRegistry
-- [ ] Update MCP tool list endpoint
-- [ ] Update tool call endpoint
-- [ ] Test integration end-to-end
-- [ ] Update documentation
+- [ ] Import and instantiate AdapterRegistry in loadMCPAdapters
+- [ ] Add adapterPath loading path alongside existing factory
+- [ ] Route mocks through registerMock()
+- [ ] Set `this.adapters = this.adapterRegistry.toAdaptersMap()` for backwards compat
+- [ ] Update gateway-execute to route through registry
+- [ ] Verify MCPDiscoveryLayer still initializes correctly
 
 **Acceptance Criteria:**
-- Mock adapters removed
-- Registry fully integrated
-- All MCP endpoints working
-- No breaking changes to API
-- Tests passing
-- Documentation updated
+- Supabase adapter still loads (no regression)
+- adapterPath entries load via require()
+- Mock adapters remain discoverable
+- gateway-execute routes through registry
+- All existing /health and /mcp endpoints work
 
 **Files:**
-- Modify: `unified_gateway.js` (lines 430-460)
-- Update: `docs/API.md`
+- Modify: `unified_gateway.js` (loadMCPAdapters section)
+- Modify: `src/mcp/discovery/tools/execute.js` (use registry for calls)
+
+---
+
+## Phase 1.5: Quick-Win Payment Adapters (NEW)
+
+### Issue #12: Create Paystack JS Adapter
+**Title:** `[Phase 1.5] Create runnable Paystack adapter via Supabase`
+**Labels:** `phase-1.5`, `priority-high`, `service-payment`, `type-adapter`
+**Blocked by:** #8, #9, #10
+
+**Description:**
+Create `services/paystack-payment-gateway/paystack-adapter.js` that routes through Supabase Edge Function `paystack` with `{ action: <toolName>, ...params }`.
+
+Tool definitions derived from existing `paystack-mcp-adapter.ts` reference spec.
+
+**Initial tools (10 high-priority):**
+- `initialize-transaction`
+- `verify-transaction`
+- `list-transactions`
+- `charge-authorization`
+- `create-customer`
+- `list-customers`
+- `create-transfer-recipient`
+- `initiate-transfer`
+- `verify-account`
+- `list-banks`
+
+**Tasks:**
+- [ ] Create `services/paystack-payment-gateway/paystack-adapter.js`
+- [ ] Implement tool definitions with input schemas
+- [ ] Implement callTool routing through UniversalSupabaseClient
+- [ ] Update catalog.json: change type from "mock" to "live", add adapterPath
+- [ ] Test at least 3 tools end-to-end via gateway-execute
+
+**Acceptance Criteria:**
+- Calls do NOT hit api.paystack.co directly from gateway
+- Requests route through Supabase Edge Function
+- gateway-intent returns Paystack for "charge a card in Nigeria"
+- At least 3 tools execute end-to-end
+
+**Files:**
+- Create: `services/paystack-payment-gateway/paystack-adapter.js`
+- Modify: `services/catalog.json`
+
+---
+
+### Issue #13: Create Flutterwave JS Adapter
+**Title:** `[Phase 1.5] Create runnable Flutterwave adapter via Supabase`
+**Labels:** `phase-1.5`, `priority-high`, `service-payment`, `type-adapter`
+**Blocked by:** #8, #9, #10
+
+**Description:**
+Same pattern as Paystack. Create `services/flutterwave-payment-gateway/flutterwave-adapter.js` routing through Edge Function `flutterwave`.
+
+**Files:**
+- Create: `services/flutterwave-payment-gateway/flutterwave-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
 ## Phase 2: Internal Services Integration
 
-### Issue #7: Create Auth Gateway Adapter
+### Issue #14: Create Auth Gateway Adapter
 **Title:** `[Phase 2] Implement Auth Gateway Service Adapter`
 **Labels:** `phase-2`, `priority-critical`, `service-auth`, `type-adapter`
-**Milestone:** Phase 2
+**Blocked by:** #9
 
 **Description:**
-Build MCP adapter for Auth Gateway service (JWT, OAuth, API keys).
+Build `services/auth-gateway/auth-gateway-adapter.js`. Uses BaseClient (not UniversalSupabaseClient) since auth-gateway is a separate upstream service at AUTH_GATEWAY_URL.
 
-**Tasks:**
-- [ ] Create `services/auth-gateway/auth-gateway-adapter.js`
-- [ ] Define auth tools (login, validate, generate-key, etc.)
-- [ ] Implement tool execution
-- [ ] Add JWT validation
-- [ ] Add OAuth flow support
-- [ ] Write integration tests
-- [ ] Update catalog.json
-
-**Tools to Implement:**
-- `authenticate_user` - Email/password login
-- `validate_token` - JWT/API key validation
-- `generate_api_key` - Create new API key
-- `refresh_token` - Refresh JWT
-- `revoke_token` - Revoke access
-- `oauth_authorize` - OAuth authorization
-- `oauth_callback` - OAuth callback handler
-
-**Acceptance Criteria:**
-- All auth tools functional
-- JWT validation working
-- OAuth flow complete
-- Integration tests passing
-- Registered in catalog
-- Documentation complete
+**Tools:**
+- `authenticate-user` -- Email/password login
+- `validate-token` -- JWT/API key validation
+- `refresh-token` -- Refresh JWT
+- `generate-api-key` -- Create new API key
+- `revoke-api-key` -- Revoke access
+- `list-api-keys` -- List user's API keys
+- `get-session` -- Get current session
+- `logout` -- End session
 
 **Files:**
 - Create: `services/auth-gateway/auth-gateway-adapter.js`
-- Create: `tests/services/auth-gateway-adapter.test.js`
-- Update: `services/catalog.json`
+- Modify: `services/catalog.json`
 
 ---
 
-### Issue #8: Create AI Router Adapter
+### Issue #15: Create AI Router Adapter
 **Title:** `[Phase 2] Implement AI Router Service Adapter`
 **Labels:** `phase-2`, `priority-high`, `service-ai`, `type-adapter`
+**Blocked by:** #8, #9
 
 **Description:**
-Build adapter for AI Router service (multi-model chat, embeddings).
-
-**Tasks:**
-- [ ] Create `services/ai-router/ai-router-adapter.js`
-- [ ] Implement chat completion tool
-- [ ] Implement streaming chat tool
-- [ ] Implement embedding generation tool
-- [ ] Add model routing logic
-- [ ] Write tests
-- [ ] Update catalog
+Build `services/ai-router/ai-router-adapter.js`. Routes to `ai-router` Edge Function or configured upstream URL.
 
 **Tools:**
-- `chat_completion` - Multi-provider chat
-- `stream_chat` - Streaming chat
-- `generate_embedding` - Text embeddings
-- `list_models` - Available models
+- `chat-completion` -- Multi-provider chat
+- `generate-embedding` -- Text embeddings
+- `stream-chat` -- Streaming chat
+- `list-models` -- Available models
 
 **Files:**
 - Create: `services/ai-router/ai-router-adapter.js`
-- Update: `services/catalog.json`
+- Modify: `services/catalog.json`
 
 ---
 
-### Issue #9: Create Memory Service Adapter
+### Issue #16: Create Memory Service Adapter
 **Title:** `[Phase 2] Implement Memory Service (MaaS) Adapter`
 **Labels:** `phase-2`, `priority-high`, `service-memory`, `type-adapter`
+**Blocked by:** #8, #9
 
 **Description:**
-Build adapter for Memory as a Service (already has 9 Edge Functions).
+Build `services/memory-as-a-service/memory-adapter.js`. Routes to 9 existing memory Edge Functions.
 
-**Tasks:**
-- [ ] Create `services/memory-as-a-service/memory-adapter.js`
-- [ ] Map 9 Edge Functions to tools
-- [ ] Implement vector search
-- [ ] Implement CRUD operations
-- [ ] Add batch operations
-- [ ] Write tests
-- [ ] Update catalog
-
-**Tools** (from existing Edge Functions):
-- `create_memory`
-- `get_memory`
-- `update_memory`
-- `delete_memory`
-- `list_memories`
-- `search_memories`
-- `memory_stats`
-- `bulk_delete`
-- `health_check`
+**Tools (each maps to a different Edge Function):**
+- `create` -> `memory-create`
+- `get` -> `memory-get`
+- `update` -> `memory-update`
+- `delete` -> `memory-delete`
+- `list` -> `memory-list`
+- `search` -> `memory-search`
+- `stats` -> `memory-stats`
+- `bulk-delete` -> `memory-bulk-delete`
+- `health` -> `system-health`
 
 **Files:**
 - Create: `services/memory-as-a-service/memory-adapter.js`
-- Update: `services/catalog.json`
+- Modify: `services/catalog.json`
 
 ---
 
-### Issue #10: Create Security Service Adapter
-**Title:** `[Phase 2] Implement Security & Compliance Service Adapter`
-**Labels:** `phase-2`, `priority-medium`, `service-security`, `type-adapter`
-
-**Description:**
-Build adapter for security verification and compliance services.
-
-**Files:**
-- Create: `services/security-service/security-adapter.js`
-
----
-
-### Issue #11: Update Verification Service Adapter
-**Title:** `[Phase 2] Update and Connect Verification Service Adapter`
-**Labels:** `phase-2`, `priority-medium`, `service-verification`, `type-adapter`
-
-**Description:**
-Update existing verification adapter to use Supabase backend.
-
-**Tasks:**
-- [ ] Update `services/verification-service/verification-mcp-adapter.ts`
-- [ ] Change client baseURL to Supabase
-- [ ] Test KYC/KYB flows
-- [ ] Update catalog
-- [ ] Integration tests
-
-**Files:**
-- Modify: `services/verification-service/verification-mcp-adapter.ts`
-
----
-
-### Issue #12: Create Intelligence API Adapter
+### Issue #17: Create Intelligence API Adapter
 **Title:** `[Phase 2] Implement Intelligence & Analytics API Adapter`
-**Labels:** `phase-2`, `priority-medium`, `service-intelligence`, `type-adapter`
+**Labels:** `phase-2`, `priority-high`, `service-intelligence`, `type-adapter`
+**Blocked by:** #8, #9
 
 **Description:**
-Build adapter for Intelligence API (6 Edge Functions for AI insights).
+Build `services/intelligence-api/intelligence-adapter.js`. Routes to 6 intelligence Edge Functions.
 
 **Tools:**
-- `suggest_tags`
-- `find_related`
-- `detect_duplicates`
-- `extract_insights`
-- `analyze_patterns`
-- `health_check`
+- `suggest-tags` -> `intelligence-suggest-tags`
+- `find-related` -> `intelligence-find-related`
+- `detect-duplicates` -> `intelligence-detect-duplicates`
+- `extract-insights` -> `intelligence-extract-insights`
+- `analyze-patterns` -> `intelligence-analyze-patterns`
+- `health-check` -> `intelligence-health-check`
 
 **Files:**
 - Create: `services/intelligence-api/intelligence-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
-## Phase 3: Payment Services Integration
-
-### Issue #13: Update Paystack Client and Adapter
-**Title:** `[Phase 3] Update Paystack to Use Supabase Backend`
-**Labels:** `phase-3`, `priority-high`, `service-payment`, `type-adapter`
-**Milestone:** Phase 3
+### Issue #18: Create Security Service Adapter
+**Title:** `[Phase 2] Implement Security & API Key Management Adapter`
+**Labels:** `phase-2`, `priority-medium`, `service-security`, `type-adapter`
+**Blocked by:** #8, #9
 
 **Description:**
-Update Paystack client to route through Supabase Edge Function instead of direct API.
+Build `services/security-service/security-adapter.js`. Maps to API key management Edge Functions.
 
-**Tasks:**
-- [ ] Update `paystack-client.js` baseURL
-- [ ] Update `paystack-mcp-adapter.ts` if needed
-- [ ] Test all 117 tools
-- [ ] Verify transaction flow
-- [ ] Test webhooks
-- [ ] Update catalog.json
-- [ ] Integration tests
-
-**Acceptance Criteria:**
-- All Paystack tools route through Supabase
-- Transaction initialization working
-- Payment verification working
-- Webhook handling tested
-- Integration tests passing
+**Tools:**
+- `create-api-key` -> `api-key-create`
+- `delete-api-key` -> `api-key-delete`
+- `rotate-api-key` -> `api-key-rotate`
+- `revoke-api-key` -> `api-key-revoke`
+- `list-api-keys` -> `api-key-list`
 
 **Files:**
-- Modify: `services/paystack-payment-gateway/paystack-client.js` (line 12)
-- Modify: `services/paystack-payment-gateway/paystack-mcp-adapter.ts`
-- Update: `services/catalog.json`
+- Create: `services/security-service/security-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
-### Issue #14: Update Flutterwave Client and Adapter
-**Title:** `[Phase 3] Update Flutterwave to Use Supabase Backend`
-**Labels:** `phase-3`, `priority-high`, `service-payment`, `type-adapter`
+### Issue #19: Create Verification Service Adapter (JS)
+**Title:** `[Phase 2] Create JS Verification Service Adapter`
+**Labels:** `phase-2`, `priority-medium`, `service-verification`, `type-adapter`
+**Blocked by:** #8, #9
 
 **Description:**
-Update Flutterwave client to route through Supabase.
-
-**Tasks:**
-- [ ] Update `flutterwave-client.js` baseURL
-- [ ] Test all 107 tools
-- [ ] Verify payment flows
-- [ ] Update catalog
-- [ ] Integration tests
+Create new `services/verification-service/verification-adapter.js` using existing `verification-mcp-adapter.ts` as reference for tool definitions.
 
 **Files:**
-- Modify: `services/flutterwave-payment-gateway/flutterwave-client.js`
+- Create: `services/verification-service/verification-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
-### Issue #15: Create Stripe Adapter
+## Phase 3: Remaining Payment Services
+
+### Issue #20: Create Stripe Adapter
 **Title:** `[Phase 3] Create Stripe Payment Adapter`
 **Labels:** `phase-3`, `priority-high`, `service-payment`, `type-adapter`
 
-**Description:**
-Build Stripe adapter (Edge Function exists, no adapter yet).
-
 **Files:**
-- Create: `services/stripe-payment-gateway/stripe-adapter.js`
+- Create: `services/---stripe-api--2024-04-10--postman-collection/stripe-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
-### Issue #16: Create SaySwitch Adapter
+### Issue #21: Create SaySwitch Adapter
 **Title:** `[Phase 3] Create SaySwitch Bills & Payment Adapter`
 **Labels:** `phase-3`, `priority-medium`, `service-payment`, `type-adapter`
 
-**Description:**
-Build SaySwitch adapter for bill payments and transfers.
+**Files:**
+- Create: `services/sayswitch-api-integration-postman-collection/sayswitch-adapter.js`
+- Modify: `services/catalog.json`
+
+---
+
+### Issue #22: Create BAP Adapter
+**Title:** `[Phase 3] Create BAP Payment Service Adapter`
+**Labels:** `phase-3`, `priority-medium`, `service-payment`, `type-adapter`
 
 **Files:**
-- Create: `services/sayswitch/sayswitch-adapter.js`
+- Create: `services/bap-postman-collection/bap-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
 ## Phase 4: Banking & Finance Services
 
-### Issue #17: Update Providus Bank Adapter
-**Title:** `[Phase 4] Update Providus Bank Adapter`
+### Issue #23: Create Providus Bank Adapter (JS)
+**Title:** `[Phase 4] Create Providus Bank Adapter`
 **Labels:** `phase-4`, `priority-high`, `service-banking`, `type-adapter`
 
+**Description:**
+New `.js` adapter using `services/providus-bank/mcp-adapter.ts` as reference.
+
 **Files:**
-- Modify: `services/providus-bank/mcp-adapter.ts`
+- Create: `services/providus-bank/providus-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
-### Issue #18: Create Credit-as-a-Service Adapter
+### Issue #24: Create Credit-as-a-Service Adapter
 **Title:** `[Phase 4] Create Credit Service Adapter`
 **Labels:** `phase-4`, `priority-medium`, `service-banking`, `type-adapter`
 
 **Files:**
 - Create: `services/credit-as-a-service/credit-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
-### Issue #19: Update Xpress Wallet Adapter
-**Title:** `[Phase 4] Update Xpress Wallet (WaaS) Adapter`
+### Issue #25: Create Xpress Wallet Adapter (JS)
+**Title:** `[Phase 4] Create Xpress Wallet (WaaS) Adapter`
 **Labels:** `phase-4`, `priority-medium`, `service-banking`, `type-adapter`
 
+**Description:**
+New `.js` adapter using `services/xpress-wallet-waas/xpress-wallet-mcp-adapter.ts` as reference.
+
 **Files:**
-- Modify: `services/xpress-wallet-waas/xpress-wallet-mcp-adapter.ts`
+- Create: `services/xpress-wallet-waas/xpress-wallet-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
 ## Phase 5: EDOC & Document Services
 
-### Issue #20: Create EDOC Adapter
+### Issue #26: Create EDOC Adapter
 **Title:** `[Phase 5] Create Electronic Document (EDOC) Service Adapter`
-**Labels:** `phase-5`, `priority-medium`, `service-documents`, `type-adapter`
+**Labels:** `phase-5`, `priority-medium`, `service-edoc`, `type-adapter`
 
 **Description:**
 Build adapter for 11 EDOC Edge Functions.
 
-**Tools:**
-- `init_consent`
-- `consent_status`
-- `delete_consent`
-- `get_transactions`
-- `dashboard_data`
-- `webhook_handler`
-- ... (11 total)
-
 **Files:**
-- Create: `services/edoc/edoc-adapter.js`
+- Create: `services/edoc-external-app-integration---for-clients-postman-collection/edoc-adapter.js`
+- Modify: `services/catalog.json`
 
 ---
 
 ## Phase 6: Testing & Quality Assurance
 
-### Issue #21: Write Unit Tests for Core Infrastructure
-**Title:** `[Phase 6] Comprehensive Unit Testing - Core`
+### Issue #27: Core Module Unit Tests (Vitest)
+**Title:** `[Phase 6] Unit tests for registry, client, and base adapter`
 **Labels:** `phase-6`, `priority-critical`, `type-testing`
 
 **Tasks:**
-- [ ] Test UniversalSupabaseClient
-- [ ] Test BaseMCPAdapter
-- [ ] Test AdapterRegistry
-- [ ] Test all adapters
-- [ ] Achieve > 90% coverage
+- [ ] AdapterRegistry: tool ID normalization, alias resolution, execution routing
+- [ ] UniversalSupabaseClient: header injection, request shaping, retry behavior
+- [ ] BaseMCPAdapter: lifecycle (initialize -> callTool -> healthCheck)
+- [ ] Target: 80%+ coverage for core modules
 
 ---
 
-### Issue #22: Write Integration Tests
-**Title:** `[Phase 6] End-to-End Integration Testing`
+### Issue #28: Integration Tests
+**Title:** `[Phase 6] End-to-end integration testing`
 **Labels:** `phase-6`, `priority-critical`, `type-testing`
 
 **Tasks:**
-- [ ] Auth flow tests
-- [ ] Payment flow tests
-- [ ] Memory operation tests
-- [ ] AI routing tests
-- [ ] Multi-service workflows
+- [ ] Gateway `/mcp` lazy mode: 5 meta-tools work
+- [ ] `gateway-execute` routes through registry (not adapter iteration)
+- [ ] Auth flow: token validation -> adapter execution
+- [ ] Payment flow: intent -> execute -> Supabase -> external API
+- [ ] Memory operations via gateway
 
 ---
 
-### Issue #23: Load & Performance Testing
-**Title:** `[Phase 6] Load Testing and Performance Benchmarks`
+### Issue #29: Preflight + Load Testing
+**Title:** `[Phase 6] Preflight validation and performance benchmarks`
 **Labels:** `phase-6`, `priority-high`, `type-testing`
 
 **Tasks:**
-- [ ] Concurrent request tests
+- [ ] Preflight fails with actionable messages when env missing
+- [ ] Concurrent request handling
+- [ ] Latency benchmarks (target: < 500ms p95)
 - [ ] Rate limiting verification
-- [ ] Circuit breaker tests
-- [ ] Latency benchmarks
-- [ ] Throughput tests
+- [ ] Circuit breaker testing
 
 ---
 
-### Issue #24: Security & Compliance Audit
-**Title:** `[Phase 6] Security Audit and Compliance Review`
+### Issue #30: Security Audit
+**Title:** `[Phase 6] Security audit and compliance review`
 **Labels:** `phase-6`, `priority-critical`, `type-testing`
 
 **Tasks:**
 - [ ] Authentication testing
-- [ ] Authorization testing
+- [ ] Authorization and scope enforcement
 - [ ] API key validation
 - [ ] CORS verification
 - [ ] Audit logging verification
-- [ ] Security penetration testing
 
 ---
 
 ## Phase 7: Deployment & Monitoring
 
-### Issue #25: Production Deployment
+### Issue #31: Production Deployment
 **Title:** `[Phase 7] Deploy to Production (Railway)`
 **Labels:** `phase-7`, `priority-critical`, `type-infrastructure`
 
 **Tasks:**
-- [ ] Update environment variables
+- [ ] Run preflight in production environment
+- [ ] Update Railway environment variables
 - [ ] Deploy to Railway
 - [ ] Verify health checks
-- [ ] Test public endpoints
-- [ ] Monitor initial traffic
+- [ ] Test public MCP endpoints
 
 ---
 
-### Issue #26: Set Up Monitoring & Alerting
-**Title:** `[Phase 7] Configure Production Monitoring`
+### Issue #32: Monitoring & Alerting
+**Title:** `[Phase 7] Configure production monitoring`
 **Labels:** `phase-7`, `priority-critical`, `type-infrastructure`
 
 **Tasks:**
-- [ ] Set up metrics collection
-- [ ] Configure alerts
-- [ ] Set up logging aggregation
-- [ ] Create dashboards
-- [ ] Configure error tracking
+- [ ] Metrics collection (adapter stats, tool execution times)
+- [ ] Alert configuration (error rate, service down)
+- [ ] Logging aggregation
+- [ ] Dashboard creation
 
 ---
 
-### Issue #27: Complete Documentation
-**Title:** `[Phase 7] Finalize All Documentation`
+### Issue #33: Documentation
+**Title:** `[Phase 7] Finalize all documentation`
 **Labels:** `phase-7`, `priority-high`, `type-docs`
 
 **Tasks:**
-- [ ] API documentation
-- [ ] Architecture diagrams
-- [ ] Deployment guide
+- [ ] API documentation per adapter
+- [ ] Updated architecture diagrams
+- [ ] Deployment and operations guide
 - [ ] Troubleshooting guide
-- [ ] Developer onboarding guide
-- [ ] Operations runbook
 
 ---
 
 ## Summary
 
-**Total Issues:** 27
-**Estimated Timeline:** 6-8 weeks
+**Total Issues:** 33
 
 ### By Phase:
-- Phase 0: 2 issues
-- Phase 1: 4 issues (Core infrastructure)
-- Phase 2: 6 issues (Internal services)
-- Phase 3: 4 issues (Payments)
-- Phase 4: 3 issues (Banking)
-- Phase 5: 1 issue (Documents)
-- Phase 6: 4 issues (Testing)
-- Phase 7: 3 issues (Deployment)
+| Phase | Issues | Focus |
+|-------|--------|-------|
+| Phase 0 | 2 | Architecture (DONE) |
+| Phase 0.5 | 5 | Scaffolding, bugs, preflight |
+| Phase 1 | 4 | Core adapter system |
+| Phase 1.5 | 2 | Quick-win payments |
+| Phase 2 | 6 | Internal services |
+| Phase 3 | 3 | Remaining payments |
+| Phase 4 | 3 | Banking |
+| Phase 5 | 1 | Documents |
+| Phase 6 | 4 | Testing |
+| Phase 7 | 3 | Deployment |
 
 ### By Priority:
-- Critical: 11 issues
-- High: 10 issues
-- Medium: 6 issues
+| Priority | Count |
+|----------|-------|
+| Critical | 14 |
+| High | 12 |
+| Medium | 7 |
 
----
-
-**Next Steps:**
-1. Review and approve this issue list
-2. Create issues in GitHub
-3. Add to project board
-4. Assign to team members
-5. Start Phase 1 execution
+### Dependency Chain (Critical Path):
+```
+#3 (dirs) + #6 (bugs) -> #8 (client) + #9 (adapter) + #10 (registry) -> #11 (gateway) -> #12 (paystack) -> #14-19 (services) -> #27-30 (tests) -> #31 (deploy)
+```
