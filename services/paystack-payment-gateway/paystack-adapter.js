@@ -18,6 +18,10 @@ const toSnakeAction = (toolName) => (toolName || '').toString().trim().replace(/
 class PaystackAdapter extends BaseMCPAdapter {
   constructor(config = {}) {
     const functionName = config.functionName || 'paystack';
+    const client = config.client || new UniversalSupabaseClient({
+      serviceName: 'paystack',
+      functionName
+    });
 
     super({
       id: 'paystack',
@@ -25,10 +29,7 @@ class PaystackAdapter extends BaseMCPAdapter {
       description: 'African payment processing via Supabase Edge Functions (paystack)',
       category: 'payments',
       capabilities: ['payments', 'customers', 'transfers', 'accounts'],
-      client: new UniversalSupabaseClient({
-        serviceName: 'paystack',
-        functionName
-      }),
+      client,
       ...config
     });
   }
@@ -212,4 +213,3 @@ class PaystackAdapter extends BaseMCPAdapter {
 }
 
 module.exports = PaystackAdapter;
-
