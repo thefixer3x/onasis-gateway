@@ -1,5 +1,5 @@
 /**
- * gateway.tools - List Tools Within an Adapter
+ * gateway-tools - List Tools Within an Adapter
  *
  * List available tools within a specific adapter.
  * Supports search and category filtering.
@@ -18,7 +18,7 @@ class GatewayTools {
                 error: {
                     code: 'ADAPTER_REQUIRED',
                     message: 'adapter parameter is required',
-                    suggestion: 'Use gateway.adapters to see available adapters'
+                    suggestion: 'Use gateway-adapters to see available adapters'
                 }
             };
         }
@@ -32,7 +32,7 @@ class GatewayTools {
                     code: 'ADAPTER_NOT_FOUND',
                     message: `Adapter '${adapter}' not found`,
                     available_adapters: available.slice(0, 10),
-                    suggestion: 'Use gateway.adapters to see all available adapters'
+                    suggestion: 'Use gateway-adapters to see all available adapters'
                 }
             };
         }
@@ -95,7 +95,7 @@ class GatewayTools {
             limit,
             categories,
             tools,
-            next_step: 'Use gateway.intent with a specific task for full schema, or gateway.execute to run a tool'
+            next_step: 'Use gateway-intent with a specific task for full schema, or gateway-execute to run a tool'
         };
     }
 }
