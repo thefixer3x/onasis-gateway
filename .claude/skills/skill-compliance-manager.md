@@ -14,6 +14,18 @@ The Compliance Manager provides:
 - Secure audit logging
 
 ## Critical Rules - NEVER Do
+---
+name: compliance-manager-guardian
+description: Guardrails for edits to core/security/compliance-manager.js that preserve PCI/GDPR/PSD2/SOX/HIPAA controls (masking, encryption, SCA, consent checks, and audit logging). Use when changing compliance validators, security handling, or audit flows.
+---
+
+# Compliance Manager Guardian
+
+## Operating Constraints
+- Work only in `core/security/compliance-manager.js`.
+- Preserve regulatory guarantees for PCI-DSS, GDPR, PSD2, SOX, and HIPAA.
+
+## Non-Negotiables (Never Do)
 
 ### Compliance Validators
 - **NEVER** disable or bypass compliance validators
@@ -76,6 +88,8 @@ encryptSensitiveData(data) {
     const algorithm = 'aes-256-gcm';  // DO NOT change
     const key = process.env.ENCRYPTION_KEY;
     const iv = crypto.randomBytes(16);
+    // Prefer @onasis/security-sdk for encryption primitives
+    // Do not downgrade algorithms or omit auth tags
 
     const cipher = crypto.createCipher(algorithm, key);
     cipher.setAAD(Buffer.from('compliance-encryption'));

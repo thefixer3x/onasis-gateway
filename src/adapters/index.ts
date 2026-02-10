@@ -11,25 +11,50 @@ import PayStackMCPAdapter from '../../services/paystack-payment-gateway/paystack
 import XpressWalletMCPAdapter from '../../services/xpress-wallet-waas/xpress-wallet-mcp-adapter.js';
 
 // Auto-generated adapters (legacy)
-import FlutterwaveV3Adapter from './generated/flutterwave-v3.js';
-import PaystackAdapter from './generated/paystack.js';
+// import FlutterwaveV3Adapter from './generated/flutterwave-v3.js';
+// import PaystackAdapter from './generated/paystack.js';
+
+// Supabase Edge Functions Auto-Discovery Adapter
+import SupabaseEdgeFunctionsAdapter from './supabase-edge-functions-adapter.js';
 
 export interface AdapterConstructor {
-  new (): MCPAdapter;
+  new(): MCPAdapter;
 }
 
 export const ADAPTER_REGISTRY: Record<string, AdapterConstructor> = {
+  // Supabase Auto-Discovery (100+ Edge Functions)
+  'supabase-edge-functions': SupabaseEdgeFunctionsAdapter,
+
   // Production-ready service adapters
   'verification-service': VerificationServiceMCPAdapter,
   'paystack-payment-gateway': PayStackMCPAdapter,
   'xpress-wallet-waas': XpressWalletMCPAdapter,
-  
-  // Legacy auto-generated adapters
-  'flutterwave-v3': FlutterwaveV3Adapter,
-  'paystack': PaystackAdapter,
+
+  // Legacy auto-generated adapters (disabled - files not found)
+  // 'flutterwave-v3': FlutterwaveV3Adapter,
+  // 'paystack': PaystackAdapter,
 };
 
 export const ADAPTER_METADATA = [
+  // Supabase Edge Functions Auto-Discovery
+  {
+    "name": "supabase-edge-functions",
+    "className": "SupabaseEdgeFunctionsAdapter",
+    "description": "Auto-discovery adapter for 100+ Supabase Edge Functions (Memory, Intelligence, Payments, API Keys)",
+    "tools": [
+      "memory-create", "memory-get", "memory-update", "memory-delete", "memory-list", "memory-search", "memory-stats", "memory-bulk-delete",
+      "intelligence-health-check", "intelligence-analyze-patterns", "intelligence-behavior-recall", "intelligence-detect-duplicates",
+      "api-key-create", "api-key-delete", "api-key-revoke", "api-key-rotate", "api-key-list",
+      "config-get", "config-set", "project-create", "organization-info",
+      "stripe-webhook", "stripe-subscription", "paystack-integration", "flutterwave", "paypal-payment"
+    ],
+    "authType": "bearer",
+    "baseUrl": process.env.SUPABASE_URL || "http://localhost:54321",
+    "category": "supabase_edge_functions",
+    "auto_discovery": true,
+    "cache_timeout": 300
+  },
+
   // Production-ready service adapters
   {
     "name": "verification-service",
@@ -37,7 +62,7 @@ export const ADAPTER_METADATA = [
     "description": "Comprehensive KYC, KYB, and AML verification service",
     "tools": [
       "verify_identity_document",
-      "verify_phone_email", 
+      "verify_phone_email",
       "verify_address",
       "verify_business_registration",
       "verify_tax_identification",
@@ -60,7 +85,7 @@ export const ADAPTER_METADATA = [
     "supported_regions": ["NG", "KE", "GH", "UG", "ZA", "global"]
   },
   {
-    "name": "paystack-payment-gateway", 
+    "name": "paystack-payment-gateway",
     "className": "PayStackMCPAdapter",
     "description": "Comprehensive PayStack payment processing for African markets",
     "tools": [
@@ -88,7 +113,7 @@ export const ADAPTER_METADATA = [
   },
   {
     "name": "xpress-wallet-waas",
-    "className": "XpressWalletMCPAdapter", 
+    "className": "XpressWalletMCPAdapter",
     "description": "Wallet-as-a-Service with multi-tenant architecture",
     "tools": [
       "create_wallet",
@@ -109,7 +134,7 @@ export const ADAPTER_METADATA = [
     "category": "wallet_service",
     "service_provider_ready": true
   },
-  
+
   // Legacy auto-generated adapters
   {
     "name": "flutterwave-v3",
@@ -375,7 +400,7 @@ export async function createAdapterInstance(name: string): Promise<MCPAdapter | 
   if (!AdapterClass) {
     return null;
   }
-  
+
   return new AdapterClass();
 }
 

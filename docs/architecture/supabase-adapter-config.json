@@ -1,0 +1,68 @@
+{
+  "adapter": {
+    "id": "supabase-edge-functions",
+    "name": "Supabase Edge Functions Adapter",
+    "version": "1.0.0",
+    "enabled": true
+  },
+  "supabase": {
+    "url": "https://lanonasis.supabase.co",
+    "anonKey": "${SUPABASE_ANON_KEY}",
+    "serviceKey": "${SUPABASE_SERVICE_KEY}",
+    "projectRef": "lanonasis"
+  },
+  "discovery": {
+    "mode": "auto",
+    "cacheTimeout": 300,
+    "excludePatterns": [
+      "_*",
+      "test-*",
+      "*-test",
+      "experimental-*"
+    ],
+    "includedServices": [
+      "memory-*",
+      "intelligence-*",
+      "api-key-*",
+      "config-*",
+      "stripe-*",
+      "paystack-*",
+      "flutterwave-*",
+      "verification-*"
+    ]
+  },
+  "authentication": {
+    "passthrough": true,
+    "uai": {
+      "enabled": true,
+      "tokenHeader": "Authorization",
+      "validateTokens": true,
+      "requiredScopes": ["gateway:proxy"]
+    }
+  },
+  "routing": {
+    "pathPrefix": "/supabase",
+    "preserveOriginalPath": true,
+    "stripPrefix": false
+  },
+  "healthCheck": {
+    "enabled": true,
+    "interval": 60000,
+    "timeout": 5000,
+    "failureThreshold": 3,
+    "successThreshold": 1
+  },
+  "fallback": {
+    "enabled": true,
+    "strategy": "direct-provider",
+    "retryAttempts": 2,
+    "retryDelay": 1000
+  },
+  "monitoring": {
+    "enabled": true,
+    "logRequests": true,
+    "logResponses": false,
+    "trackLatency": true,
+    "metricsEndpoint": "/metrics"
+  }
+}

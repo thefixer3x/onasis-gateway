@@ -1,0 +1,65 @@
+# Bun-specific files (Railway uses Node.js)
+bun.lock
+bun.lockb
+bunfig.toml
+bun-neon-server.ts
+
+# Development directories
+current/
+gateways/
+coverage/
+.nyc_output/
+
+# Large Postman collections (keep service definitions)
+*.postman_collection.json
+Paystack.postman_collection.json
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Test files
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+jest.config.*
+vitest.config.*
+
+# Documentation (not needed for runtime)
+docs/plans/
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
+
+# TypeScript source (compiled JS is used)
+src/**/*.ts
+!src/**/*.js
+
+# Development configs
+.eslintrc*
+.prettierrc*
+tsconfig.json
+
+# Logs
+logs/
+*.log
+
+# Environment examples
+.env.example
+.env.local
+.env.development
+
+# Other deployment configs
+vercel.json
+netlify.toml
+fly.toml
+docker-compose*.yml
+Dockerfile*

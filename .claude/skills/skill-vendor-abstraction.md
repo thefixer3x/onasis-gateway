@@ -38,6 +38,40 @@ The Vendor Abstraction Layer provides:
 - **NEVER** duplicate operations across categories
 
 ## Required Patterns - MUST Follow
+---
+name: vendor-abstraction-guardian
+description: Guardrails for edits to core/abstraction/vendor-abstraction.js that preserve vendor isolation, mappings, fallback selection, and stable client-facing schemas. Use when adding/removing vendors, operations, or schema fields in the vendor abstraction layer.
+---
+
+# Vendor Abstraction Guardian
+
+## Operating Constraints
+- Work only in `core/abstraction/vendor-abstraction.js`.
+- Keep vendor specifics hidden behind client-facing schemas.
+
+## Non-Negotiables (Never Do)
+
+### Schema Isolation
+- Never expose vendor-specific field names in client schema.
+- Never return vendor responses directly to clients without transform.
+- Never encode vendor-specific validation into client schema.
+
+### Vendor Selection
+- Never hardcode vendor selection in business logic.
+- Never remove a vendor without a 30‑day deprecation.
+- Never let client input reveal vendor selection.
+- Never expose vendor IDs in client responses.
+
+### Schema Stability
+- Never add required fields to existing client schemas.
+- Never remove/rename fields or change types.
+
+### Category Management
+- Never remove categories without migrating all operations.
+- Never merge categories.
+- Never duplicate operations across categories.
+
+## Required Patterns (Must Follow)
 
 ### Client Schema Definition
 ```javascript
