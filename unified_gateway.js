@@ -66,9 +66,9 @@ const getRateLimitKey = (req) => {
     const authHeader = req.headers.authorization || req.headers.Authorization || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader;
     const apiKey = req.headers['x-api-key'] || '';
-    const ip = typeof rateLimit.ipKeyGenerator === 'function'
-        ? rateLimit.ipKeyGenerator(req)
-        : (req.ip || (req.headers['x-forwarded-for'] || '').split(',')[0].trim());
+    // Get IP from req.ip or x-forwarded-for header
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const ip = req.ip || (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : '') || '';
     const seed = sessionId || token || apiKey || ip || 'anonymous';
     return crypto.createHash('sha256').update(seed).digest('hex').substring(0, 32);
 };
@@ -123,6 +123,7 @@ const ComplianceManager = require('./core/security/compliance-manager');
 const MetricsCollector = require('./core/monitoring/metrics-collector');
 const AbstractedAPIEndpoints = require('./api/abstracted-endpoints');
 const OnasisAuthBridge = require('./middleware/onasis-auth-bridge');
+const MCPDiscoveryLayer = require('./src/mcp/discovery');
 
 /**
  * Unified Gateway - Combines API Gateway + MCP Server
@@ -168,7 +169,13 @@ class UnifiedGateway {
         this.serviceCatalog = this.loadServiceCatalog();
         this.adaptersReady = null;
 
+        // MCP Discovery Layer configuration
+        // lazy = 5 meta-tools only, full = all 1600+ tools (debug mode)
+        this.mcpToolMode = process.env.MCP_TOOL_MODE || 'lazy';
+        this.discoveryLayer = null;
+
         console.log('🚀 Initializing Unified Gateway (API + MCP)...');
+        console.log(`📋 MCP Tool Mode: ${this.mcpToolMode}`);
         this.setupMiddleware();
         this.loadAPIServices();
         this.adaptersReady = this.loadMCPAdapters();
@@ -220,7 +227,8 @@ class UnifiedGateway {
             message: 'Too many API requests',
             keyGenerator: getRateLimitKey,
             standardHeaders: true,
-            legacyHeaders: false
+            legacyHeaders: false,
+            validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
         });
 
         const mcpLimiter = rateLimit({
@@ -229,7 +237,8 @@ class UnifiedGateway {
             message: 'Too many MCP requests',
             keyGenerator: getRateLimitKey,
             standardHeaders: true,
-            legacyHeaders: false
+            legacyHeaders: false,
+            validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
         });
 
         this.app.use('/api/', apiLimiter);
@@ -442,6 +451,18 @@ class UnifiedGateway {
 
         const totalTools = this.getTotalTools();
         console.log(`⚡ Loaded ${this.adapters.size} MCP adapters (${totalTools} tools)`);
+
+        // Initialize MCP Discovery Layer
+        if (this.mcpToolMode === 'lazy') {
+            try {
+                this.discoveryLayer = new MCPDiscoveryLayer(this, this.adapters);
+                console.log(`🔍 MCP Discovery Layer initialized (5 meta-tools active)`);
+            } catch (error) {
+                console.warn(`⚠️ Failed to initialize Discovery Layer: ${error.message}`);
+                console.log(`⚠️ Falling back to full mode (${totalTools} tools)`);
+                this.mcpToolMode = 'full';
+            }
+        }
     }
 
     buildAuthVerifyUrl() {
@@ -911,6 +932,65 @@ class UnifiedGateway {
             await this.ensureAdaptersReady();
             const { method, params } = req.body;
 
+            // ============ LAZY MODE: 5 Meta-Tools ============
+            if (this.mcpToolMode === 'lazy' && this.discoveryLayer) {
+                if (method === 'tools/list') {
+                    const metaTools = this.discoveryLayer.getMetaTools();
+                    return res.json({
+                        jsonrpc: '2.0',
+                        result: { tools: metaTools },
+                        id: req.body.id
+                    });
+                }
+
+                if (method === 'tools/call') {
+                    const { name: toolName, arguments: toolArgs } = params || {};
+
+                    if (!toolName) {
+                        return res.status(400).json({
+                            jsonrpc: '2.0',
+                            error: { code: -32602, message: 'Missing tool name' },
+                            id: req.body.id
+                        });
+                    }
+
+                    // Check if it's a meta-tool (gateway.*)
+                    if (toolName.startsWith('gateway.')) {
+                        try {
+                            const result = await this.discoveryLayer.callTool(toolName, toolArgs || {});
+                            return res.json({
+                                jsonrpc: '2.0',
+                                result: { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] },
+                                id: req.body.id
+                            });
+                        } catch (error) {
+                            return res.status(500).json({
+                                jsonrpc: '2.0',
+                                error: { code: -32000, message: error.message },
+                                id: req.body.id
+                            });
+                        }
+                    }
+
+                    // Tool not found in lazy mode
+                    return res.status(404).json({
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32601,
+                            message: `Tool '${toolName}' not found. In lazy mode, use gateway.intent to discover tools and gateway.execute to run them.`
+                        },
+                        id: req.body.id
+                    });
+                }
+
+                return res.status(400).json({
+                    jsonrpc: '2.0',
+                    error: { code: -32601, message: 'Method not implemented' },
+                    id: req.body.id
+                });
+            }
+
+            // ============ FULL MODE: All 1600+ Tools ============
             if (method === 'tools/list') {
                 const tools = [];
 
