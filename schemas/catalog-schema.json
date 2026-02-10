@@ -1,0 +1,228 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Onasis Gateway Service Catalog Schema",
+  "description": "Schema for the central service catalog that indexes all API services and MCP adapters",
+  "type": "object",
+  "required": ["version", "apiServices", "mcpAdapters"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Catalog version (semver)"
+    },
+    "generated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the catalog was last generated"
+    },
+    "description": {
+      "type": "string",
+      "description": "Catalog description"
+    },
+    "apiServices": {
+      "type": "array",
+      "description": "List of API services available in the gateway",
+      "items": {
+        "$ref": "#/definitions/apiService"
+      }
+    },
+    "mcpAdapters": {
+      "type": "array",
+      "description": "List of MCP adapters for AI agent access",
+      "items": {
+        "$ref": "#/definitions/mcpAdapter"
+      }
+    },
+    "categories": {
+      "type": "object",
+      "description": "Service category definitions",
+      "additionalProperties": {
+        "$ref": "#/definitions/category"
+      }
+    },
+    "settings": {
+      "type": "object",
+      "description": "Global gateway settings",
+      "properties": {
+        "mcpToolMode": {
+          "type": "string",
+          "enum": ["lazy", "full"],
+          "default": "lazy",
+          "description": "MCP tool exposure mode"
+        },
+        "defaultRateLimit": {
+          "$ref": "#/definitions/rateLimit"
+        },
+        "healthCheck": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "interval": { "type": "integer" },
+            "timeout": { "type": "integer" }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "apiService": {
+      "type": "object",
+      "required": ["id", "name", "directory", "enabled"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Unique service identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable service name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Service description"
+        },
+        "directory": {
+          "type": "string",
+          "description": "Service directory name under /services"
+        },
+        "category": {
+          "type": "string",
+          "description": "Service category"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the service is enabled"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "deprecated", "maintenance", "disabled"],
+          "default": "active"
+        },
+        "version": {
+          "type": "string",
+          "description": "Service version"
+        },
+        "configPath": {
+          "type": "string",
+          "description": "Path to service configuration file"
+        }
+      }
+    },
+    "mcpAdapter": {
+      "type": "object",
+      "required": ["id", "name", "type", "enabled"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique adapter identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable adapter name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Adapter description"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["supabase", "mock", "live", "hybrid"],
+          "description": "Adapter type"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source of adapter definition"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the adapter is enabled"
+        },
+        "autoDiscover": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to auto-discover tools"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Loading priority (lower = higher priority)"
+        },
+        "toolCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tools in adapter"
+        },
+        "authType": {
+          "type": "string",
+          "enum": ["bearer", "apikey", "oauth2", "hmac", "basic", "none"],
+          "description": "Authentication type"
+        },
+        "category": {
+          "type": "string",
+          "description": "Adapter category"
+        },
+        "supportedCountries": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "ISO country codes or GLOBAL"
+        },
+        "supportedCurrencies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "ISO currency codes"
+        },
+        "adapterPath": {
+          "type": "string",
+          "description": "Relative path to the adapter module (e.g. src/adapters/paystack-adapter.js)"
+        },
+        "functionName": {
+          "type": "string",
+          "description": "Factory function or class name exported by the adapter module"
+        },
+        "executable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this adapter can execute real operations (has callTool)"
+        }
+      }
+    },
+    "category": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Category display name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Category description"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Category icon (emoji or icon class)"
+        }
+      }
+    },
+    "rateLimit": {
+      "type": "object",
+      "properties": {
+        "windowMs": {
+          "type": "integer",
+          "description": "Rate limit window in milliseconds"
+        },
+        "maxRequests": {
+          "type": "integer",
+          "description": "Maximum requests per window"
+        }
+      }
+    }
+  }
+}

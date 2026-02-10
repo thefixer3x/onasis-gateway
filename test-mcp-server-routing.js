@@ -5,7 +5,9 @@
  * Verifies that MCP server routes to correct onasis-core endpoints
  */
 
-const fetch = require('node-fetch');
+const fetch = globalThis.fetch
+  ? globalThis.fetch.bind(globalThis)
+  : (...args) => import('node-fetch').then((mod) => (mod.default || mod)(...args));
 
 class MCPServerRoutingTester {
   constructor(config = {}) {

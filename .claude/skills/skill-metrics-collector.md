@@ -1,3 +1,8 @@
+---
+name: metrics-collector-guardian
+description: Guardrails for edits to core/monitoring/metrics-collector.js to preserve Prometheus metric names, labels, cardinality limits, and emission patterns. Use when adding or changing metrics or collectors.
+---
+
 # Skill: Metrics Collector Guardian
 
 ## Purpose & Scope

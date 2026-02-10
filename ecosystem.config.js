@@ -8,12 +8,20 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
-        CORS_ORIGIN: '*'
+        CORS_ORIGIN: '*',
+        HEALTH_AUTH_URL: 'http://127.0.0.1:4000/health',
+        HEALTH_MCP_CORE_URL: 'http://127.0.0.1:3001/health',
+        HEALTH_ENTERPRISE_MCP_URL: 'http://127.0.0.1:3001/health',
+        HEALTH_TIMEOUT_MS: 4000
       },
       env_production: {
         NODE_ENV: 'production',
         PORT: 3000,
-        CORS_ORIGIN: 'https://api.connectionpoint.tech'
+        CORS_ORIGIN: 'https://api.connectionpoint.tech',
+        HEALTH_AUTH_URL: 'http://127.0.0.1:4000/health',
+        HEALTH_MCP_CORE_URL: 'http://127.0.0.1:3001/health',
+        HEALTH_ENTERPRISE_MCP_URL: 'http://127.0.0.1:3001/health',
+        HEALTH_TIMEOUT_MS: 4000
       },
       // PM2 configuration
       watch: false,
