@@ -22,6 +22,66 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const vpsMonitor = require('./vps/monitor');
+
+const fetch = globalThis.fetch
+    ? globalThis.fetch.bind(globalThis)
+    : (...args) => import('node-fetch').then((mod) => (mod.default || mod)(...args));
+
+const parseCsv = (value) => (value || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+const allowedOrigins = [
+    ...parseCsv(process.env.ALLOWED_ORIGINS),
+    ...parseCsv(process.env.CORS_ORIGIN)
+];
+const allowedOriginSuffixes = parseCsv(process.env.ALLOWED_ORIGIN_SUFFIXES || 'lanonasis.com');
+const allowLocalhost = (process.env.CORS_ALLOW_LOCALHOST || 'true') === 'true';
+
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
+    try {
+        const url = new URL(origin);
+        const hostname = url.hostname;
+        if (allowLocalhost && (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1')) {
+            return true;
+        }
+        if (allowedOrigins.includes(origin)) {
+            return true;
+        }
+        return allowedOriginSuffixes.some((suffix) => (
+            hostname === suffix || hostname.endsWith(`.${suffix}`)
+        ));
+    } catch (error) {
+        return false;
+    }
+};
+
+const corsOriginCallback = (origin, callback) => callback(null, isAllowedOrigin(origin));
+
+const getRateLimitKey = (req) => {
+    const sessionId = req.headers['x-session-id'] || '';
+    const authHeader = req.headers.authorization || req.headers.Authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader;
+    const apiKey = req.headers['x-api-key'] || '';
+    // Get IP from req.ip or x-forwarded-for header
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const ip = req.ip || (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : '') || '';
+    const seed = sessionId || token || apiKey || ip || 'anonymous';
+    return crypto.createHash('sha256').update(seed).digest('hex').substring(0, 32);
+};
+
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 10000) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(timeout);
+    }
+};
 
 const DEFAULT_MCP_ADAPTERS = {
     'stripe-api-2024-04-10': { tools: 457, auth: 'bearer' },
@@ -63,6 +123,7 @@ const ComplianceManager = require('./core/security/compliance-manager');
 const MetricsCollector = require('./core/monitoring/metrics-collector');
 const AbstractedAPIEndpoints = require('./api/abstracted-endpoints');
 const OnasisAuthBridge = require('./middleware/onasis-auth-bridge');
+const MCPDiscoveryLayer = require('./src/mcp/discovery');
 
 /**
  * Unified Gateway - Combines API Gateway + MCP Server
@@ -89,12 +150,32 @@ class UnifiedGateway {
             projectScope: process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas'
         });
 
+        this.authGatewayUrl = process.env.AUTH_GATEWAY_URL
+            || process.env.ONASIS_AUTH_GATEWAY_URL
+            || 'http://127.0.0.1:4000';
+        this.projectScope = process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas';
+        this.vpsMonitorToken = process.env.VPS_MONITOR_TOKEN || null;
+        this.aiRouterUrl = process.env.AI_ROUTER_URL || '';
+        this.aiRouterTimeoutMs = parseInt(process.env.AI_ROUTER_TIMEOUT_MS || '12000', 10);
+        this.authGatewayTimeoutMs = parseInt(process.env.AUTH_GATEWAY_TIMEOUT_MS || '8000', 10);
+        this.supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+        this.supabaseAiChatUrl = process.env.SUPABASE_AI_CHAT_URL
+            || (process.env.SUPABASE_URL
+                ? `${process.env.SUPABASE_URL.replace(/\/+$/, '')}/functions/v1/ai-chat`
+                : '');
+
         this.startTime = Date.now();
         this.healthTargets = this.parseHealthTargets(process.env.HEALTH_TARGETS);
         this.serviceCatalog = this.loadServiceCatalog();
         this.adaptersReady = null;
 
+        // MCP Discovery Layer configuration
+        // lazy = 5 meta-tools only, full = all 1600+ tools (debug mode)
+        this.mcpToolMode = process.env.MCP_TOOL_MODE || 'lazy';
+        this.discoveryLayer = null;
+
         console.log('🚀 Initializing Unified Gateway (API + MCP)...');
+        console.log(`📋 MCP Tool Mode: ${this.mcpToolMode}`);
         this.setupMiddleware();
         this.loadAPIServices();
         this.adaptersReady = this.loadMCPAdapters();
@@ -108,8 +189,12 @@ class UnifiedGateway {
     setupMiddleware() {
         // Security
         this.app.use(helmet());
+        this.app.disable('x-powered-by');
+        if (process.env.TRUST_PROXY !== undefined) {
+            this.app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? true : process.env.TRUST_PROXY);
+        }
         this.app.use(cors({
-            origin: process.env.CORS_ORIGIN || process.env.ALLOWED_ORIGINS?.split(',') || '*',
+            origin: corsOriginCallback,
             credentials: true
         }));
 
@@ -119,6 +204,14 @@ class UnifiedGateway {
         // Body parsing
         this.app.use(express.json({ limit: '10mb' }));
         this.app.use(express.urlencoded({ extended: true }));
+
+        // Block dotfile probing early
+        this.app.use((req, res, next) => {
+            if (req.path && req.path.startsWith('/.')) {
+                return res.status(404).json({ error: 'Not Found' });
+            }
+            next();
+        });
 
         // Request ID middleware
         this.app.use((req, res, next) => {
@@ -131,13 +224,21 @@ class UnifiedGateway {
         const apiLimiter = rateLimit({
             windowMs: 15 * 60 * 1000,
             max: 100,
-            message: 'Too many API requests'
+            message: 'Too many API requests',
+            keyGenerator: getRateLimitKey,
+            standardHeaders: true,
+            legacyHeaders: false,
+            validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
         });
 
         const mcpLimiter = rateLimit({
             windowMs: 15 * 60 * 1000,
             max: 1000,
-            message: 'Too many MCP requests'
+            message: 'Too many MCP requests',
+            keyGenerator: getRateLimitKey,
+            standardHeaders: true,
+            legacyHeaders: false,
+            validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
         });
 
         this.app.use('/api/', apiLimiter);
@@ -350,6 +451,89 @@ class UnifiedGateway {
 
         const totalTools = this.getTotalTools();
         console.log(`⚡ Loaded ${this.adapters.size} MCP adapters (${totalTools} tools)`);
+
+        // Initialize MCP Discovery Layer
+        if (this.mcpToolMode === 'lazy') {
+            try {
+                this.discoveryLayer = new MCPDiscoveryLayer(this, this.adapters);
+                console.log(`🔍 MCP Discovery Layer initialized (5 meta-tools active)`);
+            } catch (error) {
+                console.warn(`⚠️ Failed to initialize Discovery Layer: ${error.message}`);
+                console.log(`⚠️ Falling back to full mode (${totalTools} tools)`);
+                this.mcpToolMode = 'full';
+            }
+        }
+    }
+
+    buildAuthVerifyUrl() {
+        const base = (this.authGatewayUrl || '').replace(/\/+$/, '');
+        if (!base) {
+            return null;
+        }
+
+        if (base.endsWith('/v1/auth')) {
+            return `${base}/verify`;
+        }
+
+        if (base.endsWith('/v1')) {
+            return `${base}/auth/verify`;
+        }
+
+        return `${base}/v1/auth/verify`;
+    }
+
+    async verifyVpsAuth(req, requireAdmin = true) {
+        const authHeader = req.headers.authorization || req.headers.Authorization;
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return { ok: false, status: 401, error: 'Missing authorization token' };
+        }
+
+        const token = authHeader.replace('Bearer ', '');
+
+        if (this.vpsMonitorToken && token === this.vpsMonitorToken) {
+            return {
+                ok: true,
+                user: { id: 'monitor', role: 'admin' },
+                isAdmin: true,
+                method: 'monitor_token'
+            };
+        }
+
+        const verifyUrl = this.buildAuthVerifyUrl();
+        if (!verifyUrl) {
+            return { ok: false, status: 500, error: 'Auth gateway URL not configured' };
+        }
+
+        try {
+            const response = await fetchWithTimeout(verifyUrl, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'X-Project-Scope': this.projectScope
+                }
+            }, this.authGatewayTimeoutMs);
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                return { ok: false, status: 401, error: data.error || 'Unauthorized' };
+            }
+
+            const payload = data.payload || data.user || data;
+            const role = payload?.role || payload?.user?.role;
+            const permissions = payload?.permissions || payload?.user?.permissions || [];
+            const isAdmin = role === 'admin' || permissions.includes('admin');
+
+            if (requireAdmin && !isAdmin) {
+                return { ok: false, status: 403, error: 'Admin access required' };
+            }
+
+            return { ok: true, user: payload, isAdmin, method: 'auth_gateway' };
+        } catch (error) {
+            return { ok: false, status: 502, error: 'Auth gateway unavailable' };
+        }
     }
 
     /**
@@ -422,6 +606,90 @@ class UnifiedGateway {
 
         // ==================== API GATEWAY ROUTES ====================
 
+        // AI chat (primary: AIServiceRouter, fallback: Supabase edge function)
+        this.app.post('/api/v1/ai-chat', async (req, res) => {
+            const requestId = req.id || crypto.randomUUID();
+            const body = req.body || {};
+
+            const forwardHeaders = {
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization }),
+                ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
+                'X-Request-ID': requestId
+            };
+
+            const tryPrimary = async () => {
+                if (!this.aiRouterUrl) return null;
+                const base = this.aiRouterUrl.replace(/\/+$/, '');
+                const url = `${base}/api/v1/ai-chat`;
+                const response = await fetchWithTimeout(url, {
+                    method: 'POST',
+                    headers: forwardHeaders,
+                    body: JSON.stringify(body)
+                }, this.aiRouterTimeoutMs);
+                return response;
+            };
+
+            const tryFallback = async () => {
+                if (!this.supabaseAiChatUrl) return null;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-Request-ID': requestId,
+                    ...(this.supabaseAnonKey && {
+                        Authorization: `Bearer ${this.supabaseAnonKey}`,
+                        apikey: this.supabaseAnonKey
+                    })
+                };
+                const response = await fetchWithTimeout(this.supabaseAiChatUrl, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body)
+                }, this.aiRouterTimeoutMs);
+                return response;
+            };
+
+            const sendResponse = async (response, source) => {
+                const contentType = response.headers.get('content-type') || '';
+                const rawText = await response.text();
+                let payload = rawText;
+                if (contentType.includes('application/json')) {
+                    try {
+                        payload = JSON.parse(rawText);
+                    } catch {
+                        payload = { error: 'Invalid JSON response', raw: rawText };
+                    }
+                }
+                res.setHeader('X-AI-Route', source);
+                return res.status(response.status).send(payload);
+            };
+
+            try {
+                const primaryResponse = await tryPrimary();
+                if (primaryResponse && primaryResponse.ok) {
+                    return await sendResponse(primaryResponse, 'ai-router');
+                }
+            } catch (error) {
+                console.warn('AI router unavailable, falling back', error.message);
+            }
+
+            try {
+                const fallbackResponse = await tryFallback();
+                if (fallbackResponse) {
+                    return await sendResponse(fallbackResponse, 'supabase');
+                }
+                return res.status(502).json({
+                    error: 'AI router unavailable and no fallback configured',
+                    requestId
+                });
+            } catch (error) {
+                return res.status(502).json({
+                    error: 'AI router unavailable and fallback failed',
+                    message: error.message,
+                    requestId
+                });
+            }
+        });
+
         // List all API services
         this.app.get('/api/services', (req, res) => {
             const services = Array.from(this.services.values()).map(service => ({
@@ -437,6 +705,140 @@ class UnifiedGateway {
         // Service catalog (source of truth)
         this.app.get('/api/catalog', (req, res) => {
             res.json(this.serviceCatalog || { apiServices: [], mcpAdapters: [] });
+        });
+
+        // ==================== VPS MONITORING ROUTES ====================
+        this.app.get('/api/vps/health', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const target = vpsMonitor.resolveTarget(req.query.target || req.query.targetId);
+                const targets = vpsMonitor.getTargets();
+                const defaultTargetId = vpsMonitor.getDefaultTargetId();
+
+                const health = await vpsMonitor.getHealth(target);
+
+                const response = {
+                    success: true,
+                    data: health,
+                    timestamp: new Date().toISOString(),
+                    targets: targets.map((t) => ({
+                        id: t.id,
+                        name: t.name,
+                        mode: t.mode,
+                        host: t.host
+                    })),
+                    defaultTargetId
+                };
+
+                return res.json(response);
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to fetch VPS health',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        this.app.get('/api/vps/services', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const target = vpsMonitor.resolveTarget(req.query.target || req.query.targetId);
+                const services = await vpsMonitor.getServices(target);
+                return res.json({
+                    success: true,
+                    data: { services },
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to fetch VPS services',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        this.app.post('/api/vps/services', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const { action, serviceName, targetId } = req.body || {};
+                const target = vpsMonitor.resolveTarget(targetId);
+                const data = await vpsMonitor.manageService(target, action, serviceName);
+
+                return res.json({
+                    success: true,
+                    data,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to manage VPS service',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        this.app.get('/api/vps/logs', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const target = vpsMonitor.resolveTarget(req.query.target || req.query.targetId);
+                const data = await vpsMonitor.getLogs(target, req.query.service, req.query.lines);
+
+                return res.json({
+                    success: true,
+                    data,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to fetch VPS logs',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        this.app.post('/api/vps/command', async (req, res) => {
+            const auth = await this.verifyVpsAuth(req, true);
+            if (!auth.ok) {
+                return res.status(auth.status).json({ error: auth.error });
+            }
+
+            try {
+                const { commandKey, targetId } = req.body || {};
+                const target = vpsMonitor.resolveTarget(targetId);
+                const data = await vpsMonitor.executeAllowedCommand(target, commandKey);
+
+                return res.json({
+                    success: true,
+                    data,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    error: error.message || 'Failed to execute VPS command',
+                    timestamp: new Date().toISOString()
+                });
+            }
         });
 
         // Get specific service details
@@ -530,6 +932,65 @@ class UnifiedGateway {
             await this.ensureAdaptersReady();
             const { method, params } = req.body;
 
+            // ============ LAZY MODE: 5 Meta-Tools ============
+            if (this.mcpToolMode === 'lazy' && this.discoveryLayer) {
+                if (method === 'tools/list') {
+                    const metaTools = this.discoveryLayer.getMetaTools();
+                    return res.json({
+                        jsonrpc: '2.0',
+                        result: { tools: metaTools },
+                        id: req.body.id
+                    });
+                }
+
+                if (method === 'tools/call') {
+                    const { name: toolName, arguments: toolArgs } = params || {};
+
+                    if (!toolName) {
+                        return res.status(400).json({
+                            jsonrpc: '2.0',
+                            error: { code: -32602, message: 'Missing tool name' },
+                            id: req.body.id
+                        });
+                    }
+
+                    // Check if it's a meta-tool (gateway.*)
+                    if (toolName.startsWith('gateway.')) {
+                        try {
+                            const result = await this.discoveryLayer.callTool(toolName, toolArgs || {});
+                            return res.json({
+                                jsonrpc: '2.0',
+                                result: { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] },
+                                id: req.body.id
+                            });
+                        } catch (error) {
+                            return res.status(500).json({
+                                jsonrpc: '2.0',
+                                error: { code: -32000, message: error.message },
+                                id: req.body.id
+                            });
+                        }
+                    }
+
+                    // Tool not found in lazy mode
+                    return res.status(404).json({
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32601,
+                            message: `Tool '${toolName}' not found. In lazy mode, use gateway.intent to discover tools and gateway.execute to run them.`
+                        },
+                        id: req.body.id
+                    });
+                }
+
+                return res.status(400).json({
+                    jsonrpc: '2.0',
+                    error: { code: -32601, message: 'Method not implemented' },
+                    id: req.body.id
+                });
+            }
+
+            // ============ FULL MODE: All 1600+ Tools ============
             if (method === 'tools/list') {
                 const tools = [];
 
@@ -643,10 +1104,11 @@ class UnifiedGateway {
         // Global error handler
         this.app.use((err, req, res, next) => {
             console.error('Global error:', err);
+            const expose = (process.env.EXPOSE_ERROR_MESSAGES || 'false') === 'true';
 
             res.status(err.status || 500).json({
                 error: 'Internal Server Error',
-                message: err.message,
+                ...(expose && err.message ? { message: err.message } : {}),
                 requestId: req.id
             });
         });
