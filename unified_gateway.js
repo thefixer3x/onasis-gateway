@@ -927,10 +927,61 @@ class UnifiedGateway {
             });
         });
 
-        // MCP tools listing
+        // MCP SSE endpoint for Streamable HTTP transport
+        this.app.get('/mcp', async (req, res) => {
+            await this.ensureAdaptersReady();
+
+            // Set SSE headers
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.flushHeaders();
+
+            // Send initial connection event
+            const sessionId = crypto.randomUUID();
+            res.write(`event: open\ndata: {"sessionId":"${sessionId}"}\n\n`);
+
+            // Keep connection alive
+            const keepAlive = setInterval(() => {
+                res.write(': keepalive\n\n');
+            }, 30000);
+
+            req.on('close', () => {
+                clearInterval(keepAlive);
+            });
+        });
+
+        // MCP JSON-RPC endpoint
         this.app.post('/mcp', async (req, res) => {
             await this.ensureAdaptersReady();
-            const { method, params } = req.body;
+            const { method, params, jsonrpc, id } = req.body;
+
+            // Handle MCP protocol methods
+            if (method === 'initialize') {
+                return res.json({
+                    jsonrpc: '2.0',
+                    result: {
+                        protocolVersion: '2024-11-05',
+                        capabilities: {
+                            tools: { listChanged: false }
+                        },
+                        serverInfo: {
+                            name: 'onasis-gateway',
+                            version: '1.0.0'
+                        }
+                    },
+                    id
+                });
+            }
+
+            if (method === 'notifications/initialized') {
+                return res.json({ jsonrpc: '2.0', result: {}, id });
+            }
+
+            if (method === 'ping') {
+                return res.json({ jsonrpc: '2.0', result: {}, id });
+            }
 
             // ============ LAZY MODE: 5 Meta-Tools ============
             if (this.mcpToolMode === 'lazy' && this.discoveryLayer) {
