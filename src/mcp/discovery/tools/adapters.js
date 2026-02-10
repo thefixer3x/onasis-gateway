@@ -1,5 +1,5 @@
 /**
- * gateway.adapters - List Available Adapters
+ * gateway-adapters - List Available Adapters
  *
  * List available service adapters and their capabilities.
  * Supports filtering by category, capability, and country.
@@ -65,7 +65,7 @@ class GatewayAdapters {
             filters_applied: Object.keys(filtersApplied).length > 0 ? filtersApplied : null,
             adapters: formattedAdapters,
             categories: this.getAvailableCategories(),
-            next_step: 'Use gateway.intent with your task, or gateway.tools to explore an adapter'
+            next_step: 'Use gateway-intent with your task, or gateway-tools to explore an adapter'
         };
     }
 

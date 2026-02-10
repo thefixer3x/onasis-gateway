@@ -1,5 +1,5 @@
 /**
- * gateway.reference - Documentation and Guides
+ * gateway-reference - Documentation and Guides
  *
  * Get documentation, examples, and usage guides for adapters and tools.
  * Keeps content thin and gateway-specific - links to provider docs for details.
@@ -190,7 +190,7 @@ class GatewayReference {
                                        operation.name.toLowerCase().includes('cancel')
             },
             usage: {
-                via_gateway: `gateway.execute({ tool_id: "${toolId}", params: {...} })`,
+                via_gateway: `gateway-execute({ tool_id: "${toolId}", params: {...} })`,
                 documentation: this.providerDocs[adapterId] || null
             }
         };
@@ -227,7 +227,7 @@ class GatewayReference {
                 usage: {
                     when_required: 'High-risk operations (payments, transfers, deletes)',
                     how_to_use: 'Pass unique idempotency_key in options',
-                    example: 'gateway.execute({ tool_id: "...", params: {...}, options: { idempotency_key: "unique-key" } })'
+                    example: 'gateway-execute({ tool_id: "...", params: {...}, options: { idempotency_key: "unique-key" } })'
                 },
                 best_practices: [
                     'Use UUIDs or deterministic keys based on operation context',
