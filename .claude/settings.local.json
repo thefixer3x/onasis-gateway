@@ -9,5 +9,10 @@
       "/Users/seyederick/DevOps/_project_folders/Onasis-CORE",
       "/Users/seyederick/DevOps/_project_folders/onasis-mcp-standalone"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase",
+    "supabase2"
+  ],
+  "enableAllProjectMcpServers": true
 }
