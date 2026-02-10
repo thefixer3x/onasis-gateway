@@ -13,7 +13,7 @@ class BaseClient extends EventEmitter {
         
         this.config = {
             name: config.name || 'unknown-service',
-            baseUrl: config.baseUrl || '',
+            baseUrl: config.baseUrl || config.baseURL || '',
             timeout: config.timeout || 30000,
             retryAttempts: config.retryAttempts || 3,
             retryDelay: config.retryDelay || 1000,
