@@ -31,7 +31,14 @@ This directory contains the complete implementation plan for integrating the Ona
    - Includes Phase 0.5 (scaffolding/bugs) and Phase 1.5 (quick-win payments)
    - Clear acceptance criteria and file references
 
-4. **[../api-gateway-codemap.md](../api-gateway-codemap.md)**
+4. **[PHASE_0_5_DEFINITION_OF_DONE.md](./PHASE_0_5_DEFINITION_OF_DONE.md)** -- GATE BEFORE PHASE 1
+   - Pass/fail checklist for Phase 0.5 exit
+   - Three buckets: repo scaffolding, external services, contracts
+   - Edge Function invocation contracts (separate functions, NOT action dispatch)
+   - Tool-to-function mapping tables
+   - Auth propagation decision
+
+5. **[../api-gateway-codemap.md](../api-gateway-codemap.md)**
    - Deep codebase analysis
    - Architecture walkthrough
    - Gap identification

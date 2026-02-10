@@ -4,8 +4,14 @@
 **Repository:** https://github.com/thefixer3x/onasis-gateway
 **Project Board:** https://github.com/users/thefixer3x/projects/2
 **Date:** 2026-02-10
-**Revised:** 2026-02-10 (v2 -- incorporates gap analysis + preflight strategy)
+**Revised:** 2026-02-10 (v2 -- incorporates gap analysis + preflight strategy + centralisation intent)
 **Status:** PLANNING -> EXECUTION
+**Architecture References:**
+- `docs/architecture/API-GATEWAY-CONSOLIDATION-PLAN.md` -- single gateway, Nginx routing
+- `docs/architecture/centralisation-tasks.md` -- auth delegation, trust model, phased cutover
+- `docs/architecture/supabase-api/DIRECT_API_ROUTES.md` -- Edge Function inventory (~80 functions)
+- `middleware/onasis-auth-bridge.js` -- existing auth proxy to auth-gateway
+- `docs/api-gateway-codemap.md` -- codebase analysis
 
 ---
 
@@ -79,22 +85,44 @@ TARGET STATE (Working):
                   +---------------------------------+
 ```
 
-### Key Architectural Principle
+### Key Architectural Principles
 
-**Supabase Edge Functions ARE the backend, NOT a duplicate.**
+**1. Supabase Edge Functions ARE the backend, NOT a duplicate.**
+
+**2. One endpoint. One gateway. No scattered endpoints across codebases.**
+
+The entire reason for the API Gateway is centralisation (see `docs/architecture/API-GATEWAY-CONSOLIDATION-PLAN.md` and `docs/architecture/centralisation-tasks.md`). Services cannot have multiple endpoints coded all over the place. The gateway is the single entrypoint:
+
+```
+Client -> gateway.lanonasis.com/api/v1/{service}/{action}
+       -> Nginx (CORS, rate limiting, TLS, logging)
+       -> central-gateway :3000 (adapter routing, MCP discovery)
+       -> Supabase Edge Function /functions/v1/{function-name}
+       -> External vendor API (Paystack, Stripe, etc.)
+       -> Response back up the chain
+```
+
+**3. Auth is delegated to auth-gateway, never duplicated.**
+
+Per centralisation-tasks.md:
+- Auth Gateway (`https://auth.lanonasis.com`, `:4000`) is the **single source of truth** for identity
+- OnasisAuthBridge in central-gateway is a **thin proxy** -- calls auth-gateway introspection, no local JWT verification
+- Auth-gateway returns verified context: `X-User-Id`, `X-User-Email`, `X-User-Role`, `X-Scopes`, `X-Session-Id`
+- Central gateway attaches these headers to downstream requests
+- Downstream services (Edge Functions, adapters) trust these headers when requests come from the gateway
 
 The Gateway is a **routing and orchestration layer** that:
 - Provides unified MCP interface for AI agents
-- Manages authentication and authorization
+- Delegates authentication to auth-gateway (never validates tokens itself)
 - Routes to correct Supabase Edge Function
 - Provides discovery, rate limiting, caching
-- Aggregates multiple services
+- Aggregates multiple services behind one endpoint
 
 Edge Functions handle:
 - Business logic
 - Database operations
 - External API calls (Paystack, Stripe, etc.)
-- Authentication enforcement
+- Auth enforcement (validate forwarded tokens/headers via shared `auth.ts`)
 - Data transformation
 
 ### Runtime Decision
@@ -376,9 +404,12 @@ class UniversalSupabaseClient extends BaseClient {
 
   /**
    * Call a Supabase Edge Function.
-   * @param {string} functionName - Edge Function slug (e.g. "paystack", "memory-create")
-   * @param {object} payload - Request body
-   * @param {object} [options] - Additional headers, method override
+   * Each Edge Function is a separate Deno.serve() entry point (NOT action dispatch).
+   * e.g., call("memory-create", { title, content }) -> POST /functions/v1/memory-create
+   *
+   * @param {string} functionName - Edge Function slug (e.g. "memory-create", "intelligence-suggest-tags")
+   * @param {object} payload - Request body (passed directly to the function)
+   * @param {object} [options] - Additional headers, method override, auth passthrough
    */
   async call(functionName, payload = {}, options = {}) {
     const fn = functionName || this.defaultFunctionName;
@@ -390,6 +421,7 @@ class UniversalSupabaseClient extends BaseClient {
       headers: {
         'apikey': process.env.SUPABASE_ANON_KEY,
         ...(options.authorization && { 'Authorization': options.authorization }),
+        ...(options.apiKey && { 'X-API-Key': options.apiKey }),
         ...(options.projectScope && { 'X-Project-Scope': options.projectScope }),
         ...options.headers
       }
@@ -804,7 +836,17 @@ class PaystackAdapter extends BaseMCPAdapter {
     this._stats.calls++;
     this._stats.lastCall = new Date().toISOString();
     try {
-      // Route through Supabase Edge Function with action dispatch
+      // Route through Supabase Edge Function.
+      // NOTE: The exact invocation contract for the `paystack` Edge Function
+      // must be verified in Phase 0.5 preflight. Two possibilities:
+      //
+      // Option A (action dispatch): POST /functions/v1/paystack
+      //   body: { action: "initialize-transaction", ...args }
+      //
+      // Option B (direct payload): POST /functions/v1/paystack
+      //   body: { endpoint: "/transaction/initialize", method: "POST", data: args }
+      //
+      // This adapter will be finalized after contract verification.
       return await this.client.call('paystack', {
         action: toolName,
         ...args
@@ -893,7 +935,12 @@ Connect all internal services that are ready to deploy.
 
 **File:** `services/auth-gateway/auth-gateway-adapter.js`
 
-This adapter calls the Auth Gateway upstream service (NOT Supabase). Uses BaseClient directly since auth-gateway is a separate service at `AUTH_GATEWAY_URL`.
+This adapter calls the **existing** Auth Gateway upstream service (NOT Supabase). The auth-gateway is:
+- **Production:** `https://auth.lanonasis.com` (PM2 managed, cluster mode)
+- **Source:** `/opt/lanonasis/lan-onasis-monorepo/apps/onasis-core/services/auth-gateway`
+- **Bridge:** `middleware/onasis-auth-bridge.js` already proxies JWT validation (`GET /session`) and API key validation (`POST /api-keys/verify`)
+
+The adapter extends BaseMCPAdapter and uses BaseClient pointed at `AUTH_GATEWAY_URL`. It wraps the same endpoints the OnasisAuthBridge already calls, but exposes them as MCP tools for AI agents.
 
 Tools: `authenticate-user`, `validate-token`, `refresh-token`, `generate-api-key`, `revoke-api-key`, `list-api-keys`, `get-session`, `logout`
 
@@ -913,12 +960,24 @@ Routes to 9 existing memory Edge Functions via UniversalSupabaseClient.
 
 Tools: `create`, `get`, `update`, `delete`, `list`, `search`, `stats`, `bulk-delete`, `health`
 
-Each tool maps to a different Edge Function (e.g., `memory-create`, `memory-get`, etc.).
+Each tool maps to a **separate** Edge Function (e.g., `memory-create`, `memory-get`, etc.).
+This is NOT action dispatch -- each function is its own Deno.serve() entry point.
 
 ```javascript
 async callTool(toolName, args, context = {}) {
-    // Map tool name to Edge Function name
-    const functionName = toolName === 'health' ? 'system-health' : `memory-${toolName}`;
+    // Map tool name to its dedicated Edge Function
+    const functionMap = {
+      'create': 'memory-create',
+      'get': 'memory-get',
+      'update': 'memory-update',
+      'delete': 'memory-delete',
+      'list': 'memory-list',
+      'search': 'memory-search',
+      'stats': 'memory-stats',
+      'bulk-delete': 'memory-bulk-delete',
+      'health': 'system-health'
+    };
+    const functionName = functionMap[toolName] || `memory-${toolName}`;
     return this.client.call(functionName, args, context);
 }
 ```
