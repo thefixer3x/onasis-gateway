@@ -7,6 +7,7 @@
 
 import { serve } from "bun";
 import { Pool } from "pg";
+import { existsSync } from "fs";
 
 // Database connection pool
 const pool = new Pool({
@@ -68,7 +69,13 @@ const registry = new AdapterRegistry();
 // Load adapters dynamically
 async function loadAdapters() {
   try {
-    const adaptersPath = "./src/adapters/generated";
+    const adaptersPath = (process.env.ADAPTERS_PATH || "./src/adapters/generated").replace(/\0/g, "");
+    if (!existsSync(adaptersPath)) {
+      console.warn(`⚠️  Adapters directory not found: ${adaptersPath}`);
+      console.warn("ℹ️  Set ADAPTERS_PATH or generate adapters before boot.");
+      return new Map();
+    }
+
     const files = await Array.fromAsync(new Bun.Glob("*.ts").scan(adaptersPath));
     
     const adapters = new Map();

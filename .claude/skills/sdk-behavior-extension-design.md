@@ -1,3 +1,8 @@
+---
+name: sdk-behavior-extension-design
+description: Design guidance for extending @lanonasis/mem-intel-sdk with behavior intelligence and workflow memory APIs. Use when planning or implementing SDK behavior extensions.
+---
+
 # SDK Extension Design: Behavior Intelligence for mem-intel-sdk v2.0
 
 ## Overview
