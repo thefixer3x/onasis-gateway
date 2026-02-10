@@ -11,7 +11,7 @@ class GatewayExecute {
         this.registry = registry;
     }
 
-    async handle(args) {
+    async handle(args, context = {}) {
         const { tool_id, params, options = {} } = args;
 
         // Validate tool_id format
@@ -40,8 +40,22 @@ class GatewayExecute {
 
         const [adapterId, toolName] = parts;
 
+        // Resolve tool_id via AdapterRegistry (aliases -> canonical)
+        let canonicalToolId = tool_id;
+        let resolvedAdapterId = adapterId;
+        let resolvedToolName = toolName;
+
+        if (this.gateway && this.gateway.adapterRegistry && typeof this.gateway.adapterRegistry.resolveTool === 'function') {
+            const resolved = this.gateway.adapterRegistry.resolveTool(tool_id);
+            if (resolved) {
+                canonicalToolId = resolved.canonicalId;
+                resolvedAdapterId = resolved.adapterId;
+                resolvedToolName = resolved.tool?.name || toolName;
+            }
+        }
+
         // Get operation metadata from registry
-        const operation = this.registry.getOperation(tool_id);
+        const operation = this.registry.getOperation(canonicalToolId) || this.registry.getOperation(tool_id);
         const operationMeta = operation || {
             risk_level: 'high', // Default to high if unknown
             requires_confirmation: true,
@@ -64,10 +78,11 @@ class GatewayExecute {
         }
 
         // 2. Check confirmation for destructive operations
-        const isDestructive = toolName.includes('delete') ||
-                              toolName.includes('cancel') ||
-                              toolName.includes('remove') ||
-                              toolName.includes('revoke');
+        const toolNameForPolicy = (resolvedToolName || toolName || '').toLowerCase();
+        const isDestructive = toolNameForPolicy.includes('delete') ||
+                              toolNameForPolicy.includes('cancel') ||
+                              toolNameForPolicy.includes('remove') ||
+                              toolNameForPolicy.includes('revoke');
 
         if (isDestructive && !options.confirmed) {
             return {
@@ -96,13 +111,14 @@ class GatewayExecute {
             return {
                 success: true,
                 dry_run: true,
-                tool_id,
+                tool_id: canonicalToolId,
+                ...(canonicalToolId !== tool_id ? { requested_tool_id: tool_id } : {}),
                 params,
                 validation: 'passed',
                 message: 'Dry run successful. Remove dry_run option to execute.',
                 operation_meta: {
-                    adapter: adapterId,
-                    tool: toolName,
+                    adapter: resolvedAdapterId,
+                    tool: resolvedToolName,
                     risk_level: operationMeta.risk_level || 'unknown'
                 }
             };
@@ -113,56 +129,73 @@ class GatewayExecute {
         const startTime = Date.now();
 
         try {
-            // Find the adapter
-            const adapter = this.gateway.adapters.get(adapterId);
+            let result = null;
 
-            if (!adapter) {
-                return {
-                    success: false,
-                    error: {
-                        code: 'ADAPTER_NOT_FOUND',
-                        message: `Adapter '${adapterId}' not found`,
-                        available_adapters: Array.from(this.gateway.adapters.keys())
+            // Prefer AdapterRegistry execution path (canonical tool routing + auth passthrough)
+            if (this.gateway.adapterRegistry && typeof this.gateway.adapterRegistry.callTool === 'function') {
+                try {
+                    result = await this.gateway.adapterRegistry.callTool(canonicalToolId, params, context);
+                } catch (error) {
+                    // Fallback for legacy behavior if registry cannot resolve the tool.
+                    if (!(error && error.message && error.message.startsWith('Tool not found'))) {
+                        throw error;
                     }
-                };
+                }
             }
 
-            // Check if adapter can execute
-            if (typeof adapter.callTool !== 'function') {
-                // This is a mock adapter - can't execute
-                if (typeof adapter.tools === 'number' || adapter.is_mock) {
+            // Legacy fallback: direct adapter execution (no registry)
+            if (result === null) {
+                const adapter = this.gateway.adapters.get(resolvedAdapterId) || this.gateway.adapters.get(adapterId);
+
+                if (!adapter) {
                     return {
                         success: false,
                         error: {
-                            code: 'MOCK_ADAPTER',
-                            message: `Adapter '${adapterId}' is a mock adapter and cannot execute real operations`,
-                            suggestion: 'This adapter needs real implementation to execute operations'
+                            code: 'ADAPTER_NOT_FOUND',
+                            message: `Adapter '${resolvedAdapterId}' not found`,
+                            available_adapters: Array.from(this.gateway.adapters.keys())
                         }
                     };
                 }
 
-                return {
-                    success: false,
-                    error: {
-                        code: 'ADAPTER_NOT_EXECUTABLE',
-                        message: `Adapter '${adapterId}' does not support tool execution`
+                // Check if adapter can execute
+                if (typeof adapter.callTool !== 'function') {
+                    // This is a mock adapter - can't execute
+                    if (typeof adapter.tools === 'number' || adapter.is_mock) {
+                        return {
+                            success: false,
+                            error: {
+                                code: 'MOCK_ADAPTER',
+                                message: `Adapter '${resolvedAdapterId}' is a mock adapter and cannot execute real operations`,
+                                suggestion: 'This adapter needs real implementation to execute operations'
+                            }
+                        };
                     }
-                };
-            }
 
-            // Execute the tool
-            const result = await adapter.callTool(toolName, params);
+                    return {
+                        success: false,
+                        error: {
+                            code: 'ADAPTER_NOT_EXECUTABLE',
+                            message: `Adapter '${resolvedAdapterId}' does not support tool execution`
+                        }
+                    };
+                }
+
+                // Execute the tool (legacy)
+                result = await adapter.callTool(resolvedToolName, params);
+            }
 
             const executionTime = Date.now() - startTime;
 
             return {
                 success: true,
-                tool_id,
+                tool_id: canonicalToolId,
+                ...(canonicalToolId !== tool_id ? { requested_tool_id: tool_id } : {}),
                 execution_time_ms: executionTime,
                 data: result,
                 meta: {
-                    adapter: adapterId,
-                    tool: toolName,
+                    adapter: resolvedAdapterId,
+                    tool: resolvedToolName,
                     request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     timestamp: new Date().toISOString(),
                     operation: {
@@ -178,13 +211,14 @@ class GatewayExecute {
 
             return {
                 success: false,
-                tool_id,
+                tool_id: canonicalToolId,
+                ...(canonicalToolId !== tool_id ? { requested_tool_id: tool_id } : {}),
                 execution_time_ms: executionTime,
                 error: {
                     code: 'EXECUTION_ERROR',
                     message: error.message,
-                    adapter: adapterId,
-                    tool: toolName
+                    adapter: resolvedAdapterId,
+                    tool: resolvedToolName
                 }
             };
         }

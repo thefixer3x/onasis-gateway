@@ -199,7 +199,7 @@ class MCPDiscoveryLayer {
     /**
      * Handle a meta-tool call
      */
-    async callTool(toolName, args) {
+    async callTool(toolName, args, context = {}) {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -208,7 +208,7 @@ class MCPDiscoveryLayer {
             case 'gateway-intent':
                 return await this.intentHandler.handle(args);
             case 'gateway-execute':
-                return await this.executeHandler.handle(args);
+                return await this.executeHandler.handle(args, context);
             case 'gateway-adapters':
                 return await this.adaptersHandler.handle(args);
             case 'gateway-tools':

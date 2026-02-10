@@ -15,6 +15,40 @@
 
 const fs = require('fs');
 
+const decodeJwtPayload = (token) => {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  const payload = parts[1];
+  if (!payload) return null;
+
+  const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+  try {
+    const json = Buffer.from(b64 + pad, 'base64').toString('utf8');
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+const deriveSupabaseUrlFromTokens = () => {
+  const candidates = [
+    process.env.SUPABASE_ANON_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.SUPABASE_SERVICE_KEY
+  ].filter(Boolean);
+
+  for (const token of candidates) {
+    const payload = decodeJwtPayload(token);
+    const ref = payload && payload.ref;
+    if (ref && typeof ref === 'string') {
+      return `https://${ref}.supabase.co`;
+    }
+  }
+  return null;
+};
+
 class SupabaseEdgeFunctionsAdapter {
   constructor() {
     // Public properties
@@ -35,7 +69,7 @@ class SupabaseEdgeFunctionsAdapter {
     this.config = {
       supabaseUrl: process.env.SUPABASE_URL || '',
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
-      supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+      supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '',
       routesFilePath: process.env.SUPABASE_DIRECT_ROUTES_PATH || '',
       discoveryMode: 'auto',
       cacheTimeout: 300, // 5 minutes
@@ -63,6 +97,14 @@ class SupabaseEdgeFunctionsAdapter {
         ...(config.uaiIntegration || {})
       }
     };
+
+    // If SUPABASE_URL isn't explicitly set, try deriving it from the Supabase JWT (ref -> https://{ref}.supabase.co).
+    if (!this.config.supabaseUrl) {
+      const derived = deriveSupabaseUrlFromTokens();
+      if (derived) {
+        this.config.supabaseUrl = derived;
+      }
+    }
 
     if (!this.config.supabaseUrl) {
       throw new Error('SUPABASE_URL is required for Supabase adapter');

@@ -14,6 +14,56 @@
 
 require('dotenv').config();
 
+const decodeJwtPayload = (token) => {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = parts[1];
+    if (!payload) return null;
+
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+    try {
+        const json = Buffer.from(b64 + pad, 'base64').toString('utf8');
+        return JSON.parse(json);
+    } catch {
+        return null;
+    }
+};
+
+const deriveSupabaseUrlFromTokens = () => {
+    const candidates = [
+        process.env.SUPABASE_ANON_KEY,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.SUPABASE_SERVICE_KEY
+    ].filter(Boolean);
+
+    for (const token of candidates) {
+        const payload = decodeJwtPayload(token);
+        const ref = payload && payload.ref;
+        if (ref && typeof ref === 'string') {
+            return `https://${ref}.supabase.co`;
+        }
+    }
+    return null;
+};
+
+const ensureSupabaseEnv = () => {
+    if (!process.env.SUPABASE_URL) {
+        const derived = deriveSupabaseUrlFromTokens();
+        if (derived) {
+            process.env.SUPABASE_URL = derived;
+        }
+    }
+
+    // Accept SUPABASE_SERVICE_KEY as alias for SUPABASE_SERVICE_ROLE_KEY (common naming).
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_KEY) {
+        process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_KEY;
+    }
+};
+
+ensureSupabaseEnv();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -142,6 +192,7 @@ class UnifiedGateway {
 
         // MCP Server components
         this.adapters = new Map();
+        this.adapterRegistry = null;
         this.abstractedAPI = new AbstractedAPIEndpoints();
         this.authBridge = new OnasisAuthBridge({
             authApiUrl: process.env.AUTH_GATEWAY_URL
@@ -362,6 +413,9 @@ class UnifiedGateway {
      * Load MCP adapters (mock for now)
      */
     async loadMCPAdapters() {
+        const AdapterRegistry = require('./src/mcp/adapter-registry');
+        this.adapterRegistry = new AdapterRegistry();
+
         const catalogAdapters = Array.isArray(this.serviceCatalog?.mcpAdapters) && this.serviceCatalog.mcpAdapters.length > 0
             ? this.serviceCatalog.mcpAdapters.filter(adapter => adapter.enabled !== false)
             : buildDefaultMcpCatalog();
@@ -399,7 +453,7 @@ class UnifiedGateway {
                 await supabaseAdapter.initialize({
                     supabaseUrl: process.env.SUPABASE_URL,
                     supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
-                    supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+                    supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY,
                     routesFilePath,
                     discoveryMode: 'auto',
                     cacheTimeout: 300,
@@ -410,7 +464,10 @@ class UnifiedGateway {
                     }
                 });
 
-                gateway.adapters.set('supabase-edge-functions', supabaseAdapter);
+                await gateway.adapterRegistry.register(supabaseAdapter, {
+                    adapterId: 'supabase-edge-functions',
+                    skipInitialize: true
+                });
 
                 const catalogEntry = gateway.serviceCatalog?.mcpAdapters?.find(
                     entry => entry.id === 'supabase-edge-functions'
@@ -441,16 +498,56 @@ class UnifiedGateway {
                 continue;
             }
 
+            // Real adapter loaded from catalog adapterPath (CommonJS .js module)
+            if (adapterEntry.adapterPath) {
+                try {
+                    const resolvedPath = path.isAbsolute(adapterEntry.adapterPath)
+                        ? adapterEntry.adapterPath
+                        : path.join(__dirname, adapterEntry.adapterPath);
+
+                    // eslint-disable-next-line import/no-dynamic-require, global-require
+                    const mod = require(resolvedPath);
+
+                    let AdapterClass = null;
+                    if (adapterEntry.functionName && mod && typeof mod === 'object' && mod[adapterEntry.functionName]) {
+                        AdapterClass = mod[adapterEntry.functionName];
+                    } else if (typeof mod === 'function') {
+                        AdapterClass = mod;
+                    } else if (mod && typeof mod === 'object' && typeof mod.default === 'function') {
+                        AdapterClass = mod.default;
+                    } else if (mod && typeof mod === 'object') {
+                        const candidates = Object.values(mod).filter((v) => typeof v === 'function');
+                        if (candidates.length === 1) {
+                            AdapterClass = candidates[0];
+                        }
+                    }
+
+                    if (!AdapterClass) {
+                        throw new Error(`Adapter module did not export a constructor (${adapterEntry.adapterPath})`);
+                    }
+
+                    const adapter = new AdapterClass(adapterEntry);
+                    await this.adapterRegistry.register(adapter);
+                    console.log(`✅ Loaded adapter ${adapterEntry.id} (${Array.isArray(adapter.tools) ? adapter.tools.length : 0} tools)`);
+                } catch (error) {
+                    console.warn(`⚠️ ${adapterEntry.id} adapter failed to load from adapterPath:`, error.message);
+                    this.adapterRegistry.registerMock(adapterEntry);
+                }
+                continue;
+            }
+
+            // Mock adapter placeholder (discoverable but not executable)
             if (adapterEntry.type === 'mock' || adapterEntry.source === 'mock') {
-                this.adapters.set(adapterEntry.id, {
-                    tools: adapterEntry.toolCount || adapterEntry.tools || 0,
-                    auth: adapterEntry.auth || adapterEntry.authType || 'apikey'
-                });
+                this.adapterRegistry.registerMock(adapterEntry);
             }
         }
 
+        // Backwards-compat: keep gateway.adapters as the live map of adapters
+        this.adapters = this.adapterRegistry.toAdaptersMap();
+
         const totalTools = this.getTotalTools();
-        console.log(`⚡ Loaded ${this.adapters.size} MCP adapters (${totalTools} tools)`);
+        const stats = this.adapterRegistry.getStats();
+        console.log(`⚡ Loaded ${stats.totalAdapters} MCP adapters (${stats.realAdapters} real, ${stats.mockAdapters} mock, ${totalTools} tools)`);
 
         // Initialize MCP Discovery Layer
         if (this.mcpToolMode === 'lazy') {
@@ -463,6 +560,33 @@ class UnifiedGateway {
                 this.mcpToolMode = 'full';
             }
         }
+    }
+
+    buildMcpRequestContext(req) {
+        const authorization = req.headers.authorization || req.headers.Authorization || '';
+        const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key'] || '';
+        const projectScope = req.headers['x-project-scope'] || req.headers['X-Project-Scope'] || this.projectScope || '';
+        const requestId = req.id || '';
+        const sessionId = req.headers['x-session-id'] || req.headers['X-Session-ID'] || '';
+        const apikey = req.headers.apikey || req.headers['apikey'] || '';
+
+        const headers = {
+            ...(authorization && { Authorization: authorization }),
+            ...(apiKey && { 'X-API-Key': apiKey }),
+            ...(apikey && { apikey }),
+            ...(projectScope && { 'X-Project-Scope': projectScope }),
+            ...(requestId && { 'X-Request-ID': requestId }),
+            ...(sessionId && { 'X-Session-ID': sessionId })
+        };
+
+        return {
+            authorization,
+            apiKey,
+            projectScope,
+            requestId,
+            sessionId,
+            headers
+        };
     }
 
     buildAuthVerifyUrl() {
@@ -1006,7 +1130,8 @@ class UnifiedGateway {
                     // Check if it's a meta-tool (gateway-*)
                     if (toolName.startsWith('gateway-')) {
                         try {
-                            const result = await this.discoveryLayer.callTool(toolName, toolArgs || {});
+                            const context = this.buildMcpRequestContext(req);
+                            const result = await this.discoveryLayer.callTool(toolName, toolArgs || {}, context);
                             return res.json({
                                 jsonrpc: '2.0',
                                 result: { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] },
