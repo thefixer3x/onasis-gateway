@@ -1,0 +1,347 @@
+{
+  "$schema": "../schemas/catalog-schema.json",
+  "version": "1.0.0",
+  "generated": "2026-02-10T00:00:00Z",
+  "description": "Onasis Gateway Service Catalog - Central registry of all API services and MCP adapters",
+
+  "apiServices": [
+    {
+      "id": "credit-as-a-service",
+      "name": "Credit as a Service",
+      "description": "Comprehensive credit management and lending platform with provider integration",
+      "directory": "credit-as-a-service",
+      "category": "financial",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "flutterwave-payment-gateway",
+      "name": "Flutterwave Payment Gateway",
+      "description": "Comprehensive Flutterwave payment processing with wallet capabilities",
+      "directory": "flutterwave-payment-gateway",
+      "category": "payment_gateway",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "paystack-payment-gateway",
+      "name": "PayStack Payment Gateway",
+      "description": "Comprehensive PayStack payment processing with advanced features for African markets",
+      "directory": "paystack-payment-gateway",
+      "category": "payment_gateway",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "providus-bank",
+      "name": "Providus Bank API",
+      "description": "Nigerian banking and wallet services",
+      "directory": "providus-bank",
+      "category": "banking",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "verification-service",
+      "name": "Verification Service",
+      "description": "Comprehensive KYC, KYB, and AML verification service with multi-provider integration",
+      "directory": "verification-service",
+      "category": "identity_verification",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "memory-as-a-service",
+      "name": "Memory as a Service",
+      "description": "Semantic memory storage with vector embeddings for AI applications",
+      "directory": "memory-as-a-service",
+      "category": "ai_infrastructure",
+      "enabled": true,
+      "status": "active"
+    }
+  ],
+
+  "mcpAdapters": [
+    {
+      "id": "supabase-edge-functions",
+      "name": "Supabase Edge Functions",
+      "description": "Auto-discovery adapter for Supabase Edge Functions with UAI authentication",
+      "type": "supabase",
+      "enabled": true,
+      "autoDiscover": true,
+      "priority": 1
+    },
+    {
+      "id": "stripe-api-2024-04-10",
+      "name": "Stripe API",
+      "description": "Stripe payment processing API",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 457,
+      "authType": "bearer",
+      "category": "payments",
+      "supportedCountries": ["US", "GB", "EU", "CA", "AU", "GLOBAL"],
+      "supportedCurrencies": ["USD", "EUR", "GBP", "CAD", "AUD"]
+    },
+    {
+      "id": "paystack",
+      "name": "Paystack API",
+      "description": "African payment processing",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 117,
+      "authType": "bearer",
+      "category": "payments",
+      "supportedCountries": ["NG", "GH", "ZA", "KE"],
+      "supportedCurrencies": ["NGN", "GHS", "ZAR", "KES"]
+    },
+    {
+      "id": "flutterwave-v3",
+      "name": "Flutterwave v3 API",
+      "description": "Pan-African payment processing with mobile money support",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 108,
+      "authType": "bearer",
+      "category": "payments",
+      "supportedCountries": ["NG", "GH", "KE", "ZA", "TZ", "UG", "RW"],
+      "supportedCurrencies": ["NGN", "GHS", "KES", "ZAR", "USD", "EUR", "GBP"]
+    },
+    {
+      "id": "ngrok-api",
+      "name": "ngrok API",
+      "description": "Secure tunnels and ingress",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 217,
+      "authType": "bearer",
+      "category": "infrastructure"
+    },
+    {
+      "id": "hostinger-api",
+      "name": "Hostinger API",
+      "description": "Web hosting management",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 85,
+      "authType": "bearer",
+      "category": "infrastructure"
+    },
+    {
+      "id": "shutterstock-api",
+      "name": "Shutterstock API",
+      "description": "Stock media assets",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 109,
+      "authType": "oauth2",
+      "category": "media"
+    },
+    {
+      "id": "google-analytics-api-v3",
+      "name": "Google Analytics v3 API",
+      "description": "Web analytics",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 88,
+      "authType": "apikey",
+      "category": "analytics"
+    },
+    {
+      "id": "bap",
+      "name": "BAP API",
+      "description": "Nigerian payment services",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 92,
+      "authType": "apikey",
+      "category": "payments",
+      "supportedCountries": ["NG"]
+    },
+    {
+      "id": "open-banking-api",
+      "name": "Open Banking API",
+      "description": "PSD2-compliant banking integration",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 58,
+      "authType": "apikey",
+      "category": "banking"
+    },
+    {
+      "id": "7-wise-multicurrency-account-mca-platform-api-s",
+      "name": "Wise MCA Platform API",
+      "description": "Multi-currency accounts and transfers",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 47,
+      "authType": "apikey",
+      "category": "payments",
+      "supportedCurrencies": ["USD", "EUR", "GBP", "NGN"]
+    },
+    {
+      "id": "business-api",
+      "name": "Business API",
+      "description": "Business operations and management",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 52,
+      "authType": "bearer",
+      "category": "general"
+    },
+    {
+      "id": "merchant-api",
+      "name": "Merchant API",
+      "description": "Merchant services and POS integration",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 49,
+      "authType": "apikey",
+      "category": "payments"
+    },
+    {
+      "id": "sayswitch-api-integration",
+      "name": "Sayswitch API",
+      "description": "Payment switching and routing",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 43,
+      "authType": "bearer",
+      "category": "payments"
+    },
+    {
+      "id": "xpress-wallet-for-merchants",
+      "name": "Xpress Wallet for Merchants",
+      "description": "Digital wallet services for merchants",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 40,
+      "authType": "bearer",
+      "category": "payments"
+    },
+    {
+      "id": "ngrok-examples",
+      "name": "ngrok Examples",
+      "description": "ngrok integration examples",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 19,
+      "authType": "apikey",
+      "category": "infrastructure"
+    },
+    {
+      "id": "multi-currency-account",
+      "name": "Multi-Currency Account",
+      "description": "Multi-currency account management",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 9,
+      "authType": "apikey",
+      "category": "banking"
+    },
+    {
+      "id": "api-testing-basics",
+      "name": "API Testing Basics",
+      "description": "API testing utilities",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 8,
+      "authType": "apikey",
+      "category": "testing"
+    },
+    {
+      "id": "edoc-external-app-integration-for-clients",
+      "name": "EDOC External App Integration",
+      "description": "Electronic document integration",
+      "type": "mock",
+      "source": "mock",
+      "enabled": true,
+      "toolCount": 6,
+      "authType": "apikey",
+      "category": "documents"
+    }
+  ],
+
+  "categories": {
+    "payments": {
+      "name": "Payment Services",
+      "description": "Payment processing, transfers, and financial transactions",
+      "icon": "💳"
+    },
+    "banking": {
+      "name": "Banking Services",
+      "description": "Bank account management and open banking",
+      "icon": "🏦"
+    },
+    "infrastructure": {
+      "name": "Infrastructure",
+      "description": "Hosting, tunnels, and deployment services",
+      "icon": "🔧"
+    },
+    "analytics": {
+      "name": "Analytics",
+      "description": "Data analytics and tracking",
+      "icon": "📊"
+    },
+    "media": {
+      "name": "Media",
+      "description": "Stock media, images, and video",
+      "icon": "🖼️"
+    },
+    "ai_infrastructure": {
+      "name": "AI Infrastructure",
+      "description": "AI and machine learning services",
+      "icon": "🤖"
+    },
+    "identity_verification": {
+      "name": "Identity Verification",
+      "description": "KYC, KYB, and AML verification",
+      "icon": "🔐"
+    },
+    "documents": {
+      "name": "Documents",
+      "description": "Document management and processing",
+      "icon": "📄"
+    },
+    "general": {
+      "name": "General",
+      "description": "General purpose services",
+      "icon": "⚙️"
+    },
+    "testing": {
+      "name": "Testing",
+      "description": "API testing and development tools",
+      "icon": "🧪"
+    }
+  },
+
+  "settings": {
+    "mcpToolMode": "lazy",
+    "defaultRateLimit": {
+      "windowMs": 900000,
+      "maxRequests": 100
+    },
+    "healthCheck": {
+      "enabled": true,
+      "interval": 30000,
+      "timeout": 5000
+    }
+  }
+}
