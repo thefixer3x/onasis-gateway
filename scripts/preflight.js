@@ -23,6 +23,57 @@ try {
 
 const results = [];
 
+function decodeJwtPayload(token) {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = parts[1];
+    if (!payload) return null;
+
+    // base64url -> base64
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+    try {
+        const json = Buffer.from(b64 + pad, 'base64').toString('utf8');
+        return JSON.parse(json);
+    } catch {
+        return null;
+    }
+}
+
+function deriveSupabaseUrlFromTokens() {
+    const candidates = [
+        process.env.SUPABASE_ANON_KEY,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.SUPABASE_SERVICE_KEY
+    ].filter(Boolean);
+
+    for (const token of candidates) {
+        const payload = decodeJwtPayload(token);
+        const ref = payload && payload.ref;
+        if (ref && typeof ref === 'string') {
+            return `https://${ref}.supabase.co`;
+        }
+    }
+    return null;
+}
+
+function ensureSupabaseEnv() {
+    if (!process.env.SUPABASE_URL) {
+        const derived = deriveSupabaseUrlFromTokens();
+        if (derived) {
+            process.env.SUPABASE_URL = derived;
+        }
+    }
+
+    // Accept SUPABASE_SERVICE_KEY as an alias for SUPABASE_SERVICE_ROLE_KEY (common naming).
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_KEY) {
+        process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_KEY;
+    }
+}
+
+ensureSupabaseEnv();
+
 function pass(label) {
     results.push({ label, status: 'PASS' });
     console.log(`  [PASS] ${label}`);
