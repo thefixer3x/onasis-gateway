@@ -58,7 +58,7 @@ class MCPDiscoveryLayer {
     getMetaTools() {
         return [
             {
-                name: 'gateway.intent',
+                name: 'gateway-intent',
                 description: 'Find the right tool for your task. Describe what you want to do in natural language. Returns structured, executable action options with full schemas.',
                 inputSchema: {
                     type: 'object',
@@ -93,7 +93,7 @@ class MCPDiscoveryLayer {
                 }
             },
             {
-                name: 'gateway.execute',
+                name: 'gateway-execute',
                 description: 'Execute a specific tool. Use gateway.intent first to find the right tool_id. Includes risk enforcement and validation.',
                 inputSchema: {
                     type: 'object',
@@ -128,7 +128,7 @@ class MCPDiscoveryLayer {
                 }
             },
             {
-                name: 'gateway.adapters',
+                name: 'gateway-adapters',
                 description: 'List available service adapters and their capabilities. Filter by category, capability, or country.',
                 inputSchema: {
                     type: 'object',
@@ -151,7 +151,7 @@ class MCPDiscoveryLayer {
                 }
             },
             {
-                name: 'gateway.tools',
+                name: 'gateway-tools',
                 description: 'List available tools within a specific adapter. Search and filter by category.',
                 inputSchema: {
                     type: 'object',
@@ -175,7 +175,7 @@ class MCPDiscoveryLayer {
                 }
             },
             {
-                name: 'gateway.reference',
+                name: 'gateway-reference',
                 description: 'Get documentation, examples, and usage guides for adapters and tools.',
                 inputSchema: {
                     type: 'object',
@@ -205,15 +205,15 @@ class MCPDiscoveryLayer {
         }
 
         switch (toolName) {
-            case 'gateway.intent':
+            case 'gateway-intent':
                 return await this.intentHandler.handle(args);
-            case 'gateway.execute':
+            case 'gateway-execute':
                 return await this.executeHandler.handle(args);
-            case 'gateway.adapters':
+            case 'gateway-adapters':
                 return await this.adaptersHandler.handle(args);
-            case 'gateway.tools':
+            case 'gateway-tools':
                 return await this.toolsHandler.handle(args);
-            case 'gateway.reference':
+            case 'gateway-reference':
                 return await this.referenceHandler.handle(args);
             default:
                 throw new Error(`Unknown discovery tool: ${toolName}`);
@@ -224,7 +224,7 @@ class MCPDiscoveryLayer {
      * Check if a tool name is a meta-tool
      */
     isMetaTool(toolName) {
-        return toolName.startsWith('gateway.');
+        return toolName.startsWith('gateway-');
     }
 }
 
