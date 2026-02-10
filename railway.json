@@ -10,7 +10,9 @@
       "api/**/*.js",
       "core/**/*.js",
       "services/**/*.json",
-      "package.json"
+      "package.json",
+      "nixpacks.toml",
+      "railway.json"
     ]
   },
   "deploy": {
