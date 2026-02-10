@@ -1,14 +1,17 @@
 import fs from 'fs';
 import path from 'path';
-import { 
-  PostmanCollection, 
-  PostmanItem, 
-  MCPAdapter, 
-  MCPTool, 
-  GeneratedAdapter,
-  AdapterConfig,
-  AdapterStatus 
+import {
+  PostmanCollection,
+  PostmanItem,
+  MCPTool,
+  GeneratedAdapter
 } from '../types/mcp.js';
+
+type JsonSchema = {
+  type: 'object';
+  properties: Record<string, unknown>;
+  required?: string[];
+};
 
 export class AdapterGenerator {
   private collectionsDir: string;
@@ -101,8 +104,8 @@ export class AdapterGenerator {
     return tools;
   }
 
-  private generateInputSchema(item: PostmanItem): any {
-    const properties: Record<string, any> = {};
+  private generateInputSchema(item: PostmanItem): JsonSchema {
+    const properties: Record<string, unknown> = {};
     const required: string[] = [];
 
     // Extract URL parameters
@@ -139,7 +142,7 @@ export class AdapterGenerator {
             description: `Body parameter: ${key}`
           };
         });
-      } catch (e) {
+      } catch {
         // If body is not JSON, add a generic body parameter
         properties.body = {
           type: 'string',
@@ -214,7 +217,7 @@ export class AdapterGenerator {
     baseUrl: string;
     dependencies: string[];
   }): string {
-    const { name, className, tools, authType, baseUrl, dependencies } = params;
+    const { name, className, tools, authType, baseUrl } = params;
 
     return `/**
  * Generated MCP Adapter for ${name}

@@ -7,7 +7,7 @@ export interface MCPTool {
   description: string;
   inputSchema: {
     type: "object";
-    properties: Record<string, any>;
+    properties: Record<string, unknown>;
     required?: string[];
   };
 }
@@ -27,11 +27,11 @@ export interface MCPAdapter {
   resources?: MCPResource[];
   
   // Core methods
-  initialize(config: AdapterConfig): Promise<void>;
+  initialize(_config: AdapterConfig): Promise<void>;
   listTools(): Promise<MCPTool[]>;
-  callTool(name: string, args: any): Promise<any>;
+  callTool(_name: string, _args: unknown): Promise<unknown>;
   listResources?(): Promise<MCPResource[]>;
-  readResource?(uri: string): Promise<string>;
+  readResource?(_uri: string): Promise<string>;
   
   // Health and status
   isHealthy(): Promise<boolean>;
@@ -45,14 +45,14 @@ export interface AdapterConfig {
   baseUrl?: string;
   timeout?: number;
   retryAttempts?: number;
-  credentials?: Record<string, any>;
+  credentials?: Record<string, unknown>;
   environment?: 'development' | 'staging' | 'production';
   
   // Service provider configuration
   serviceProvider?: {
     enabled: boolean;
     clientId?: string;
-    branding?: Record<string, any>;
+    branding?: Record<string, unknown>;
   };
   
   // Database configuration (for services like Xpress Wallet)
@@ -72,7 +72,7 @@ export interface AdapterStatus {
   requestCount: number;
   errorCount: number;
   averageResponseTime: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PostmanCollection {
@@ -141,7 +141,7 @@ export interface PostmanQuery {
 
 export interface PostmanAuth {
   type: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface PostmanVariable {
