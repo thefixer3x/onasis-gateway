@@ -1,0 +1,879 @@
+{
+  "generatedAt": "2026-02-10T14:01:59Z",
+  "projectRef": "mxtsdgkwzjzlttpotole",
+  "functions": [
+    {
+      "id": "6c854bed-00ef-4c3f-b136-10e3ed2d5f89",
+      "name": "ai-chat",
+      "slug": "ai-chat",
+      "status": "ACTIVE",
+      "version": 42,
+      "verify_jwt": true,
+      "updated_at": 1765244517810
+    },
+    {
+      "id": "8a1f5b92-2cda-45b7-85da-a2b6237ecb59",
+      "name": "ai-router",
+      "slug": "ai-router",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": true,
+      "updated_at": 1749990179124
+    },
+    {
+      "id": "ef4a3c4c-fe00-47ca-b6b8-896bb336296a",
+      "name": "api-key-create",
+      "slug": "api-key-create",
+      "status": "ACTIVE",
+      "version": 9,
+      "verify_jwt": false,
+      "updated_at": 1770572593319
+    },
+    {
+      "id": "64844c4a-fa8a-4726-be9e-85e54c38ae49",
+      "name": "api-key-delete",
+      "slug": "api-key-delete",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572598398
+    },
+    {
+      "id": "62fdd528-aa16-4a9f-a9fc-c4b47a579422",
+      "name": "api-key-list",
+      "slug": "api-key-list",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572594479
+    },
+    {
+      "id": "0a75d8bd-f383-4eaf-9218-54b2b340de52",
+      "name": "api-key-revoke",
+      "slug": "api-key-revoke",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572597154
+    },
+    {
+      "id": "d5506dfa-541d-4003-8e07-7e7fbba45d49",
+      "name": "api-key-rotate",
+      "slug": "api-key-rotate",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572596048
+    },
+    {
+      "id": "2b4979f8-62f1-4480-b7a4-ec16a9cbc145",
+      "name": "auth",
+      "slug": "auth",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": true,
+      "updated_at": 1759036464377
+    },
+    {
+      "id": "cfb80de4-0684-4df9-abb1-5e35548ddecc",
+      "name": "auth-hook-user-created",
+      "slug": "auth-hook-user-created",
+      "status": "ACTIVE",
+      "version": 23,
+      "verify_jwt": true,
+      "updated_at": 1755051359118
+    },
+    {
+      "id": "dca89802-8b61-4909-9dfc-a02bedcb9b60",
+      "name": "auth-redirect-hook",
+      "slug": "auth-redirect-hook",
+      "status": "ACTIVE",
+      "version": 26,
+      "verify_jwt": true,
+      "updated_at": 1756853108511
+    },
+    {
+      "id": "b2193384-b28e-4b44-bb97-ffe4b81a363c",
+      "name": "auth-status",
+      "slug": "auth-status",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572599575
+    },
+    {
+      "id": "47b2863b-341a-4b46-88fb-9284fbafb337",
+      "name": "batch-sync-users",
+      "slug": "batch-sync-users",
+      "status": "ACTIVE",
+      "version": 11,
+      "verify_jwt": false,
+      "updated_at": 1768602949509
+    },
+    {
+      "id": "34933058-bb8a-4469-961f-de76c8b041cb",
+      "name": "bizgenie-router",
+      "slug": "bizgenie-router",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356811712
+    },
+    {
+      "id": "925a4f70-568e-4b14-aad0-171646aef192",
+      "name": "cache-cleanup",
+      "slug": "cache-cleanup",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": false,
+      "updated_at": 1752356814075
+    },
+    {
+      "id": "464fbfaf-c6a2-4535-a1a7-8834713ad4e7",
+      "name": "callback-handler",
+      "slug": "callback-handler",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": true,
+      "updated_at": 1759036466219
+    },
+    {
+      "id": "462f4082-abdb-4912-8251-0fd2f1d3b1f0",
+      "name": "chat",
+      "slug": "chat",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1749423451364
+    },
+    {
+      "id": "06e76acf-da96-4aad-8315-1e30b5a73e96",
+      "name": "claude-ai",
+      "slug": "claude-ai",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1750004097364
+    },
+    {
+      "id": "1cc63964-d4b6-497f-8047-be1886687df2",
+      "name": "client-api",
+      "slug": "client-api",
+      "status": "ACTIVE",
+      "version": 17,
+      "verify_jwt": true,
+      "updated_at": 1759501910389
+    },
+    {
+      "id": "1d1b50a8-6d83-4106-938a-a4dd32010893",
+      "name": "config-get",
+      "slug": "config-get",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572604722
+    },
+    {
+      "id": "9dc24d30-a4af-417f-9076-b1432158710f",
+      "name": "config-set",
+      "slug": "config-set",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572606301
+    },
+    {
+      "id": "f27f1ccd-472e-4519-a548-33807249f816",
+      "name": "consent-status",
+      "slug": "consent-status",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1748897595006
+    },
+    {
+      "id": "ceb1a334-dcae-4126-a59b-89646c0f2cbc",
+      "name": "create-checkout-session",
+      "slug": "create-checkout-session",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": true,
+      "updated_at": 1750004097364
+    },
+    {
+      "id": "ac0fc859-82a8-44bb-a956-29f6c07bb4d2",
+      "name": "create-notification",
+      "slug": "create-notification",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356843313
+    },
+    {
+      "id": "c6b249f6-b08f-4734-89bc-10bd42d4ba36",
+      "name": "create-portal-session",
+      "slug": "create-portal-session",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1750004097364
+    },
+    {
+      "id": "af880d7d-3c9f-46d8-9acd-0d856972687f",
+      "name": "create-stripe-checkout",
+      "slug": "create-stripe-checkout",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356842417
+    },
+    {
+      "id": "976109c5-d761-4e6d-88df-0eb1c6cabca6",
+      "name": "delete-consent",
+      "slug": "delete-consent",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1748897595006
+    },
+    {
+      "id": "60aff40e-8638-44b7-a74b-39c09ed1235b",
+      "name": "edoc",
+      "slug": "edoc",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1748788719774
+    },
+    {
+      "id": "575a71cd-32ee-4b0c-952c-889f7ac107df",
+      "name": "edoc-consent",
+      "slug": "edoc-consent",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356851779
+    },
+    {
+      "id": "091c1610-ffcc-4ab2-9e08-a9b0c76eae89",
+      "name": "edoc-dashboard",
+      "slug": "edoc-dashboard",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1748897595006
+    },
+    {
+      "id": "ccc7f5e4-d6f3-4907-b456-4924ee09366a",
+      "name": "edoc-transactions",
+      "slug": "edoc-transactions",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356852708
+    },
+    {
+      "id": "2c786111-d825-4217-a433-125bc44ebad2",
+      "name": "edoc-webhook",
+      "slug": "edoc-webhook",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": false,
+      "updated_at": 1752356902289
+    },
+    {
+      "id": "7440e717-da32-4ea6-83df-2aa0c507088a",
+      "name": "edocWebhook",
+      "slug": "edocWebhook",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1748788719774
+    },
+    {
+      "id": "182a47fb-0172-48b4-a7e6-6be00cdc3182",
+      "name": "etl-daily-edoc",
+      "slug": "etl-daily-edoc",
+      "status": "ACTIVE",
+      "version": 41,
+      "verify_jwt": true,
+      "updated_at": 1748897595006
+    },
+    {
+      "id": "db6300a1-a990-4869-b07a-86a1cb5b86d0",
+      "name": "flutterwave",
+      "slug": "flutterwave",
+      "status": "ACTIVE",
+      "version": 42,
+      "verify_jwt": true,
+      "updated_at": 1748788719774
+    },
+    {
+      "id": "c636b13c-a0c9-44b7-ab8b-8d5d5fdaa116",
+      "name": "gateway",
+      "slug": "gateway",
+      "status": "ACTIVE",
+      "version": 43,
+      "verify_jwt": true,
+      "updated_at": 1748788719774
+    },
+    {
+      "id": "fa3b040d-20b2-4e6f-91ff-17b8b33c8aae",
+      "name": "gemini-ai",
+      "slug": "gemini-ai",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1749422817686
+    },
+    {
+      "id": "c7c0922d-8b72-47f2-9313-60a49829803c",
+      "name": "generate-api-key",
+      "slug": "generate-api-key",
+      "status": "ACTIVE",
+      "version": 10,
+      "verify_jwt": true,
+      "updated_at": 1764262790966
+    },
+    {
+      "id": "2d534b4a-ab70-4fb5-881d-004e36681228",
+      "name": "generate-embedding",
+      "slug": "generate-embedding",
+      "status": "ACTIVE",
+      "version": 22,
+      "verify_jwt": true,
+      "updated_at": 1758123461499
+    },
+    {
+      "id": "d8a343fe-bba8-4e96-ad51-2dec9626c0e2",
+      "name": "hash-api-key",
+      "slug": "hash-api-key",
+      "status": "ACTIVE",
+      "version": 26,
+      "verify_jwt": true,
+      "updated_at": 1755018510312
+    },
+    {
+      "id": "25975b39-9ff3-43f2-8d70-362c82b8f8aa",
+      "name": "health-check",
+      "slug": "health-check",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": false,
+      "updated_at": 1752356532049
+    },
+    {
+      "id": "dd9bbc74-4411-457a-adc6-5f097c413705",
+      "name": "i18n-translator",
+      "slug": "i18n-translator",
+      "status": "ACTIVE",
+      "version": 23,
+      "verify_jwt": true,
+      "updated_at": 1752912524107
+    },
+    {
+      "id": "265bce5c-9c3a-4d35-bb3e-0af55b5e147a",
+      "name": "init-consent",
+      "slug": "init-consent",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1748897595006
+    },
+    {
+      "id": "4f73cc66-4cdd-4168-978c-e88662f51d70",
+      "name": "intelligence-analyze-patterns",
+      "slug": "intelligence-analyze-patterns",
+      "status": "ACTIVE",
+      "version": 8,
+      "verify_jwt": false,
+      "updated_at": 1766871695528
+    },
+    {
+      "id": "cb10a493-817a-4568-8213-350e77569513",
+      "name": "intelligence-behavior-recall",
+      "slug": "intelligence-behavior-recall",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770582839473
+    },
+    {
+      "id": "0371956a-5ec3-420b-b82b-700ad7350e55",
+      "name": "intelligence-behavior-record",
+      "slug": "intelligence-behavior-record",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770582717261
+    },
+    {
+      "id": "0524c20b-bf7b-41be-b7b9-0dcebf202758",
+      "name": "intelligence-behavior-suggest",
+      "slug": "intelligence-behavior-suggest",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770582843014
+    },
+    {
+      "id": "0f41d651-ec81-48ab-8070-bf5a28d783b2",
+      "name": "intelligence-detect-duplicates",
+      "slug": "intelligence-detect-duplicates",
+      "status": "ACTIVE",
+      "version": 10,
+      "verify_jwt": false,
+      "updated_at": 1769067481979
+    },
+    {
+      "id": "d3e3575c-9535-4438-bb76-2879442a3319",
+      "name": "intelligence-extract-insights",
+      "slug": "intelligence-extract-insights",
+      "status": "ACTIVE",
+      "version": 8,
+      "verify_jwt": false,
+      "updated_at": 1766871693218
+    },
+    {
+      "id": "63ccd391-e304-477a-bd39-823b9fad38ae",
+      "name": "intelligence-find-related",
+      "slug": "intelligence-find-related",
+      "status": "ACTIVE",
+      "version": 8,
+      "verify_jwt": false,
+      "updated_at": 1766871691640
+    },
+    {
+      "id": "c82cc177-c7cd-4185-9cbb-f807f5a62569",
+      "name": "intelligence-health-check",
+      "slug": "intelligence-health-check",
+      "status": "ACTIVE",
+      "version": 9,
+      "verify_jwt": false,
+      "updated_at": 1766871630193
+    },
+    {
+      "id": "4676d561-2a3d-4cd2-8b2c-7c9f6bf4d790",
+      "name": "intelligence-suggest-tags",
+      "slug": "intelligence-suggest-tags",
+      "status": "ACTIVE",
+      "version": 8,
+      "verify_jwt": false,
+      "updated_at": 1766871690184
+    },
+    {
+      "id": "a82f690a-a4f5-45a3-9424-60ef383229ae",
+      "name": "mcp-handler",
+      "slug": "mcp-handler",
+      "status": "ACTIVE",
+      "version": 32,
+      "verify_jwt": true,
+      "updated_at": 1758126764581
+    },
+    {
+      "id": "550a37f3-812e-4e14-94a1-50d002c9897e",
+      "name": "memory-bulk-delete",
+      "slug": "memory-bulk-delete",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572592124
+    },
+    {
+      "id": "26aa6a37-298f-4c05-9bf5-34a86f61790b",
+      "name": "memory-create",
+      "slug": "memory-create",
+      "status": "ACTIVE",
+      "version": 13,
+      "verify_jwt": false,
+      "updated_at": 1770574128268
+    },
+    {
+      "id": "53a26b79-64f7-4398-a847-e0a60ece57c0",
+      "name": "memory-delete",
+      "slug": "memory-delete",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572589263
+    },
+    {
+      "id": "eef4e50c-e0dc-474d-969b-a0911a3cfcf2",
+      "name": "memory-get",
+      "slug": "memory-get",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572588165
+    },
+    {
+      "id": "92284b23-7617-4888-973a-82be8af2574d",
+      "name": "memory-list",
+      "slug": "memory-list",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572571881
+    },
+    {
+      "id": "f9d0e6b7-7d20-483c-b0b8-64b7f6f6efd8",
+      "name": "memory-search",
+      "slug": "memory-search",
+      "status": "ACTIVE",
+      "version": 14,
+      "verify_jwt": false,
+      "updated_at": 1770572570335
+    },
+    {
+      "id": "9d819f47-1dff-4204-911a-d2f4e06549b9",
+      "name": "memory-stats",
+      "slug": "memory-stats",
+      "status": "ACTIVE",
+      "version": 8,
+      "verify_jwt": false,
+      "updated_at": 1770578013464
+    },
+    {
+      "id": "fdf41314-924c-4155-bd42-4d8908adfaa4",
+      "name": "memory-update",
+      "slug": "memory-update",
+      "status": "ACTIVE",
+      "version": 8,
+      "verify_jwt": false,
+      "updated_at": 1770574131504
+    },
+    {
+      "id": "ab5120aa-90ce-43b1-ada0-4c3665d6a7d0",
+      "name": "migrate-to-voyage",
+      "slug": "migrate-to-voyage",
+      "status": "ACTIVE",
+      "version": 5,
+      "verify_jwt": true,
+      "updated_at": 1770544593937
+    },
+    {
+      "id": "ee2c0ea7-6eb5-40f3-a953-e25373630633",
+      "name": "migrate-to-voyage-batch",
+      "slug": "migrate-to-voyage-batch",
+      "status": "ACTIVE",
+      "version": 2,
+      "verify_jwt": true,
+      "updated_at": 1770544771050
+    },
+    {
+      "id": "9614f487-e577-4f40-8d04-587b66ee2202",
+      "name": "nixie-ai",
+      "slug": "nixie-ai",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": false,
+      "updated_at": 1750004097364
+    },
+    {
+      "id": "6cdd3add-4057-429b-a2c8-750ff2b5546b",
+      "name": "nixie-ai-streaming",
+      "slug": "nixie-ai-streaming",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": false,
+      "updated_at": 1750004097364
+    },
+    {
+      "id": "7d36edd3-05dd-49c4-b3a4-ea1367f96eaa",
+      "name": "openai",
+      "slug": "openai",
+      "status": "ACTIVE",
+      "version": 40,
+      "verify_jwt": true,
+      "updated_at": 1747475116531
+    },
+    {
+      "id": "0919839c-8b54-4cb6-b06e-25c43b40b06f",
+      "name": "openai-assistant",
+      "slug": "openai-assistant",
+      "status": "ACTIVE",
+      "version": 45,
+      "verify_jwt": false,
+      "updated_at": 1759036469214
+    },
+    {
+      "id": "fc0a0067-2c33-4246-a4ff-bb8e26da65fc",
+      "name": "openai-chat",
+      "slug": "openai-chat",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": false,
+      "updated_at": 1759036472547
+    },
+    {
+      "id": "21ed2f24-fea3-4ddd-b2e5-30238143ae56",
+      "name": "organization-info",
+      "slug": "organization-info",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1770572600715
+    },
+    {
+      "id": "7ac80163-6ae1-42d2-b92e-9e35aa6adffb",
+      "name": "parent-dashboard",
+      "slug": "parent-dashboard",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": true,
+      "updated_at": 1750004097364
+    },
+    {
+      "id": "b7ba8b27-392f-4ada-a5f8-835dfdeec492",
+      "name": "payment",
+      "slug": "payment",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1749423441765
+    },
+    {
+      "id": "0ba4c1bd-1959-47cd-bd7f-93c393a06a33",
+      "name": "payments-gateway",
+      "slug": "payments-gateway",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356519357
+    },
+    {
+      "id": "d7d4d1cf-8763-4870-8b98-d8157ef83af0",
+      "name": "paypal-payment",
+      "slug": "paypal-payment",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356870588
+    },
+    {
+      "id": "04e102c8-4108-40be-9175-30ff03291854",
+      "name": "paypal-webhook",
+      "slug": "paypal-webhook",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": false,
+      "updated_at": 1752356893194
+    },
+    {
+      "id": "d2e9ab74-934f-4e74-9a3d-5a62b75a51de",
+      "name": "paystack",
+      "slug": "paystack",
+      "status": "ACTIVE",
+      "version": 43,
+      "verify_jwt": true,
+      "updated_at": 1748788719774
+    },
+    {
+      "id": "aa51b0a4-b9c7-48b8-86ab-0d4c8802c7c6",
+      "name": "paystack-integration",
+      "slug": "paystack-integration",
+      "status": "ACTIVE",
+      "version": 17,
+      "verify_jwt": true,
+      "updated_at": 1759501914358
+    },
+    {
+      "id": "fbaf2537-4899-4c0a-8564-4781bbb1a713",
+      "name": "personalized-ai-chat",
+      "slug": "personalized-ai-chat",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356813019
+    },
+    {
+      "id": "fd23c99a-f46e-4763-bcc1-4b8f305ff801",
+      "name": "prembly",
+      "slug": "prembly",
+      "status": "ACTIVE",
+      "version": 41,
+      "verify_jwt": true,
+      "updated_at": 1748788719774
+    },
+    {
+      "id": "f3e7c8c2-5c71-4572-bf83-189f333e8284",
+      "name": "process-bulk-payment",
+      "slug": "process-bulk-payment",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356853516
+    },
+    {
+      "id": "dacfc07a-8afd-4fe2-9736-6e744ca2c5ec",
+      "name": "project-create",
+      "slug": "project-create",
+      "status": "ACTIVE",
+      "version": 8,
+      "verify_jwt": false,
+      "updated_at": 1770574811756
+    },
+    {
+      "id": "4e3e8ee2-fd21-44d4-82a5-5319c647463d",
+      "name": "project-list",
+      "slug": "project-list",
+      "status": "ACTIVE",
+      "version": 9,
+      "verify_jwt": false,
+      "updated_at": 1770574809936
+    },
+    {
+      "id": "b3c94bee-b2f2-466e-9f8f-25569c5ebe04",
+      "name": "sayswitch",
+      "slug": "sayswitch",
+      "status": "ACTIVE",
+      "version": 38,
+      "verify_jwt": true,
+      "updated_at": 1748788719774
+    },
+    {
+      "id": "84a27d81-951a-4de4-a8d3-f89c2161aee1",
+      "name": "sayswitch-bills",
+      "slug": "sayswitch-bills",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356872672
+    },
+    {
+      "id": "f6b3dc56-a3fa-4238-8ecb-07faa5b9468c",
+      "name": "sayswitch-integration",
+      "slug": "sayswitch-integration",
+      "status": "ACTIVE",
+      "version": 17,
+      "verify_jwt": true,
+      "updated_at": 1759501917405
+    },
+    {
+      "id": "91dfb3d4-5ef5-40f0-9c5f-9dd4925a82e8",
+      "name": "sayswitch-payment",
+      "slug": "sayswitch-payment",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356874806
+    },
+    {
+      "id": "4e939f38-076b-4d43-ae38-10e7f46cb842",
+      "name": "sayswitch-transfer",
+      "slug": "sayswitch-transfer",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356889805
+    },
+    {
+      "id": "2c3cc508-a8cf-40b3-b929-9ae8c3086822",
+      "name": "sayswitch-webhook",
+      "slug": "sayswitch-webhook",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": false,
+      "updated_at": 1752356904192
+    },
+    {
+      "id": "70c591d9-0d41-4953-8547-7548801f2524",
+      "name": "setup-cron-jobs",
+      "slug": "setup-cron-jobs",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356825351
+    },
+    {
+      "id": "749df2ab-15fb-4590-bebc-65a6bb378997",
+      "name": "stripe",
+      "slug": "stripe",
+      "status": "ACTIVE",
+      "version": 42,
+      "verify_jwt": true,
+      "updated_at": 1759060853142
+    },
+    {
+      "id": "257b2a9a-08d6-4dcd-bad7-2fa16df038df",
+      "name": "stripe-connect",
+      "slug": "stripe-connect",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356829303
+    },
+    {
+      "id": "7abc78bd-ec9f-459f-bdc0-374bc2b8cf40",
+      "name": "stripe-issuing",
+      "slug": "stripe-issuing",
+      "status": "ACTIVE",
+      "version": 35,
+      "verify_jwt": true,
+      "updated_at": 1752356840422
+    },
+    {
+      "id": "bd6a3b5b-7f83-4845-bd91-63ee9d79eff7",
+      "name": "stripe-subscription",
+      "slug": "stripe-subscription",
+      "status": "ACTIVE",
+      "version": 36,
+      "verify_jwt": false,
+      "updated_at": 1763710080944
+    },
+    {
+      "id": "cf984ef4-c18a-4943-82b2-fcc2a39731eb",
+      "name": "stripe-webhook",
+      "slug": "stripe-webhook",
+      "status": "ACTIVE",
+      "version": 40,
+      "verify_jwt": true,
+      "updated_at": 1759036463262
+    },
+    {
+      "id": "da7e6ddb-1469-4ea9-b395-8f3e44ebe0ef",
+      "name": "sync-api-key",
+      "slug": "sync-api-key",
+      "status": "ACTIVE",
+      "version": 10,
+      "verify_jwt": false,
+      "updated_at": 1767768455414
+    },
+    {
+      "id": "26b53f18-18e6-42cd-ae71-c708c5d1013d",
+      "name": "sync-user",
+      "slug": "sync-user",
+      "status": "ACTIVE",
+      "version": 9,
+      "verify_jwt": false,
+      "updated_at": 1768905588364
+    },
+    {
+      "id": "2c6b8e87-def2-4bfb-838f-7318607399ae",
+      "name": "system-health",
+      "slug": "system-health",
+      "status": "ACTIVE",
+      "version": 7,
+      "verify_jwt": false,
+      "updated_at": 1766841604870
+    },
+    {
+      "id": "bdcaa288-2848-4969-8f1b-95afba3a7cc4",
+      "name": "verify",
+      "slug": "verify",
+      "status": "ACTIVE",
+      "version": 37,
+      "verify_jwt": true,
+      "updated_at": 1749423432594
+    },
+    {
+      "id": "9c0c1237-1e0b-4bc5-8d53-3f7146920d25",
+      "name": "verify-api-key",
+      "slug": "verify-api-key",
+      "status": "ACTIVE",
+      "version": 23,
+      "verify_jwt": true,
+      "updated_at": 1755017611224
+    }
+  ]
+}
