@@ -1,3 +1,43 @@
+# Skill: Vendor Abstraction Guardian
+
+## Purpose & Scope
+
+This skill applies when modifying the **Vendor Abstraction Layer** (`core/abstraction/vendor-abstraction.js`).
+
+The Vendor Abstraction Layer provides:
+- Isolation between client requests and vendor-specific implementations
+- Schema validation for client inputs
+- Transform functions to convert client input to vendor format
+- Multi-vendor support with fallback capabilities
+- Category-based service organization (payment, banking, infrastructure)
+
+## Critical Rules - NEVER Do
+
+### Schema Isolation
+- **NEVER** expose vendor-specific field names in client schema
+  - Client schema uses: `firstName`, `lastName`
+  - Vendor may use: `first_name`, `last_name` (hidden from client)
+- **NEVER** let vendor response leak directly to client without transformation
+- **NEVER** add vendor-specific validation in client schema
+
+### Vendor Selection
+- **NEVER** hardcode vendor selection logic in business code
+- **NEVER** remove a vendor without 30-day deprecation notice
+- **NEVER** make vendor selection observable from client input
+- **NEVER** expose vendor identifiers in client-facing responses
+
+### Schema Stability
+- **NEVER** add required fields to existing client schemas (breaking change)
+- **NEVER** remove fields from existing client schemas
+- **NEVER** change field types in existing client schemas
+- **NEVER** rename fields in existing client schemas
+
+### Category Management
+- **NEVER** remove a category without migrating all operations
+- **NEVER** merge categories (maintain separation of concerns)
+- **NEVER** duplicate operations across categories
+
+## Required Patterns - MUST Follow
 ---
 name: vendor-abstraction-guardian
 description: Guardrails for edits to core/abstraction/vendor-abstraction.js that preserve vendor isolation, mappings, fallback selection, and stable client-facing schemas. Use when adding/removing vendors, operations, or schema fields in the vendor abstraction layer.
@@ -201,7 +241,7 @@ vendors: {
 Before any changes to this file:
 
 ```bash
-# 1. Run abstraction tests (if present)
+# 1. Run abstraction tests
 npm test -- --grep "VendorAbstraction"
 
 # 2. Verify schema validation

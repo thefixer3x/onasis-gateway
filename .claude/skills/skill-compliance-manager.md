@@ -1,3 +1,19 @@
+# Skill: Compliance Manager Guardian
+
+## Purpose & Scope
+
+This skill applies when modifying the **Compliance Manager** (`core/security/compliance-manager.js`).
+
+The Compliance Manager provides:
+- PCI-DSS data protection (card data masking, encryption)
+- GDPR compliance (pseudonymization, consent management, data minimization)
+- PSD2 compliance (Strong Customer Authentication)
+- SOX audit trail requirements
+- HIPAA health data protection
+- Multi-regulation validation framework
+- Secure audit logging
+
+## Critical Rules - NEVER Do
 ---
 name: compliance-manager-guardian
 description: Guardrails for edits to core/security/compliance-manager.js that preserve PCI/GDPR/PSD2/SOX/HIPAA controls (masking, encryption, SCA, consent checks, and audit logging). Use when changing compliance validators, security handling, or audit flows.
@@ -50,7 +66,7 @@ description: Guardrails for edits to core/security/compliance-manager.js that pr
 - **NEVER** rollback security fixes without security team approval
 - **NEVER** lower security levels in production
 
-## Required Patterns (Must Follow)
+## Required Patterns - MUST Follow
 
 ### Card Number Masking
 ```javascript
@@ -70,6 +86,8 @@ maskCardNumber(cardNumber) {
 // MUST use AES-256-GCM
 encryptSensitiveData(data) {
     const algorithm = 'aes-256-gcm';  // DO NOT change
+    const key = process.env.ENCRYPTION_KEY;
+    const iv = crypto.randomBytes(16);
     // Prefer @onasis/security-sdk for encryption primitives
     // Do not downgrade algorithms or omit auth tags
 
@@ -221,7 +239,7 @@ this.logAuditEntry('NEW_COMPLIANCE_ACTION', {
 Before any changes to this file:
 
 ```bash
-# 1. Run compliance tests (if present)
+# 1. Run compliance tests
 npm test -- --grep "ComplianceManager"
 
 # 2. Verify card masking
