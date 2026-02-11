@@ -601,8 +601,8 @@ Use intelligence tools to improve behavior and memory quality.
 - Prefer descriptive text or chunk large content with `create_memory_chunked`.
 
 ## Templates and Automation
-- Reuse JSON templates from the Enterprise MCP Memory skill at `/Users/seyederick/.codex/skills/enterprise-mcp-memory/assets/workflow-templates/`.
-- Use `/Users/seyederick/.codex/skills/enterprise-mcp-memory/scripts/generate_template_from_prompt.py` to generate tailored templates from natural language prompts.
+- Reuse JSON templates from the Enterprise MCP Memory skill at `${ENTERPRISE_MCP_SKILL_DIR}/assets/workflow-templates/` (or `./assets/workflow-templates/` when running from the skill directory).
+- Use `${ENTERPRISE_MCP_SKILL_DIR}/scripts/generate_template_from_prompt.py` (or `./scripts/generate_template_from_prompt.py`) to generate tailored templates from natural language prompts. Set `ENTERPRISE_MCP_SKILL_DIR` or run from the repo/skill root so these relative paths resolve correctly.
 
 ## Gap Handling
 If a behavior cleanup tool is needed, use `search_memories` with `type: workflow` and `delete_memory` to remove stale patterns.

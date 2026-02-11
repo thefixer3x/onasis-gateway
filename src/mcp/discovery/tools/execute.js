@@ -131,13 +131,18 @@ class GatewayExecute {
         try {
             let result = null;
 
+            const gateway = this.gateway;
+
             // Prefer AdapterRegistry execution path (canonical tool routing + auth passthrough)
-            if (this.gateway.adapterRegistry && typeof this.gateway.adapterRegistry.callTool === 'function') {
+            if (gateway && gateway.adapterRegistry && typeof gateway.adapterRegistry.callTool === 'function') {
                 try {
-                    result = await this.gateway.adapterRegistry.callTool(canonicalToolId, params, context);
+                    result = await gateway.adapterRegistry.callTool(canonicalToolId, params, context);
                 } catch (error) {
                     // Fallback for legacy behavior if registry cannot resolve the tool.
-                    if (!(error && error.message && error.message.startsWith('Tool not found'))) {
+                    const isToolNotFound =
+                        (error && error.code === 'TOOL_NOT_FOUND') ||
+                        (error && typeof error.message === 'string' && error.message.startsWith('Tool not found'));
+                    if (!isToolNotFound) {
                         throw error;
                     }
                 }
@@ -145,7 +150,17 @@ class GatewayExecute {
 
             // Legacy fallback: direct adapter execution (no registry)
             if (result === null) {
-                const adapter = this.gateway.adapters.get(resolvedAdapterId) || this.gateway.adapters.get(adapterId);
+                if (!gateway || !gateway.adapters || typeof gateway.adapters.get !== 'function') {
+                    return {
+                        success: false,
+                        error: {
+                            code: 'GATEWAY_NOT_READY',
+                            message: 'Gateway adapter map is not available'
+                        }
+                    };
+                }
+
+                const adapter = gateway.adapters.get(resolvedAdapterId) || gateway.adapters.get(adapterId);
 
                 if (!adapter) {
                     return {
@@ -153,7 +168,7 @@ class GatewayExecute {
                         error: {
                             code: 'ADAPTER_NOT_FOUND',
                             message: `Adapter '${resolvedAdapterId}' not found`,
-                            available_adapters: Array.from(this.gateway.adapters.keys())
+                            available_adapters: Array.from(gateway.adapters.keys())
                         }
                     };
                 }
@@ -182,7 +197,7 @@ class GatewayExecute {
                 }
 
                 // Execute the tool (legacy)
-                result = await adapter.callTool(resolvedToolName, params);
+                result = await adapter.callTool(resolvedToolName, params, context);
             }
 
             const executionTime = Date.now() - startTime;
@@ -196,7 +211,7 @@ class GatewayExecute {
                 meta: {
                     adapter: resolvedAdapterId,
                     tool: resolvedToolName,
-                    request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    request_id: `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
                     timestamp: new Date().toISOString(),
                     operation: {
                         risk_level: operationMeta.risk_level || 'unknown',

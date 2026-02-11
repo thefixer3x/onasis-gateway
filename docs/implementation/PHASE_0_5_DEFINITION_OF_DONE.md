@@ -64,9 +64,10 @@ Note: `src/clients/` is NOT created. UniversalSupabaseClient goes in `core/`.
 |-------|------|
 | [ ] | `SUPABASE_URL` is set and valid |
 | [ ] | `SUPABASE_ANON_KEY` is set and valid |
-| [ ] | `GET ${SUPABASE_URL}/functions/v1/system-health` returns 200 |
-| [ ] | `POST ${SUPABASE_URL}/functions/v1/memory-search` with `X-API-Key` returns structured response |
-| [ ] | At least one payment function (e.g., `paystack`) responds (even if with auth error) |
+| [ ] | `GET ${SUPABASE_URL}/functions/v1/system-health` returns 200 within timeout |
+| [ ] | `POST ${SUPABASE_URL}/functions/v1/memory-search` with `X-API-Key` returns a structured success payload OR a structured 401/403 auth error within timeout |
+| [ ] | `POST ${SUPABASE_URL}/functions/v1/intelligence-suggest-tags` returns a structured success payload OR a structured 401/403 auth error within timeout |
+| [ ] | Optional for Phase 0.5 (required before Phase 1.5): at least one payment function (e.g., `paystack`) returns a structured response OR structured 401/403 auth error within timeout |
 
 ### 2.2 Auth Gateway Availability
 | Check | Item |
@@ -121,7 +122,10 @@ Intelligence: POST /functions/v1/intelligence-suggest-tags  (body: { content, ..
 - The UniversalSupabaseClient's `call(functionName, payload)` maps directly to `POST /functions/v1/{functionName}`
 
 **For payment functions (paystack, flutterwave, stripe):**
-The invocation contract depends on how the Edge Function was built. We must verify:
+The invocation contract depends on how the Edge Function was built.
+
+### Phase 1.5 Prerequisites (Informational During Phase 0.5)
+The checks below are required before starting Phase 1.5 payment adapters, but they are not Phase 0.5 exit-gate blockers.
 
 | Check | Item |
 |-------|------|
@@ -133,7 +137,7 @@ The invocation contract depends on how the Edge Function was built. We must veri
 **If payment functions are single-purpose:** Each tool maps to its own function (like memory).
 **If payment functions accept action dispatch:** The adapter sends `{ action: "initialize-transaction", ... }`.
 
-This MUST be determined before Phase 1.5 (payment adapters).
+This MUST be determined before Phase 1.5 (payment adapters), not before Phase 0.5 exit.
 
 ### 3.2 Tool-to-Function Mapping Table
 

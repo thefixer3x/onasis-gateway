@@ -43,11 +43,12 @@ Layer 1: MCP Adapters (Gateway)         Layer 2: Service Clients          Layer 
    - AI & Chat (12 functions)
    - Authentication (5 functions)
 
-2. **Supabase Auto-Discovery** - Gateway successfully discovers 82 Edge Functions
+2. **Supabase Auto-Discovery** - Gateway discovers a filtered subset per environment (32 in the sample run below)
    ```
    ✅ Discovered 32 Supabase Edge Functions
    ✅ Supabase adapter initialized with 32 functions
    ```
+   Note: 82 reflects total deployed functions in Supabase. 32 reflects what this gateway instance discovered/initialized at that time based on configured route sources and filters.
 
 3. **MCP Discovery Layer** - 5 meta-tools working perfectly
    - `gateway-intent`, `gateway-execute`, `gateway-adapters`, etc.
