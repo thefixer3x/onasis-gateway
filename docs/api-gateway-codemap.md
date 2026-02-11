@@ -144,7 +144,7 @@ The adapter is configured via supabase-adapter-config.json with three key settin
 
 Discovery mode: Set to "auto" to enable automatic function discovery
 Cache timeout: 300 seconds (5 minutes) to balance freshness vs. API calls [3c]
-Service filters: Include patterns like "memory-*", "intelligence-*", "paystack-*" determine which functions to expose [3d]
+Service filters: Include patterns like "memory-*", "intelligence-*", "paystack-*" that determine which functions to expose [3d]
 Discovery Flow
 When the gateway initializes, it calls supabaseAdapter.discoverServices() [3b], which:
 
@@ -438,7 +438,7 @@ The central gateway's OnasisAuthBridge component delegates all authentication to
 After receiving the auth response, the central gateway attaches verified context headers to the proxied request: X-User-Id, X-User-Email, X-User-Role, X-Scopes, and X-Session-Id [7c]. Downstream services trust these headers because they know they came from the gateway's auth validation.
 
 Supabase Adapter Validation
-The Supabase adapter validates that requests include the Authorization header and checks for required scopes like gateway:proxy [7d]. The adapter's UAI (Universal Authentication Identifier) integration is configured with validateTokens: true and requiredScopes: ["gateway:proxy"] to enforce these checks.
+UAI stands for Universal Authentication Identifier, a token/identifier framework used to authenticate and authorize requests across the gateway boundary. The Supabase adapter validates that requests include the Authorization header and checks for required scopes like gateway:proxy [7d]. The adapter's UAI integration is configured with validateTokens: true and requiredScopes: ["gateway:proxy"], so UAI validation happens before proxying to Edge Functions.
 
 Once validated, the adapter proxies requests to Supabase Edge Functions with the verified context, enabling the Edge Functions to make authorization decisions based on trusted user information without re-validating tokens.
 
@@ -540,6 +540,9 @@ Deploy to Railway with monitoring, alerting, and documentation. Success is measu
 
 Total Timeline
 6-8 weeks from Phase 1 to production deployment, with each phase building on the previous foundation.
+
+Timeline Notes
+The per-phase durations are active development estimates. The 6-8 week total includes sequential dependencies and integration overhead, stakeholder review/approval cycles between phases, and explicit buffer time for unexpected issues. In practice, integration testing, review/approval, and risk buffer are the three main contributors that make the end-to-end timeline longer than a simple sum of implementation days.
 
 Onasis Gateway Implementation Roadmap
 Phase 0: Architecture & Planning (Complete)

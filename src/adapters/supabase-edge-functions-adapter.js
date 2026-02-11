@@ -56,6 +56,9 @@ class SupabaseEdgeFunctionsAdapter {
     this.version = '1.0.0';
     this.description = 'Auto-discovery adapter for Supabase Edge Functions with UAI authentication';
     this.tools = [];
+    // Explicit legacy call signature marker for AdapterRegistry.
+    this.callToolVersion = 'v1';
+    this.legacyCallTool = true;
 
     // Private properties
     this.config = null;

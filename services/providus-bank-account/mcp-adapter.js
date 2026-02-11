@@ -11,6 +11,8 @@ class AccountServiceMCPAdapter {
     constructor(config) {
         this.client = new client_1.ProvidusBankAccountClient(config);
         this.tools = this.defineTools();
+        this.callToolVersion = 'v1';
+        this.legacyCallTool = true;
     }
     defineTools() {
         return [
