@@ -527,7 +527,13 @@ class UnifiedGateway {
                     }
 
                     const adapter = new AdapterClass(adapterEntry);
-                    await this.adapterRegistry.register(adapter);
+                    if (typeof adapter.initialize === 'function') {
+                        await adapter.initialize();
+                        if (!adapter._initialized) {
+                            adapter._initialized = true;
+                        }
+                    }
+                    await this.adapterRegistry.register(adapter, { skipInitialize: true });
                     console.log(`✅ Loaded adapter ${adapterEntry.id} (${Array.isArray(adapter.tools) ? adapter.tools.length : 0} tools)`);
                 } catch (error) {
                     console.warn(`⚠️ ${adapterEntry.id} adapter failed to load from adapterPath:`, error.message);

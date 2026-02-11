@@ -13,6 +13,7 @@
     "start:bun": "bun run bun-neon-server.ts",
     "dev": "bun --watch bun-neon-server.ts",
     "generate-adapters": "bun run scripts/generate-adapters.js",
+    "sync:deployed-functions": "node scripts/sync-deployed-functions.js",
     "preflight": "node scripts/preflight.js",
     "health-check": "bun run scripts/health-check.js",
     "deploy": "./scripts/deploy.sh",

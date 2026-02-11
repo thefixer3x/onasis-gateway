@@ -14,7 +14,7 @@ This directory contains the complete implementation plan for integrating the Ona
 
 1. **[MASTER_IMPLEMENTATION_PLAN.md](./MASTER_IMPLEMENTATION_PLAN.md)** -- START HERE
    - Complete end-to-end implementation plan (v2)
-   - 9 phases (0, 0.5, 1, 1.5, 2-7) with clear objectives
+   - 10 phases (0, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 7) with clear objectives
    - Incorporates gap analysis and preflight strategy
    - Acceptance criteria for each task
    - Runtime decision: all new adapters are CommonJS (.js)
@@ -185,7 +185,7 @@ Edge Functions handle:
 
 | Metric | Before | After |
 |--------|--------|-------|
-| Functional Tools | 82 (~5%) | 200+ real (expandable) |
+| Functional Tools | 82 (~5%) | 2,000+ real, functional tools |
 | Services Connected | 1 (Supabase only) | 15+ |
 | Real Adapters | 0 | 15+ |
 | gateway-execute | Broken (subtraction bug) | Routes through registry |

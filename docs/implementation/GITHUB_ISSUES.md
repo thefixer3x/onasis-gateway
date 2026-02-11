@@ -24,6 +24,7 @@
 ### Issue #2: Set up Project Board and Labels
 **Title:** `[Phase 0] Set up Project Board and Issue Templates`
 **Labels:** `phase-0`, `priority-high`, `type-infrastructure`
+**Status:** TODO
 
 **Tasks:**
 - [ ] Create project board columns (Backlog, Ready, In Progress, In Review, Done)
@@ -168,7 +169,7 @@ Add optional fields to catalog schema so `unified_gateway.js` can load real adap
 ### Issue #8: Create Universal Supabase Client
 **Title:** `[Phase 1] Implement Universal Supabase Client`
 **Labels:** `phase-1`, `priority-critical`, `type-infrastructure`
-**Blocks:** #12, #13, #14, #15, #16
+**Blocks:** #12, #13, #14, #15, #16, #17, #18, #19
 
 **Description:**
 Create `core/universal-supabase-client.js` that extends `BaseClient` for all Supabase Edge Function calls. Lives in `core/` alongside `base-client.js`.
@@ -197,7 +198,7 @@ Create `core/universal-supabase-client.js` that extends `BaseClient` for all Sup
 ### Issue #9: Create Base MCP Adapter Class
 **Title:** `[Phase 1] Implement Base MCP Adapter Class`
 **Labels:** `phase-1`, `priority-critical`, `type-infrastructure`
-**Blocks:** #12, #13, #14, #15, #16
+**Blocks:** #12, #13, #14, #15, #16, #17, #18, #19
 
 **Description:**
 Create `core/base-mcp-adapter.js` -- abstract base class for all service adapters.

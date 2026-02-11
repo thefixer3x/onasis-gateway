@@ -61,12 +61,8 @@ const deriveSupabaseUrlFromTokens = () => {
 
 class UniversalSupabaseClient extends BaseClient {
   constructor(config = {}) {
-    if (!process.env.SUPABASE_URL) {
-      const derived = deriveSupabaseUrlFromTokens();
-      if (derived) process.env.SUPABASE_URL = derived;
-    }
-
-    const supabaseUrl = stripTrailingSlashes(config.supabaseUrl || process.env.SUPABASE_URL || '');
+    const envSupabaseUrl = process.env.SUPABASE_URL || deriveSupabaseUrlFromTokens() || '';
+    const supabaseUrl = stripTrailingSlashes(config.supabaseUrl || envSupabaseUrl);
     if (!supabaseUrl) {
       throw new Error('SUPABASE_URL is required for UniversalSupabaseClient');
     }
