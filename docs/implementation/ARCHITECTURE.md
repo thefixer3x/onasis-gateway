@@ -116,7 +116,7 @@ Onasis Gateway is a **unified API gateway and MCP server** that provides:
 │                      BACKEND SERVICES                                  │
 │                                                                        │
 │  ┌──────────────────────────────────────────────────────────────┐   │
-│  │  Supabase Edge Functions (82 deployed)                       │   │
+│  │  Supabase Edge Functions (82 deployed: 80 categorized + 2 utility functions) │   │
 │  │                                                               │   │
 │  │  ┌────────────┐  ┌────────────┐  ┌────────────┐            │   │
 │  │  │ Memory API │  │ Payments   │  │ AI & Chat  │            │   │
@@ -144,6 +144,8 @@ Onasis Gateway is a **unified API gateway and MCP server** that provides:
 │  └──────────────────────────────────────────────────────────────┘   │
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
+Note: The two utility functions not shown in category boxes are `create-checkout-session` and `create-portal-session`.
 
 ---
 
@@ -314,6 +316,8 @@ interface MCPTool {
 └─────────────────────────────────────┘
 ```
 
+Rate limiting is enforced by gateway instances using a shared Redis store (Redis/Redis Cluster), not instance-local memory, so limits remain consistent under horizontal scaling. The implementation uses a token-bucket strategy with atomic Redis operations (Lua/transactional increments) for distributed counters, keyed by global, API key, IP, and tool dimensions. This provides strong consistency for the active counter path; if Redis is temporarily unavailable, the gateway falls back to best-effort local protection and emits rate-limit headers/telemetry so clients and operators can detect degraded enforcement.
+
 ---
 
 ## Service Categories
@@ -359,7 +363,7 @@ interface MCPTool {
 
 - **Adapter Registry:** In-memory, refreshed every 5 minutes
 - **Tool Schemas:** In-memory, loaded at startup
-- **Auth Tokens:** Redis cache, TTL from token
+- **Auth Tokens:** Redis-backed shared cache, TTL derived from token/session expiry
 - **API Responses:** Configurable per-tool caching
 
 ### Performance Targets
@@ -425,6 +429,7 @@ mxtsdgkwzjzlttpotole.supabase.co → Edge Functions
 - **Protocol:** MCP (Model Context Protocol)
 - **Backend:** Supabase Edge Functions (Deno)
 - **Database:** PostgreSQL (Supabase)
+- **Distributed Cache:** Redis (shared rate-limit + auth/session cache)
 - **Deployment:** Railway
 - **Monitoring:** Built-in metrics + external APM
 

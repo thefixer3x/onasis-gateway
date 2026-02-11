@@ -61,11 +61,13 @@ describe('AdapterRegistry', () => {
     });
   });
 
-  it('callTool() wraps legacy adapters with { data, headers } when callTool.length < 3', async () => {
+  it('callTool() wraps legacy adapters with { data, headers } when adapter.legacyCallTool=true', async () => {
     let captured = null;
 
     const legacy = {
       id: 'supabase-edge-functions',
+      legacyCallTool: true,
+      callToolVersion: 'v1',
       tools: [{ name: 'system-health', description: 'health' }],
       initialize: async function () { /* no-op */ },
       callTool: async function (toolName, payload) {
@@ -110,5 +112,15 @@ describe('AdapterRegistry', () => {
     expect(adapter.tools).toBe(3);
     expect(adapter.toolCount).toBe(3);
   });
-});
 
+  it('register() rejects tool names that mix "-" and "_" separators', async () => {
+    const adapter = {
+      id: 'bad-adapter',
+      tools: [{ name: 'my-tool_name', description: 'invalid' }],
+      initialize: async function () { /* no-op */ },
+      callTool: async function () { return { ok: true }; }
+    };
+
+    await expect(registry.register(adapter)).rejects.toThrow('Use only one separator style');
+  });
+});

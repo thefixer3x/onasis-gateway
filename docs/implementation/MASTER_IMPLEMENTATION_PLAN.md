@@ -387,6 +387,23 @@ const BaseClient = require('./base-client');
 
 class UniversalSupabaseClient extends BaseClient {
   constructor(config) {
+    if (!process.env.SUPABASE_URL) {
+      throw new Error('SUPABASE_URL is required for UniversalSupabaseClient');
+    }
+
+    const useServiceRole = !!config.serviceRole;
+    const selectedKey = useServiceRole
+      ? process.env.SUPABASE_SERVICE_ROLE_KEY
+      : process.env.SUPABASE_ANON_KEY;
+
+    if (!selectedKey) {
+      throw new Error(
+        useServiceRole
+          ? 'SUPABASE_SERVICE_ROLE_KEY is required when config.serviceRole=true'
+          : 'SUPABASE_ANON_KEY is required when config.serviceRole=false'
+      );
+    }
+
     super({
       name: config.serviceName || 'supabase',
       baseUrl: process.env.SUPABASE_URL + '/functions/v1',
@@ -395,11 +412,12 @@ class UniversalSupabaseClient extends BaseClient {
       authentication: {
         type: 'bearer',
         config: {
-          token: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+          token: selectedKey
         }
       }
     });
     this.defaultFunctionName = config.functionName;
+    this.selectedApiKey = selectedKey;
   }
 
   /**
@@ -419,7 +437,7 @@ class UniversalSupabaseClient extends BaseClient {
     }, {
       data: payload,
       headers: {
-        'apikey': process.env.SUPABASE_ANON_KEY,
+        'apikey': this.selectedApiKey,
         ...(options.authorization && { 'Authorization': options.authorization }),
         ...(options.apiKey && { 'X-API-Key': options.apiKey }),
         ...(options.projectScope && { 'X-Project-Scope': options.projectScope }),
@@ -562,6 +580,12 @@ class AdapterRegistry {
 
     // Index all tools with canonical "adapter:tool-name" IDs (kebab-case)
     for (const tool of adapter.tools) {
+      if (tool.name.includes('-') && tool.name.includes('_')) {
+        throw new Error(
+          `Invalid tool name '${tool.name}' in adapter '${adapter.id}'. ` +
+          'Tool names must use only one separator style ("-" or "_"), not both.'
+        );
+      }
       const canonicalId = `${adapter.id}:${tool.name}`;
       this.toolIndex.set(canonicalId, { adapterId: adapter.id, tool });
 

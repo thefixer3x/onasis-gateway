@@ -1,6 +1,24 @@
 {
-  "generatedAt": "2026-02-11T20:04:25.668Z",
+  "generatedAt": "2026-02-11T20:52:16.795Z",
   "projectRef": "mxtsdgkwzjzlttpotole",
+  "generation": {
+    "source": "supabase functions list -o json",
+    "createdAtNormalization": {
+      "applied": true,
+      "normalizedCount": 8,
+      "strategy": "created_at || updated_at || ci/generated timestamp",
+      "functionNames": [
+        "etl-daily-edoc",
+        "consent-status",
+        "delete-consent",
+        "edoc-dashboard",
+        "edoc-webhook",
+        "init-consent",
+        "claude-ai",
+        "create-portal-session"
+      ]
+    }
+  },
   "functions": [
     {
       "created_at": 1747475116531,
@@ -27,7 +45,7 @@
       "version": 45
     },
     {
-      "created_at": 0,
+      "created_at": 1748897595006,
       "entrypoint_path": "file:///tmp/user_fn_mxtsdgkwzjzlttpotole_182a47fb-0172-48b4-a7e6-6be00cdc3182_5/supabase/functions/etl-daily-edoc/index.ts",
       "id": "182a47fb-0172-48b4-a7e6-6be00cdc3182",
       "import_map": false,
@@ -133,7 +151,7 @@
       "version": 37
     },
     {
-      "created_at": 0,
+      "created_at": 1748897595006,
       "entrypoint_path": "file:///tmp/user_fn_mxtsdgkwzjzlttpotole_f27f1ccd-472e-4519-a548-33807249f816_1/supabase/functions/consent-status/index.ts",
       "id": "f27f1ccd-472e-4519-a548-33807249f816",
       "import_map": false,
@@ -146,7 +164,7 @@
       "version": 37
     },
     {
-      "created_at": 0,
+      "created_at": 1748897595006,
       "entrypoint_path": "file:///tmp/user_fn_mxtsdgkwzjzlttpotole_976109c5-d761-4e6d-88df-0eb1c6cabca6_1/supabase/functions/delete-consent/index.ts",
       "id": "976109c5-d761-4e6d-88df-0eb1c6cabca6",
       "import_map": false,
@@ -159,7 +177,7 @@
       "version": 37
     },
     {
-      "created_at": 0,
+      "created_at": 1748897595006,
       "entrypoint_path": "file:///tmp/user_fn_mxtsdgkwzjzlttpotole_091c1610-ffcc-4ab2-9e08-a9b0c76eae89_1/supabase/functions/edoc-dashboard/index.ts",
       "id": "091c1610-ffcc-4ab2-9e08-a9b0c76eae89",
       "import_map": false,
@@ -172,7 +190,7 @@
       "version": 37
     },
     {
-      "created_at": 0,
+      "created_at": 1752356902289,
       "entrypoint_path": "file:///tmp/user_fn_mxtsdgkwzjzlttpotole_2c786111-d825-4217-a433-125bc44ebad2_4/source/supabase/functions/edoc-webhook/index.ts",
       "id": "2c786111-d825-4217-a433-125bc44ebad2",
       "import_map": false,
@@ -184,7 +202,7 @@
       "version": 38
     },
     {
-      "created_at": 0,
+      "created_at": 1748897595006,
       "entrypoint_path": "file:///tmp/user_fn_mxtsdgkwzjzlttpotole_265bce5c-9c3a-4d35-bb3e-0af55b5e147a_1/supabase/functions/init-consent/index.ts",
       "id": "265bce5c-9c3a-4d35-bb3e-0af55b5e147a",
       "import_map": false,
@@ -354,7 +372,7 @@
       "version": 38
     },
     {
-      "created_at": 0,
+      "created_at": 1750004097364,
       "entrypoint_path": "file:///tmp/user_fn_mxtsdgkwzjzlttpotole_06e76acf-da96-4aad-8315-1e30b5a73e96_1/source/supabase/functions/claude-ai/index.ts",
       "id": "06e76acf-da96-4aad-8315-1e30b5a73e96",
       "import_map": false,
@@ -367,7 +385,7 @@
       "version": 35
     },
     {
-      "created_at": 0,
+      "created_at": 1750004097364,
       "entrypoint_path": "file:///tmp/user_fn_mxtsdgkwzjzlttpotole_c6b249f6-b08f-4734-89bc-10bd42d4ba36_1/source/supabase/functions/create-portal-session/index.ts",
       "id": "c6b249f6-b08f-4734-89bc-10bd42d4ba36",
       "import_map": false,

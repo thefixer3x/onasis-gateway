@@ -29,6 +29,12 @@ const splitToolId = (toolId) => {
   return { adapterId, toolName };
 };
 
+const createRegistryError = (code, message) => {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+};
+
 class AdapterRegistry {
   constructor() {
     this.adapters = new Map();  // adapterId -> adapter instance
@@ -82,8 +88,16 @@ class AdapterRegistry {
     // Some adapters populate tools lazily; index what we have now.
     for (const tool of tools) {
       if (!tool || typeof tool !== 'object' || !tool.name) continue;
+      const toolName = tool.name.toString();
 
-      const canonicalToolName = normalizeToolNameForId(tool.name);
+      if (toolName.includes('-') && toolName.includes('_')) {
+        throw createRegistryError(
+          'INVALID_TOOL_NAME',
+          `Invalid tool name '${toolName}' in adapter '${adapterId}'. Use only one separator style ("-" or "_").`
+        );
+      }
+
+      const canonicalToolName = normalizeToolNameForId(toolName);
       const canonicalId = `${adapterId}:${canonicalToolName}`;
 
       // Keep the first tool for a canonical id; collisions should be rare.
@@ -92,14 +106,14 @@ class AdapterRegistry {
       }
 
       // Alias: original tool name as declared by adapter.
-      const originalId = `${adapterId}:${tool.name}`;
+      const originalId = `${adapterId}:${toolName}`;
       if (originalId !== canonicalId) {
         this.aliases.set(originalId, canonicalId);
       }
 
       // Alias: snake_case <-> kebab-case
       const snakeAlias = `${adapterId}:${canonicalToolName.replace(/-/g, '_')}`;
-      const kebabAlias = `${adapterId}:${tool.name.toString().replace(/_/g, '-')}`;
+      const kebabAlias = `${adapterId}:${toolName.replace(/_/g, '-')}`;
       if (snakeAlias !== canonicalId) this.aliases.set(snakeAlias, canonicalId);
       if (kebabAlias !== canonicalId) this.aliases.set(kebabAlias, canonicalId);
 
@@ -235,7 +249,7 @@ class AdapterRegistry {
   async callTool(toolId, args, context = {}) {
     const resolved = this.resolveTool(toolId);
     if (!resolved) {
-      throw new Error(`Tool not found: ${toolId}`);
+      throw createRegistryError('TOOL_NOT_FOUND', `Tool not found: ${toolId}`);
     }
 
     const adapter = this.adapters.get(resolved.adapterId);
@@ -249,8 +263,10 @@ class AdapterRegistry {
 
     const forwardedHeaders = this.buildForwardHeaders(context);
 
-    // Legacy adapters accept (toolName, { data, headers }) and do not take a context arg.
-    if (adapter.callTool.length < 3) {
+    // Prefer explicit legacy marker. Keep arity-based detection as temporary shim.
+    const isLegacyAdapter = adapter.legacyCallTool === true || adapter.callToolVersion === 'v1';
+    const isLegacyByArity = typeof adapter.callTool === 'function' && adapter.callTool.length < 3;
+    if (isLegacyAdapter || isLegacyByArity) {
       return adapter.callTool(resolved.tool.name, { data: args, headers: forwardedHeaders });
     }
 
@@ -276,4 +292,3 @@ class AdapterRegistry {
 }
 
 module.exports = AdapterRegistry;
-
