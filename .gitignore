@@ -10,6 +10,8 @@ bun.lockb
 .env
 .env.local
 .env.production
+/gateways/unified-gateway/.env
+/gateways/unified-gateway/.env.local
 
 # Logs
 logs/
@@ -18,6 +20,7 @@ logs/
 # Build
 dist/
 build/
+coverage/
 
 # IDE
 .vscode/
@@ -34,3 +37,7 @@ postman-collections/
 # Temporary
 temp/
 tmp/
+bun.lock
+
+# Added by ggshield
+.cache_ggshield

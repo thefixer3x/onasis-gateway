@@ -1,26 +1,34 @@
 module.exports = {
   apps: [
     {
-      name: 'mcp-server',
+      name: 'central-gateway',
       script: 'server.js',
       instances: 1,
       exec_mode: 'cluster',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001,
-        CORS_ORIGIN: '*'
+        PORT: 3000,
+        CORS_ORIGIN: '*',
+        HEALTH_AUTH_URL: 'http://127.0.0.1:4000/health',
+        HEALTH_MCP_CORE_URL: 'http://127.0.0.1:3001/health',
+        HEALTH_ENTERPRISE_MCP_URL: 'http://127.0.0.1:3001/health',
+        HEALTH_TIMEOUT_MS: 4000
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 3001,
-        CORS_ORIGIN: 'https://your-domain.com'
+        PORT: 3000,
+        CORS_ORIGIN: 'https://api.connectionpoint.tech',
+        HEALTH_AUTH_URL: 'http://127.0.0.1:4000/health',
+        HEALTH_MCP_CORE_URL: 'http://127.0.0.1:3001/health',
+        HEALTH_ENTERPRISE_MCP_URL: 'http://127.0.0.1:3001/health',
+        HEALTH_TIMEOUT_MS: 4000
       },
       // PM2 configuration
       watch: false,
       max_memory_restart: '1G',
-      error_file: './logs/mcp-server-error.log',
-      out_file: './logs/mcp-server-out.log',
-      log_file: './logs/mcp-server-combined.log',
+      error_file: './logs/central-gateway-error.log',
+      out_file: './logs/central-gateway-out.log',
+      log_file: './logs/central-gateway-combined.log',
       time: true,
       
       // Auto restart configuration

@@ -1,198 +1,193 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Test Script for Abstracted API Endpoints
-# Tests Paystack and SaySwitch integrations through vendor abstraction layer
+# Smoke tests for abstracted API endpoints.
+# Source of truth: core/abstraction/vendor-abstraction.js
 
-BASE_URL="https://f525e96e43e2.ngrok-free.app"
-API_KEY="test-key"
+set -u
 
-echo "🚀 Testing Abstracted API Endpoints via Ngrok Tunnel"
-echo "Base URL: $BASE_URL"
-echo "=========================================="
+BASE_URL="${BASE_URL:-http://127.0.0.1:${PORT:-3000}}"
+API_KEY="${API_KEY:-test-key}"
+INCLUDE_NEGATIVE_TESTS="${INCLUDE_NEGATIVE_TESTS:-1}"
 
-# Test 1: Health Check
-echo "1. Health Check"
-curl -s -X GET "$BASE_URL/health" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" | jq '.'
-echo ""
+PASSED=0
+FAILED=0
 
-# Test 2: Discover Available Categories
-echo "2. Discover API Categories"
-curl -s -X GET "$BASE_URL/api/v1/categories" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" | jq '.'
-echo ""
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Missing required command: $1"
+    exit 1
+  fi
+}
 
-# Test 3: Get Payment Category Info
-echo "3. Payment Category Information"
-curl -s -X GET "$BASE_URL/api/v1/categories/payment" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" | jq '.'
-echo ""
+require_command curl
+require_command jq
 
-# Test 4: Get Payment Schema for Initialize Transaction
-echo "4. Payment Initialize Transaction Schema"
-curl -s -X GET "$BASE_URL/api/v1/categories/payment/schema/initializeTransaction" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" | jq '.'
-echo ""
+request() {
+  local method="$1"
+  local path="$2"
+  local payload="${3:-}"
 
-# Test 5: Initialize Payment with Paystack (Abstracted)
-echo "5. Initialize Payment - Paystack (Abstracted)"
-curl -s -X POST "$BASE_URL/api/v1/payments/initialize" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-ID: test-paystack-init-001" \
-  -d '{
-    "vendor": "paystack",
+  local url="${BASE_URL}${path}"
+  local headers=(
+    -H "Content-Type: application/json"
+    -H "X-Request-ID: abstracted-$(date +%s)-$RANDOM"
+  )
+
+  if [[ -n "${API_KEY}" ]]; then
+    headers+=(-H "X-API-Key: ${API_KEY}")
+  fi
+
+  if [[ -n "${payload}" ]]; then
+    curl -sS -X "${method}" "${url}" "${headers[@]}" -d "${payload}" -w '\n__STATUS__:%{http_code}'
+  else
+    curl -sS -X "${method}" "${url}" "${headers[@]}" -w '\n__STATUS__:%{http_code}'
+  fi
+}
+
+run_case() {
+  local name="$1"
+  local method="$2"
+  local path="$3"
+  local payload="${4:-}"
+  local expected="${5:-2xx}" # 2xx | 4xx
+
+  echo ""
+  echo "=== ${name} ==="
+  echo "${method} ${path}"
+
+  local raw
+  raw="$(request "${method}" "${path}" "${payload}")"
+
+  local status
+  status="$(echo "${raw}" | sed -n 's/^__STATUS__://p')"
+  local body
+  body="$(echo "${raw}" | sed '/^__STATUS__:/d')"
+
+  echo "HTTP ${status}"
+  if echo "${body}" | jq '.' >/dev/null 2>&1; then
+    echo "${body}" | jq '.'
+  else
+    echo "${body}"
+  fi
+
+  local ok=0
+  if [[ "${expected}" == "2xx" && "${status}" =~ ^2 ]]; then
+    ok=1
+  fi
+  if [[ "${expected}" == "4xx" && "${status}" =~ ^4 ]]; then
+    ok=1
+  fi
+
+  if [[ "${ok}" -eq 1 ]]; then
+    echo "Result: PASS"
+    PASSED=$((PASSED + 1))
+  else
+    echo "Result: FAIL (expected ${expected})"
+    FAILED=$((FAILED + 1))
+  fi
+}
+
+echo "Abstracted API smoke test"
+echo "BASE_URL=${BASE_URL}"
+echo "INCLUDE_NEGATIVE_TESTS=${INCLUDE_NEGATIVE_TESTS}"
+
+# Health and discovery
+run_case "Health check" "GET" "/health"
+run_case "List categories" "GET" "/api/v1/categories"
+run_case "Payment category info" "GET" "/api/v1/categories/payment"
+run_case "Banking category info" "GET" "/api/v1/categories/banking"
+run_case "Infrastructure category info" "GET" "/api/v1/categories/infrastructure"
+
+# Schema checks from vendor-abstraction.js
+run_case "Payment schema: initializeTransaction" "GET" "/api/v1/categories/payment/schema/initializeTransaction"
+run_case "Payment schema: verifyTransaction" "GET" "/api/v1/categories/payment/schema/verifyTransaction"
+run_case "Payment schema: createCustomer" "GET" "/api/v1/categories/payment/schema/createCustomer"
+run_case "Banking schema: verifyAccount" "GET" "/api/v1/categories/banking/schema/verifyAccount"
+run_case "Infrastructure schema: createTunnel" "GET" "/api/v1/categories/infrastructure/schema/createTunnel"
+
+# Canonical generic endpoint checks (matches deployed route precedence)
+run_case "Payment initializeTransaction (paystack)" "POST" "/api/v1/payment/initializeTransaction" '{
+  "vendor": "paystack",
+  "amount": 5000,
+  "currency": "NGN",
+  "email": "test@example.com",
+  "metadata": { "test": true, "source": "abstracted-api" }
+}'
+
+run_case "Payment initializeTransaction (flutterwave)" "POST" "/api/v1/payment/initializeTransaction" '{
+  "vendor": "flutterwave",
+  "amount": 5000,
+  "currency": "NGN",
+  "email": "test@example.com",
+  "metadata": { "test": true, "source": "abstracted-api" }
+}'
+
+run_case "Payment initializeTransaction (sayswitch)" "POST" "/api/v1/payment/initializeTransaction" '{
+  "vendor": "sayswitch",
+  "amount": 5000,
+  "currency": "NGN",
+  "email": "test@example.com",
+  "metadata": { "test": true, "source": "abstracted-api" }
+}'
+
+run_case "Payment verifyTransaction (paystack)" "POST" "/api/v1/payment/verifyTransaction" '{
+  "vendor": "paystack",
+  "reference": "test-ref-001"
+}'
+
+run_case "Payment createCustomer (sayswitch)" "POST" "/api/v1/payment/createCustomer" '{
+  "vendor": "sayswitch",
+  "email": "customer@example.com",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "phone": "+2348087654321"
+}'
+
+# Generic category/operation endpoint
+run_case "Generic payment initializeTransaction" "POST" "/api/v1/payment/initializeTransaction" '{
+  "vendor": "paystack",
+  "amount": 2500,
+  "currency": "NGN",
+  "email": "generic@example.com"
+}'
+
+# Banking and infrastructure abstractions
+run_case "Banking verifyAccount (bap)" "POST" "/api/v1/banking/verifyAccount" '{
+  "vendor": "bap",
+  "accountNumber": "0123456789",
+  "bankCode": "044"
+}'
+
+run_case "Banking getAccountBalance (wise)" "POST" "/api/v1/banking/getAccountBalance" '{
+  "vendor": "wise",
+  "accountId": "acct_demo_001"
+}'
+
+run_case "Infrastructure createTunnel (ngrok)" "POST" "/api/v1/infrastructure/createTunnel" '{
+  "vendor": "ngrok",
+  "port": 3000,
+  "subdomain": "test-app",
+  "region": "us"
+}'
+
+run_case "Infrastructure list tunnels (ngrok)" "GET" "/api/v1/infrastructure/tunnels?vendor=ngrok"
+
+# Current abstraction behavior: unsupported vendor preference falls back to default vendor.
+if [[ "${INCLUDE_NEGATIVE_TESTS}" == "1" ]]; then
+  run_case "Payment initializeTransaction with vendor=stripe (falls back to default vendor)" "POST" "/api/v1/payment/initializeTransaction" '{
+    "vendor": "stripe",
     "amount": 5000,
     "currency": "NGN",
-    "email": "test@example.com",
-    "metadata": {
-      "test": true,
-      "source": "abstracted-api"
-    }
-  }' | jq '.'
-echo ""
+    "email": "test@example.com"
+  }' "2xx"
+fi
 
-# Test 6: Initialize Payment with SaySwitch (Abstracted)
-echo "6. Initialize Payment - SaySwitch (Abstracted)"
-curl -s -X POST "$BASE_URL/api/v1/payments/initialize" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-ID: test-sayswitch-init-001" \
-  -d '{
-    "vendor": "sayswitch",
-    "amount": 5000,
-    "currency": "NGN",
-    "email": "test@example.com",
-    "metadata": {
-      "test": true,
-      "source": "abstracted-api"
-    }
-  }' | jq '.'
 echo ""
-
-# Test 7: Create Customer with Paystack (Abstracted)
-echo "7. Create Customer - Paystack (Abstracted)"
-curl -s -X POST "$BASE_URL/api/v1/payments/customer" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-ID: test-paystack-customer-001" \
-  -d '{
-    "vendor": "paystack",
-    "email": "customer@example.com",
-    "firstName": "John",
-    "lastName": "Doe",
-    "phone": "+2348012345678"
-  }' | jq '.'
-echo ""
-
-# Test 8: Create Customer with SaySwitch (Abstracted)
-echo "8. Create Customer - SaySwitch (Abstracted)"
-curl -s -X POST "$BASE_URL/api/v1/payments/customer" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-ID: test-sayswitch-customer-001" \
-  -d '{
-    "vendor": "sayswitch",
-    "email": "customer@example.com",
-    "firstName": "Jane",
-    "lastName": "Smith",
-    "phone": "+2348087654321"
-  }' | jq '.'
-echo ""
-
-# Test 9: Generic Abstracted Call - Payment Category
-echo "9. Generic Abstracted Call - Payment/Initialize"
-curl -s -X POST "$BASE_URL/api/v1/payment/initializeTransaction" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-ID: test-generic-payment-001" \
-  -d '{
-    "vendor": "paystack",
-    "amount": 2500,
-    "currency": "NGN",
-    "email": "generic@example.com"
-  }' | jq '.'
-echo ""
-
-# Test 10: Banking Category Info
-echo "10. Banking Category Information"
-curl -s -X GET "$BASE_URL/api/v1/categories/banking" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" | jq '.'
-echo ""
-
-# Test 11: Infrastructure Category Info
-echo "11. Infrastructure Category Information"
-curl -s -X GET "$BASE_URL/api/v1/categories/infrastructure" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" | jq '.'
-echo ""
-
-# Test 12: Verify Account with BAP (Banking)
-echo "12. Verify Account - BAP (Banking)"
-curl -s -X POST "$BASE_URL/api/v1/banking/verify-account" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-ID: test-bap-verify-001" \
-  -d '{
-    "vendor": "bap",
-    "accountNumber": "0123456789",
-    "bankCode": "044"
-  }' | jq '.'
-echo ""
-
-# Test 13: Create Tunnel with Ngrok (Infrastructure)
-echo "13. Create Tunnel - Ngrok (Infrastructure)"
-curl -s -X POST "$BASE_URL/api/v1/infrastructure/tunnel" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-ID: test-ngrok-tunnel-001" \
-  -d '{
-    "vendor": "ngrok",
-    "port": 3000,
-    "subdomain": "test-app",
-    "region": "us"
-  }' | jq '.'
-echo ""
-
-# Test 14: List Tunnels with Ngrok (Infrastructure)
-echo "14. List Tunnels - Ngrok (Infrastructure)"
-curl -s -X GET "$BASE_URL/api/v1/infrastructure/tunnels?vendor=ngrok" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-ID: test-ngrok-list-001" | jq '.'
-echo ""
-
-# Test 15: Test Webhook Endpoint
-echo "15. Test Webhook Endpoint"
-curl -s -X POST "$BASE_URL/webhook" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Paystack-Signature: test-signature" \
-  -d '{
-    "event": "charge.success",
-    "data": {
-      "reference": "test-ref-001",
-      "amount": 5000,
-      "currency": "NGN",
-      "status": "success"
-    }
-  }' | jq '.'
-echo ""
-
-# Test 16: Test Callback Endpoint
-echo "16. Test Callback Endpoint"
-curl -s -X GET "$BASE_URL/callback?reference=test-ref-001&status=success" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" | jq '.'
-echo ""
-
 echo "=========================================="
-echo "✅ Abstracted API Testing Complete!"
-echo "🔍 Check the responses above for vendor abstraction functionality"
-echo "📊 All vendor-specific details should be hidden from client responses"
-echo "🛡️  Client should only see standardized, abstracted responses"
+echo "Summary: PASS=${PASSED} FAIL=${FAILED}"
+
+if [[ "${FAILED}" -gt 0 ]]; then
+  exit 1
+fi
+
+exit 0
