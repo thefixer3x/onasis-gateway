@@ -17,7 +17,7 @@ INSERT INTO users (
 ) VALUES (
     gen_random_uuid(),
     'admin@lanonasis.com',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- Password: Admin@2024!
+    '<SET_BCRYPT_HASH>', -- Password: <SET_SECURE_PASSWORD>
     '00000000-0000-0000-0000-000000000001'::UUID,
     'superadmin',
     NOW(),
@@ -39,4 +39,4 @@ WHERE email = 'admin@lanonasis.com' OR role = 'superadmin';
 -- Step 5: Verify master API key exists
 SELECT id, name, api_key_value, access_level, is_active
 FROM api_keys
-WHERE api_key_value = 'lano_master_key_2024';
+WHERE api_key_value = '<SET_MASTER_API_KEY>';

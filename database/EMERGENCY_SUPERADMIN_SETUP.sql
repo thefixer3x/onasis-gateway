@@ -45,12 +45,12 @@ RETURNING id; -- Save this ID!
 DELETE FROM users WHERE id = 'ed212bb7-205f-47d8-81ce-cfb549387c90'::UUID;
 
 -- Create YOUR superadmin account
--- Password: 'Admin@2024!' (bcrypt hash below - CHANGE THIS AFTER FIRST LOGIN!)
+-- Password: '<SET_SECURE_PASSWORD>' (bcrypt hash below - CHANGE THIS AFTER FIRST LOGIN!)
 INSERT INTO users (id, email, password_hash, organization_id, is_active, role, created_at, updated_at)
 VALUES (
     gen_random_uuid(),
     'admin@lanonasis.com', -- ✅ CHANGE THIS TO YOUR REAL EMAIL
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- Password: Admin@2024!
+    '<SET_BCRYPT_HASH>', -- Password: <SET_SECURE_PASSWORD>
     '00000000-0000-0000-0000-000000000001'::UUID, -- System org
     true,
     'superadmin',
@@ -111,7 +111,7 @@ BEGIN
     VALUES (
         master_key_id,
         'SUPERADMIN MASTER KEY',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- Hash for: lano_master_key_2024
+        '<SET_BCRYPT_HASH>', -- Hash for: <SET_MASTER_API_KEY>
         admin_user_id,
         '00000000-0000-0000-0000-000000000001'::UUID,
         'superadmin',
@@ -120,7 +120,7 @@ BEGIN
         999999, -- Unlimited rate limit
         'all',
         false, -- No rate limiting for superadmin
-        'lano_master_key_2024', -- ✅ THIS IS YOUR MASTER KEY - SAVE IT!
+        '<SET_MASTER_API_KEY>', -- ✅ THIS IS YOUR MASTER KEY - SAVE IT!
         'Global master key - full access to all services, never expires',
         NOW(),
         NOW(),
@@ -131,10 +131,10 @@ BEGIN
         access_level = 'superadmin',
         service = 'all',
         rate_limited = false,
-        api_key_value = 'lano_master_key_2024',
+        api_key_value = '<SET_MASTER_API_KEY>',
         updated_at = NOW();
 
-    RAISE NOTICE 'Master API Key Created: lano_master_key_2024';
+    RAISE NOTICE 'Master API Key Created: <SET_MASTER_API_KEY>';
     RAISE NOTICE 'Admin User ID: %', admin_user_id;
     RAISE NOTICE 'Master Key ID: %', master_key_id;
 END $$;
@@ -190,7 +190,7 @@ INSERT INTO users (id, email, password_hash, organization_id, is_active, role, c
 VALUES (
     '00000000-0000-0000-0000-000000000001'::UUID,
     'system@lanonasis.internal',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '<SET_BCRYPT_HASH>',
     '00000000-0000-0000-0000-000000000001'::UUID,
     true,
     'system',
@@ -243,7 +243,7 @@ USERS:
 - system@lanonasis.internal | system | true | 00000000-0000-0000-0000-000000000001
 
 API_KEYS:
-- SUPERADMIN MASTER KEY | lano_master_key_2024 | superadmin | all | true | NULL
+- SUPERADMIN MASTER KEY | <SET_MASTER_API_KEY> | superadmin | all | true | NULL
 
 ✅ IF YOU SEE THIS, YOU NOW HAVE ACCESS!
 */
@@ -255,12 +255,12 @@ API_KEYS:
 /*
 1. LOGIN TO DASHBOARD:
    Email: admin@lanonasis.com
-   Password: Admin@2024!
+   Password: <SET_SECURE_PASSWORD>
    (CHANGE THIS IMMEDIATELY AFTER LOGIN!)
 
 2. USE API KEY FOR TESTING:
    curl -X POST http://localhost:3001/tools/core_create_memory \
-     -H "X-API-Key: lano_master_key_2024" \
+     -H "X-API-Key: <SET_MASTER_API_KEY>" \
      -H "Content-Type: application/json" \
      -d '{"title": "Test", "content": "It works!"}'
 
@@ -290,11 +290,11 @@ IF YOU STILL CAN'T LOGIN:
    (Try login again, then re-enable)
 
 3. Check password hash:
-   -- Password should be 'Admin@2024!'
+   -- Password should be '<SET_SECURE_PASSWORD>'
    -- If not working, generate new hash at: https://bcrypt-generator.com/
 
 4. Verify API key:
-   SELECT * FROM api_keys WHERE api_key_value = 'lano_master_key_2024';
+   SELECT * FROM api_keys WHERE api_key_value = '<SET_MASTER_API_KEY>';
 
 5. If nothing works:
    -- DM me the error message and I'll help debug
