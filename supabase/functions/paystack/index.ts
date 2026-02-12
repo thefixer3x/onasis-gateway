@@ -446,11 +446,12 @@ Deno.serve(async (req: Request) => {
     return successResponse(result);
   } catch (error) {
     console.error('[Paystack Error]', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return errorResponse(
-      error.message || 'Internal server error',
-      error.code || 'INTERNAL_ERROR',
-      error.details,
-      error.status || 500
+      message,
+      (error as any)?.code || 'INTERNAL_ERROR',
+      (error as any)?.details,
+      (error as any)?.status || 500
     );
   }
 });
