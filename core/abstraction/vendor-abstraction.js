@@ -4,10 +4,19 @@
  */
 
 class VendorAbstractionLayer {
-  constructor() {
+  /**
+   * @param {object} [options]
+   * @param {object} [options.adapterRegistry] AdapterRegistry instance (preferred)
+   * @param {function} [options.getAdapterRegistry] Lazy provider for AdapterRegistry
+   */
+  constructor(options = {}) {
     this.vendorMappings = new Map();
     this.clientSchemas = new Map();
     this.vendorConfigs = new Map();
+    this.adapterRegistry = options.adapterRegistry || null;
+    this.getAdapterRegistry = typeof options.getAdapterRegistry === 'function'
+      ? options.getAdapterRegistry
+      : null;
     this.initializeAbstractions();
   }
 
@@ -36,11 +45,24 @@ class VendorAbstractionLayer {
             lastName: { type: 'string', required: false },
             phone: { type: 'string', required: false }
           }
+        },
+        purchaseAirtime: {
+          schema: {
+            phone: { type: 'string', required: true },
+            amount: { type: 'number', required: true },
+            network: { type: 'string', required: true },
+            reference: { type: 'string', required: false }
+          }
+        },
+        getTransaction: {
+          schema: {
+            txn_id: { type: 'string', required: true }
+          }
         }
       },
       vendors: {
         'paystack': {
-          adapter: 'paystack-api',
+          adapter: 'paystack',
           mappings: {
             initializeTransaction: {
               tool: 'initialize-transaction',
@@ -55,15 +77,6 @@ class VendorAbstractionLayer {
             verifyTransaction: {
               tool: 'verify-transaction',
               transform: (input) => ({ reference: input.reference })
-            },
-            createCustomer: {
-              tool: 'create-customer',
-              transform: (input) => ({
-                email: input.email,
-                first_name: input.firstName,
-                last_name: input.lastName,
-                phone: input.phone
-              })
             }
           }
         },
@@ -71,54 +84,36 @@ class VendorAbstractionLayer {
           adapter: 'flutterwave-v3',
           mappings: {
             initializeTransaction: {
-              tool: 'initialize-transaction',
+              tool: 'initiate-payment',
               transform: (input) => ({
-                email: input.email,
                 amount: input.amount,
                 currency: input.currency,
-                reference: input.reference || `fw_${Date.now()}`,
-                callback_url: process.env.CALLBACK_URL
+                tx_ref: input.reference || `fw_${Date.now()}`,
+                customer: { email: input.email }
               })
             },
             verifyTransaction: {
-              tool: 'verify-transaction',
-              transform: (input) => ({ reference: input.reference })
-            },
-            createCustomer: {
-              tool: 'create-customer',
-              transform: (input) => ({
-                email: input.email,
-                first_name: input.firstName,
-                last_name: input.lastName,
-                phone: input.phone
-              })
+              tool: 'verify-payment',
+              transform: (input) => ({ tx_ref: input.reference })
             }
           }
         },
         'sayswitch': {
           adapter: 'sayswitch-api-integration',
           mappings: {
-            initializeTransaction: {
-              tool: 'initialize-transaction',
+            purchaseAirtime: {
+              tool: 'purchase-airtime',
               transform: (input) => ({
-                email: input.email,
+                phone: input.phone,
                 amount: input.amount,
-                currency: input.currency,
-                reference: input.reference || `ss_${Date.now()}`,
-                callback_url: process.env.CALLBACK_URL
+                network: input.network,
+                reference: input.reference || `ss_${Date.now()}`
               })
             },
-            verifyTransaction: {
-              tool: 'verify-transaction',
-              transform: (input) => ({ reference: input.reference })
-            },
-            createCustomer: {
-              tool: 'create-customer',
+            getTransaction: {
+              tool: 'get-transaction',
               transform: (input) => ({
-                email: input.email,
-                first_name: input.firstName,
-                last_name: input.lastName,
-                phone: input.phone
+                txn_id: input.txn_id
               })
             }
           }
@@ -225,19 +220,34 @@ class VendorAbstractionLayer {
     this.clientSchemas.set(category, config.client);
   }
 
-  async executeAbstractedCall(category, operation, input, vendorPreference = null) {
+  createError(status, code, message, meta = {}) {
+    const err = new Error(message);
+    err.status = status;
+    err.code = code;
+    err.meta = meta;
+    return err;
+  }
+
+  getRegistry() {
+    if (this.getAdapterRegistry) return this.getAdapterRegistry();
+    return this.adapterRegistry;
+  }
+
+  async executeAbstractedCall(category, operation, input, vendorPreference = null, context = {}) {
     const abstraction = this.vendorMappings.get(category);
     if (!abstraction) {
-      throw new Error(`Unknown category: ${category}`);
+      throw this.createError(404, 'UNKNOWN_CATEGORY', `Unknown category: ${category}`);
     }
 
     // Validate client input against schema
     const clientSchema = abstraction.client[operation];
     if (!clientSchema) {
-      throw new Error(`Unknown operation: ${operation} in category: ${category}`);
+      throw this.createError(404, 'UNKNOWN_OPERATION', `Unknown operation: ${operation} in category: ${category}`);
     }
 
-    this.validateInput(input, clientSchema.schema);
+    // Do not mutate caller input; defaults are applied to a copy.
+    const validatedInput = { ...(input && typeof input === 'object' ? input : {}) };
+    this.validateInput(validatedInput, clientSchema.schema);
 
     // Select vendor (use preference or default to first available)
     const vendors = Object.keys(abstraction.vendors);
@@ -246,18 +256,23 @@ class VendorAbstractionLayer {
       : vendors[0];
 
     if (!selectedVendor) {
-      throw new Error(`No vendors available for category: ${category}`);
+      throw this.createError(503, 'NO_VENDORS', `No vendors available for category: ${category}`);
     }
 
     const vendorConfig = abstraction.vendors[selectedVendor];
     const mapping = vendorConfig.mappings[operation];
 
     if (!mapping) {
-      throw new Error(`Operation ${operation} not supported by vendor: ${selectedVendor}`);
+      throw this.createError(
+        501,
+        'OPERATION_NOT_SUPPORTED',
+        `Operation ${operation} not supported by vendor: ${selectedVendor}`,
+        { category, operation, vendor: selectedVendor }
+      );
     }
 
     // Transform client input to vendor format
-    const vendorInput = mapping.transform(input);
+    const vendorInput = mapping.transform(validatedInput);
 
     // Execute vendor call through adapter
     return await this.executeVendorCall(
@@ -268,8 +283,9 @@ class VendorAbstractionLayer {
         category,
         operation,
         vendor: selectedVendor,
-        clientInput: input
-      }
+        clientInput: validatedInput
+      },
+      context
     );
   }
 
@@ -293,25 +309,48 @@ class VendorAbstractionLayer {
     }
   }
 
-  async executeVendorCall(adapter, tool, input, metadata) {
-    // This would integrate with your MCP adapter system
-    // For now, return a mock response structure
-    return {
-      success: true,
-      data: {
-        // Vendor response would be here
-        message: `Executed ${tool} on ${adapter}`,
-        input,
-        metadata
-      },
-      metadata: {
-        vendor: metadata.vendor,
-        category: metadata.category,
-        operation: metadata.operation,
-        timestamp: new Date().toISOString(),
-        abstracted: true
+  async executeVendorCall(adapterId, toolName, input, metadata, context = {}) {
+    const registry = this.getRegistry();
+    if (!registry) {
+      throw this.createError(
+        503,
+        'ADAPTER_REGISTRY_NOT_READY',
+        'Adapter registry not available yet (gateway still initializing).',
+        { adapterId, toolName }
+      );
+    }
+
+    const toolId = `${adapterId}:${toolName}`;
+    try {
+      const result = await registry.callTool(toolId, input, context);
+      return {
+        success: true,
+        data: result,
+        metadata: {
+          category: metadata.category,
+          operation: metadata.operation,
+          timestamp: new Date().toISOString(),
+          abstracted: true
+        }
+      };
+    } catch (err) {
+      const code = err && err.code ? err.code : 'VENDOR_CALL_FAILED';
+      if (code === 'TOOL_NOT_FOUND') {
+        throw this.createError(501, 'TOOL_NOT_FOUND', `Tool not found for abstraction mapping: ${toolId}`, {
+          adapterId,
+          toolName,
+          category: metadata.category,
+          operation: metadata.operation
+        });
       }
-    };
+
+      // Registry will throw non-executable (mock) adapters as a normal Error.
+      if (err && typeof err.message === 'string' && err.message.includes('not executable')) {
+        throw this.createError(501, 'ADAPTER_NOT_EXECUTABLE', err.message, { adapterId, toolName });
+      }
+
+      throw err;
+    }
   }
 
   getAvailableCategories() {

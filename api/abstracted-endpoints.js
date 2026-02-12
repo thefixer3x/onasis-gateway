@@ -7,10 +7,36 @@ const express = require('express');
 const VendorAbstractionLayer = require('../core/abstraction/vendor-abstraction');
 
 class AbstractedAPIEndpoints {
-  constructor() {
+  constructor(options = {}) {
     this.router = express.Router();
-    this.abstraction = new VendorAbstractionLayer();
+    this.abstraction = new VendorAbstractionLayer({
+      adapterRegistry: options.adapterRegistry,
+      getAdapterRegistry: options.getAdapterRegistry
+    });
     this.setupRoutes();
+  }
+
+  buildContext(req) {
+    const headers = req && req.headers ? req.headers : {};
+    return {
+      headers,
+      authorization: headers.authorization || headers.Authorization,
+      apiKey: headers['x-api-key'] || headers['X-API-Key'],
+      projectScope: headers['x-project-scope'] || headers['X-Project-Scope'],
+      requestId: headers['x-request-id'] || headers['X-Request-ID'],
+      sessionId: headers['x-session-id'] || headers['X-Session-ID']
+    };
+  }
+
+  getStatusCode(error) {
+    if (!error) return 400;
+    const s = error.status;
+    if (typeof s === 'number' && s >= 100 && s <= 599) return s;
+    return 400;
+  }
+
+  shouldExposeVendor() {
+    return process.env.ABSTRACTION_EXPOSE_VENDOR === '1';
   }
 
   setupRoutes() {
@@ -41,15 +67,17 @@ class AbstractedAPIEndpoints {
     try {
       const { category, operation } = req.params;
       const { vendor, ...input } = req.body;
+      const context = this.buildContext(req);
 
       const result = await this.abstraction.executeAbstractedCall(
         category,
         operation,
         input,
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         category,
         operation,
@@ -59,11 +87,19 @@ class AbstractedAPIEndpoints {
           requestId: req.headers['x-request-id'] || this.generateRequestId(),
           timestamp: new Date().toISOString()
         }
-      });
+      };
+
+      // Do not expose vendor selection to clients by default.
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.metadata.vendor = result.metadata.vendor;
+      }
+
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         category: req.params.category,
         operation: req.params.operation,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
@@ -75,24 +111,30 @@ class AbstractedAPIEndpoints {
   async handlePaymentInitialize(req, res) {
     try {
       const { vendor, ...paymentData } = req.body;
+      const context = this.buildContext(req);
       
       const result = await this.abstraction.executeAbstractedCall(
         'payment',
         'initializeTransaction',
         paymentData,
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         transaction: result.data,
-        vendor: result.metadata.vendor,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
-      });
+      };
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.vendor = result.metadata.vendor;
+      }
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
@@ -101,24 +143,30 @@ class AbstractedAPIEndpoints {
   async handlePaymentVerify(req, res) {
     try {
       const { vendor, reference } = req.body;
+      const context = this.buildContext(req);
       
       const result = await this.abstraction.executeAbstractedCall(
         'payment',
         'verifyTransaction',
         { reference },
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         verification: result.data,
-        vendor: result.metadata.vendor,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
-      });
+      };
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.vendor = result.metadata.vendor;
+      }
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
@@ -127,24 +175,30 @@ class AbstractedAPIEndpoints {
   async handleCreateCustomer(req, res) {
     try {
       const { vendor, ...customerData } = req.body;
+      const context = this.buildContext(req);
       
       const result = await this.abstraction.executeAbstractedCall(
         'payment',
         'createCustomer',
         customerData,
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         customer: result.data,
-        vendor: result.metadata.vendor,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
-      });
+      };
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.vendor = result.metadata.vendor;
+      }
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
@@ -153,24 +207,30 @@ class AbstractedAPIEndpoints {
   async handleGetBalance(req, res) {
     try {
       const { vendor, accountId } = req.body;
+      const context = this.buildContext(req);
       
       const result = await this.abstraction.executeAbstractedCall(
         'banking',
         'getAccountBalance',
         { accountId },
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         balance: result.data,
-        vendor: result.metadata.vendor,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
-      });
+      };
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.vendor = result.metadata.vendor;
+      }
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
@@ -179,24 +239,30 @@ class AbstractedAPIEndpoints {
   async handleTransfer(req, res) {
     try {
       const { vendor, ...transferData } = req.body;
+      const context = this.buildContext(req);
       
       const result = await this.abstraction.executeAbstractedCall(
         'banking',
         'transferFunds',
         transferData,
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         transfer: result.data,
-        vendor: result.metadata.vendor,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
-      });
+      };
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.vendor = result.metadata.vendor;
+      }
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
@@ -205,24 +271,30 @@ class AbstractedAPIEndpoints {
   async handleVerifyAccount(req, res) {
     try {
       const { vendor, accountNumber, bankCode } = req.body;
+      const context = this.buildContext(req);
       
       const result = await this.abstraction.executeAbstractedCall(
         'banking',
         'verifyAccount',
         { accountNumber, bankCode },
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         verification: result.data,
-        vendor: result.metadata.vendor,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
-      });
+      };
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.vendor = result.metadata.vendor;
+      }
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
@@ -231,24 +303,30 @@ class AbstractedAPIEndpoints {
   async handleCreateTunnel(req, res) {
     try {
       const { vendor, ...tunnelData } = req.body;
+      const context = this.buildContext(req);
       
       const result = await this.abstraction.executeAbstractedCall(
         'infrastructure',
         'createTunnel',
         tunnelData,
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         tunnel: result.data,
-        vendor: result.metadata.vendor,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
-      });
+      };
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.vendor = result.metadata.vendor;
+      }
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
@@ -257,24 +335,30 @@ class AbstractedAPIEndpoints {
   async handleListTunnels(req, res) {
     try {
       const vendor = req.query.vendor;
+      const context = this.buildContext(req);
       
       const result = await this.abstraction.executeAbstractedCall(
         'infrastructure',
         'listTunnels',
         {},
-        vendor
+        vendor,
+        context
       );
 
-      res.json({
+      const response = {
         success: true,
         tunnels: result.data,
-        vendor: result.metadata.vendor,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
-      });
+      };
+      if (this.shouldExposeVendor() && result && result.metadata && result.metadata.vendor) {
+        response.vendor = result.metadata.vendor;
+      }
+      res.json(response);
     } catch (error) {
-      res.status(400).json({
+      res.status(this.getStatusCode(error)).json({
         success: false,
         error: error.message,
+        code: error.code,
         requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
@@ -352,7 +436,7 @@ class AbstractedAPIEndpoints {
   }
 
   generateRequestId() {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `req_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
 
   getRouter() {
