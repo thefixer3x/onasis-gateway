@@ -76,9 +76,9 @@ const fallbackWss = new WebSocketServer({
 
 // API Key Authentication
 const API_KEYS = new Set([
-  process.env.MASTER_API_KEY || 'lano_master_key_2024',
+  process.env.MASTER_API_KEY,
   process.env.VIBE_API_KEY || 'vibe_frontend_key_2024'
-]);
+].filter(Boolean));
 
 // API Key validation middleware (optional for public endpoints)
 function validateApiKey(req, res, next) {
