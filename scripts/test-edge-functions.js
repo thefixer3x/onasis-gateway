@@ -5,11 +5,18 @@
  * Tests all deployed payment Edge Functions
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mxtsdgkwzjzlttpotole.supabase.co';
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL) {
+  console.error('❌ SUPABASE_URL not set');
+  console.error('   Set it with: export SUPABASE_URL="https://your-project-ref.supabase.co"');
+  process.exit(1);
+}
 
 if (!SUPABASE_ANON_KEY) {
   console.error('❌ SUPABASE_ANON_KEY not set');
+  console.error('   Set it with: export SUPABASE_ANON_KEY="your-anon-key"');
   process.exit(1);
 }
 

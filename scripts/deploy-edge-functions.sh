@@ -5,7 +5,8 @@
 
 set -e
 
-PROJECT_REF="mxtsdgkwzjzlttpotole"
+# Get project reference from environment variable
+PROJECT_REF="${SUPABASE_PROJECT_REF:-}"
 FUNCTIONS=("paystack" "stripe" "flutterwave" "sayswitch")
 
 echo "========================================"
@@ -21,6 +22,19 @@ if ! command -v supabase &> /dev/null; then
 fi
 
 echo "✅ Supabase CLI version: $(supabase --version)"
+echo ""
+
+# Check if project reference is set
+if [ -z "$PROJECT_REF" ]; then
+    echo "❌ SUPABASE_PROJECT_REF not set"
+    echo ""
+    echo "Please set your Supabase project reference:"
+    echo "  export SUPABASE_PROJECT_REF=\"your-project-ref\""
+    echo ""
+    exit 1
+fi
+
+echo "✅ Project reference: $PROJECT_REF"
 echo ""
 
 # Check if access token is set
@@ -61,7 +75,8 @@ for func in "${FUNCTIONS[@]}"; do
     echo "Deploying $func..."
     echo "========================================"
 
-    if supabase functions deploy "$func" --project-ref "$PROJECT_REF" --no-verify-jwt; then
+    # Deploy with JWT verification enabled for security
+    if supabase functions deploy "$func" --project-ref "$PROJECT_REF"; then
         echo "✅ $func deployed successfully"
     else
         echo "❌ Failed to deploy $func"
@@ -81,7 +96,8 @@ echo "  2. Test functions with: node scripts/test-edge-functions.js"
 echo "  3. Check function logs for any errors"
 echo ""
 echo "Function URLs:"
+SUPABASE_URL="${SUPABASE_URL:-https://$PROJECT_REF.supabase.co}"
 for func in "${FUNCTIONS[@]}"; do
-    echo "  • https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/$func"
+    echo "  • $SUPABASE_URL/functions/v1/$func"
 done
 echo ""
