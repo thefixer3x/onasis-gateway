@@ -39,11 +39,35 @@ async function callPaystackAPI(
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, options);
-  const data = await response.json();
+  const controller = new AbortController();
+  const timeoutMs = 5000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error(`Paystack request timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  const rawBody = await response.text();
+  let data: any = null;
+  try {
+    data = rawBody ? JSON.parse(rawBody) : null;
+  } catch {
+    data = { rawBody };
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || 'Paystack API error');
+    const msg = typeof data?.message === 'string'
+      ? data.message
+      : `Paystack API error (status ${response.status})`;
+    throw new Error(msg);
   }
 
   return data;
@@ -396,7 +420,8 @@ const actions: Record<string, (params: any) => Promise<any>> = {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      throw new Error(`Health check failed: ${error.message}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new Error(`Health check failed: ${msg}`);
     }
   },
 };
@@ -405,28 +430,36 @@ const actions: Record<string, (params: any) => Promise<any>> = {
  * Main handler
  */
 Deno.serve(async (req: Request) => {
+  const requestOrigin = req.headers.get('origin');
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return corsResponse();
+    return corsResponse(requestOrigin);
   }
 
   try {
     // Only allow POST requests
     if (req.method !== 'POST') {
-      return errorResponse('Method not allowed', 'METHOD_NOT_ALLOWED', null, 405);
+      return errorResponse('Method not allowed', 'METHOD_NOT_ALLOWED', null, 405, requestOrigin);
     }
 
     // Verify API key
     if (!PAYSTACK_SECRET_KEY) {
-      return errorResponse('Paystack API key not configured', 'MISSING_API_KEY', null, 500);
+      return errorResponse('Paystack API key not configured', 'MISSING_API_KEY', null, 500, requestOrigin);
     }
 
     // Parse request body
-    const body: PaystackRequest = await req.json();
+    let body: PaystackRequest;
+    try {
+      body = await req.json();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return errorResponse('Invalid JSON body', 'INVALID_JSON', { message: msg }, 400, requestOrigin);
+    }
     const { action, ...params } = body;
 
     if (!action) {
-      return errorResponse('action is required in request body', 'MISSING_ACTION');
+      return errorResponse('action is required in request body', 'MISSING_ACTION', null, 400, requestOrigin);
     }
 
     // Find and execute action handler
@@ -436,22 +469,23 @@ Deno.serve(async (req: Request) => {
       return errorResponse(
         `Unknown action: ${action}`,
         'UNKNOWN_ACTION',
-        { available_actions: availableActions }
+        { available_actions: availableActions },
+        400,
+        requestOrigin
       );
     }
 
     // Execute the action
     const result = await handler(params);
 
-    return successResponse(result);
+    return successResponse(result, 200, requestOrigin);
   } catch (error) {
-    console.error('[Paystack Error]', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return errorResponse(
-      message,
-      (error as any)?.code || 'INTERNAL_ERROR',
-      (error as any)?.details,
-      (error as any)?.status || 500
-    );
+    const err = error instanceof Error ? error : new Error(String(error));
+    const rec = (typeof error === 'object' && error) ? (error as Record<string, unknown>) : {};
+    const status = typeof rec.status === 'number' ? rec.status : 500;
+    const code = typeof rec.code === 'string' ? rec.code : 'INTERNAL_ERROR';
+
+    console.error('[Paystack Error]', { message: err.message, name: err.name });
+    return errorResponse(err.message || 'Internal server error', code, undefined, status, requestOrigin);
   }
 });

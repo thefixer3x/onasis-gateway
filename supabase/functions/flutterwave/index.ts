@@ -9,7 +9,8 @@
 
 import { successResponse, errorResponse, corsResponse } from '../_shared/response.ts';
 
-const FLW_SECRET_KEY = Deno.env.get('FLW_SECRET_KEY_TEST') || Deno.env.get('FLUTTERWAVE_SECRET_KEY');
+// Prefer production credentials; fall back to test only if production isn't configured.
+const FLW_SECRET_KEY = Deno.env.get('FLUTTERWAVE_SECRET_KEY') || Deno.env.get('FLW_SECRET_KEY_TEST');
 const FLW_BASE_URL = 'https://api.flutterwave.com/v3';
 
 interface FlutterwaveRequest {
@@ -39,11 +40,35 @@ async function callFlutterwaveAPI(
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, options);
-  const data = await response.json();
+  const controller = new AbortController();
+  const timeoutMs = 8000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok || data.status === 'error') {
-    throw new Error(data.message || 'Flutterwave API error');
+  let response: Response;
+  try {
+    response = await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error(`Flutterwave request timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  const rawBody = await response.text();
+  let data: any = null;
+  try {
+    data = rawBody ? JSON.parse(rawBody) : null;
+  } catch {
+    data = { rawBody };
+  }
+
+  if (!response.ok || data?.status === 'error') {
+    const msg = typeof data?.message === 'string'
+      ? data.message
+      : `Flutterwave API error (status ${response.status})`;
+    throw new Error(msg);
   }
 
   return data;
@@ -123,20 +148,24 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   /**
    * Create payment link
    */
-  create_payment_link: async (params) => {
-    const { amount, currency = 'NGN', description, redirect_url } = params;
+	  create_payment_link: async (params) => {
+	    const { amount, currency = 'NGN', description, redirect_url } = params;
 
-    if (!amount || !description) {
-      throw new Error('amount and description are required');
-    }
+	    if (!amount || !description) {
+	      throw new Error('amount and description are required');
+	    }
 
-    return await callFlutterwaveAPI('/payment-links', 'POST', {
-      amount,
-      currency,
-      description,
-      redirect_url,
-    });
-  },
+	    if (!redirect_url) {
+	      throw new Error('redirect_url is required for security. Do not use default redirect URLs.');
+	    }
+
+	    return await callFlutterwaveAPI('/payment-links', 'POST', {
+	      amount,
+	      currency,
+	      description,
+	      redirect_url,
+	    });
+	  },
 
   /**
    * Get transaction
@@ -174,7 +203,7 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   /**
    * Charge card
    */
-  charge_card: async (params) => {
+	  charge_card: async (params) => {
     const {
       card_number,
       cvv,
@@ -186,24 +215,33 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       fullname,
       tx_ref,
       authorization,
-    } = params;
+	    } = params;
 
-    // If authorization exists, use tokenized charge
-    if (authorization) {
-      const payload = {
-        token: authorization.token,
-        currency,
-        amount,
-        email,
-        tx_ref: tx_ref || generateTxRef(),
-      };
-      return await callFlutterwaveAPI('/tokenized-charges', 'POST', payload);
-    }
+	    // Prefer tokenized charges to avoid handling raw PAN/CVV.
+	    if (authorization?.token) {
+	      if (!amount || !email) {
+	        throw new Error('amount and email are required');
+	      }
+	      const payload = {
+	        token: authorization.token,
+	        currency,
+	        amount,
+	        email,
+	        tx_ref: tx_ref || generateTxRef(),
+	      };
+	      return await callFlutterwaveAPI('/tokenized-charges', 'POST', payload);
+	    }
 
-    // Otherwise, charge with card details
-    if (!card_number || !cvv || !expiry_month || !expiry_year || !amount || !email) {
-      throw new Error('card details, amount, and email are required');
-    }
+	    // Raw card charges are deprecated/guarded behind a strict feature flag.
+	    const allowRawCard = Deno.env.get('FLW_ALLOW_RAW_CARD') === 'true';
+	    if (!allowRawCard) {
+	      throw new Error('Raw card charges are disabled. Provide authorization.token for tokenized charges.');
+	    }
+
+	    // Otherwise (feature-flagged), charge with card details
+	    if (!card_number || !cvv || !expiry_month || !expiry_year || !amount || !email) {
+	      throw new Error('card details, amount, and email are required');
+	    }
 
     return await callFlutterwaveAPI('/charges?type=card', 'POST', {
       card_number,
@@ -383,28 +421,36 @@ const actions: Record<string, (params: any) => Promise<any>> = {
  * Main handler
  */
 Deno.serve(async (req: Request) => {
+  const requestOrigin = req.headers.get('origin');
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return corsResponse();
+    return corsResponse(requestOrigin);
   }
 
   try {
     // Only allow POST requests
     if (req.method !== 'POST') {
-      return errorResponse('Method not allowed', 'METHOD_NOT_ALLOWED', null, 405);
+      return errorResponse('Method not allowed', 'METHOD_NOT_ALLOWED', null, 405, requestOrigin);
     }
 
     // Verify API key
     if (!FLW_SECRET_KEY) {
-      return errorResponse('Flutterwave API key not configured', 'MISSING_API_KEY', null, 500);
+      return errorResponse('Flutterwave API key not configured', 'MISSING_API_KEY', null, 500, requestOrigin);
     }
 
     // Parse request body
-    const body: FlutterwaveRequest = await req.json();
+    let body: FlutterwaveRequest;
+    try {
+      body = await req.json();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return errorResponse('Invalid JSON body', 'INVALID_JSON', { message: msg }, 400, requestOrigin);
+    }
     const { action, ...params } = body;
 
     if (!action) {
-      return errorResponse('action is required in request body', 'MISSING_ACTION');
+      return errorResponse('action is required in request body', 'MISSING_ACTION', null, 400, requestOrigin);
     }
 
     // Find and execute action handler
@@ -414,21 +460,25 @@ Deno.serve(async (req: Request) => {
       return errorResponse(
         `Unknown action: ${action}`,
         'UNKNOWN_ACTION',
-        { available_actions: availableActions }
+        { available_actions: availableActions },
+        400,
+        requestOrigin
       );
     }
 
     // Execute the action
     const result = await handler(params);
 
-    return successResponse(result);
+    return successResponse(result, 200, requestOrigin);
   } catch (error) {
-    console.error('[Flutterwave Error]', error);
-    return errorResponse(
-      error.message || 'Internal server error',
-      error.code || 'INTERNAL_ERROR',
-      error.details,
-      error.status || 500
-    );
+    const err = error instanceof Error ? error : new Error(String(error));
+    const rec = (typeof error === 'object' && error) ? (error as Record<string, unknown>) : {};
+    const status = typeof rec.status === 'number' ? rec.status : 500;
+    const code = typeof rec.code === 'string' ? rec.code : 'INTERNAL_ERROR';
+
+    // Avoid logging sensitive payloads or arbitrary objects.
+    console.error('[Flutterwave Error]', { message: err.message, name: err.name });
+
+    return errorResponse(err.message || 'Internal server error', code, undefined, status, requestOrigin);
   }
 });

@@ -40,11 +40,35 @@ async function callSaySwitchAPI(
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, options);
-  const data = await response.json();
+  const controller = new AbortController();
+  const timeoutMs = 5000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error(`SaySwitch request timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  const rawBody = await response.text();
+  let data: any = null;
+  try {
+    data = rawBody ? JSON.parse(rawBody) : null;
+  } catch {
+    data = { rawBody };
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || 'SaySwitch API error');
+    const bodyMsg = typeof data?.message === 'string'
+      ? data.message
+      : (rawBody ? rawBody.slice(0, 500) : 'No response body');
+    throw new Error(`SaySwitch API error (status ${response.status}): ${bodyMsg}`);
   }
 
   return data;
@@ -309,7 +333,8 @@ const actions: Record<string, (params: any) => Promise<any>> = {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      throw new Error(`Health check failed: ${error.message}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new Error(`Health check failed: ${msg}`);
     }
   },
 };
@@ -318,28 +343,36 @@ const actions: Record<string, (params: any) => Promise<any>> = {
  * Main handler
  */
 Deno.serve(async (req: Request) => {
+  const requestOrigin = req.headers.get('origin');
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return corsResponse();
+    return corsResponse(requestOrigin);
   }
 
   try {
     // Only allow POST requests
     if (req.method !== 'POST') {
-      return errorResponse('Method not allowed', 'METHOD_NOT_ALLOWED', null, 405);
+      return errorResponse('Method not allowed', 'METHOD_NOT_ALLOWED', null, 405, requestOrigin);
     }
 
     // Verify API key
     if (!SAYSWITCH_API_KEY) {
-      return errorResponse('SaySwitch API key not configured', 'MISSING_API_KEY', null, 500);
+      return errorResponse('SaySwitch API key not configured', 'MISSING_API_KEY', null, 500, requestOrigin);
     }
 
     // Parse request body
-    const body: SaySwitchRequest = await req.json();
+    let body: SaySwitchRequest;
+    try {
+      body = await req.json();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return errorResponse('Invalid JSON body', 'INVALID_JSON', { message: msg }, 400, requestOrigin);
+    }
     const { action, ...params } = body;
 
     if (!action) {
-      return errorResponse('action is required in request body', 'MISSING_ACTION');
+      return errorResponse('action is required in request body', 'MISSING_ACTION', null, 400, requestOrigin);
     }
 
     // Find and execute action handler
@@ -349,21 +382,24 @@ Deno.serve(async (req: Request) => {
       return errorResponse(
         `Unknown action: ${action}`,
         'UNKNOWN_ACTION',
-        { available_actions: availableActions }
+        { available_actions: availableActions },
+        400,
+        requestOrigin
       );
     }
 
     // Execute the action
     const result = await handler(params);
 
-    return successResponse(result);
+    return successResponse(result, 200, requestOrigin);
   } catch (error) {
-    console.error('[SaySwitch Error]', error);
-    return errorResponse(
-      error.message || 'Internal server error',
-      error.code || 'INTERNAL_ERROR',
-      error.details,
-      error.status || 500
-    );
+    const err = error instanceof Error ? error : new Error(String(error));
+    const rec = (typeof error === 'object' && error) ? (error as Record<string, unknown>) : {};
+    const status = typeof rec.status === 'number' ? rec.status : 500;
+    const code = typeof rec.code === 'string' ? rec.code : 'INTERNAL_ERROR';
+    const details = typeof rec.details === 'string' ? rec.details : undefined;
+
+    console.error('[SaySwitch Error]', { message: err.message, name: err.name });
+    return errorResponse(err.message || 'Internal server error', code, details, status, requestOrigin);
   }
 });
