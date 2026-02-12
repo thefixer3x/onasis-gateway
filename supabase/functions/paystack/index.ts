@@ -86,7 +86,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('reference is required');
     }
 
-    return await callPaystackAPI(`/transaction/verify/${reference}`, 'GET');
+    // URL encode to prevent path injection
+    const encodedRef = encodeURIComponent(reference);
+    return await callPaystackAPI(`/transaction/verify/${encodedRef}`, 'GET');
   },
 
   /**
@@ -136,7 +138,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('email_or_code is required');
     }
 
-    return await callPaystackAPI(`/customer/${email_or_code}`, 'GET');
+    // URL encode to prevent path injection
+    const encoded = encodeURIComponent(email_or_code);
+    return await callPaystackAPI(`/customer/${encoded}`, 'GET');
   },
 
   /**
@@ -145,11 +149,16 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_customers: async (params) => {
     const { perPage = 50, page = 1, from, to } = params;
 
-    let query = `?perPage=${perPage}&page=${page}`;
-    if (from) query += `&from=${from}`;
-    if (to) query += `&to=${to}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      perPage: String(perPage),
+      page: String(page),
+    });
 
-    return await callPaystackAPI(`/customer${query}`, 'GET');
+    if (from) queryParams.append('from', from);
+    if (to) queryParams.append('to', to);
+
+    return await callPaystackAPI(`/customer?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -200,13 +209,18 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_transactions: async (params) => {
     const { perPage = 50, page = 1, from, to, status, customer } = params;
 
-    let query = `?perPage=${perPage}&page=${page}`;
-    if (from) query += `&from=${from}`;
-    if (to) query += `&to=${to}`;
-    if (status) query += `&status=${status}`;
-    if (customer) query += `&customer=${customer}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      perPage: String(perPage),
+      page: String(page),
+    });
 
-    return await callPaystackAPI(`/transaction${query}`, 'GET');
+    if (from) queryParams.append('from', from);
+    if (to) queryParams.append('to', to);
+    if (status) queryParams.append('status', status);
+    if (customer) queryParams.append('customer', customer);
+
+    return await callPaystackAPI(`/transaction?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -215,7 +229,14 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_banks: async (params) => {
     const { country = 'nigeria', perPage = 50, page = 1 } = params;
 
-    return await callPaystackAPI(`/bank?country=${country}&perPage=${perPage}&page=${page}`, 'GET');
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      country,
+      perPage: String(perPage),
+      page: String(page),
+    });
+
+    return await callPaystackAPI(`/bank?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -228,8 +249,14 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('account_number and bank_code are required');
     }
 
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      account_number,
+      bank_code,
+    });
+
     return await callPaystackAPI(
-      `/bank/resolve?account_number=${account_number}&bank_code=${bank_code}`,
+      `/bank/resolve?${queryParams.toString()}`,
       'GET'
     );
   },
@@ -260,10 +287,16 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_dedicated_accounts: async (params) => {
     const { active, currency = 'NGN', perPage = 50, page = 1 } = params;
 
-    let query = `?perPage=${perPage}&page=${page}&currency=${currency}`;
-    if (active !== undefined) query += `&active=${active}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      perPage: String(perPage),
+      page: String(page),
+      currency,
+    });
 
-    return await callPaystackAPI(`/dedicated_account${query}`, 'GET');
+    if (active !== undefined) queryParams.append('active', String(active));
+
+    return await callPaystackAPI(`/dedicated_account?${queryParams.toString()}`, 'GET');
   },
 
   /**
