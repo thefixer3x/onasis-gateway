@@ -96,6 +96,42 @@ export interface BehaviorRecallParams {
   limit?: number;
   similarityThreshold?: number;
 }
+
+export interface BehaviorRecallResult {
+  /** Ranked matches for the current context */
+  patterns: Array<{
+    /** Stable identifier (typically the behavior pattern id) */
+    id: string;
+    /** Relevance score (0.0 - 1.0) */
+    score: number;
+    /** Optional short excerpt/snippet for display */
+    snippet?: string;
+    /** Optional source namespace (e.g., 'behavior_patterns', 'memories') */
+    source?: string;
+    /** Optional metadata used for ranking/debugging */
+    metadata?: Record<string, any>;
+    /** Optional raw payload for advanced consumers */
+    raw?: any;
+  }>;
+  /** Total matches returned after filtering + thresholding */
+  total_found: number;
+  /** Optional debug count of patterns skipped due to missing/invalid embeddings */
+  skipped_invalid_embeddings?: number;
+}
+
+export interface BehaviorSuggestParams {
+  userId: string;
+  context: Record<string, any>;
+  limit?: number;
+}
+
+export interface BehaviorSuggestion {
+  action: string;
+  tool: string;
+  confidence: number;
+  based_on_patterns: string[];
+  reasoning: string;
+}
 ```
 
 ### 2. Client Extension (`core/client.ts`)
@@ -160,6 +196,38 @@ async recallBehavior(params: BehaviorRecallParams): Promise<{
 
   return { data: response.data, usage: response.usage, fromCache: false };
 }
+
+/**
+ * Get AI-powered suggestions for next actions (maps to MCP tool: behavior_suggest)
+ *
+ * Signature:
+ * - suggestBehavior(params: { userId, context, limit? })
+ * Returns:
+ * - { data: { suggestions: BehaviorSuggestion[] }, usage?: UsageInfo }
+ *
+ * Error cases:
+ * - Missing/invalid params
+ * - Network/API failures (DatabaseError)
+ */
+async suggestBehavior(params: BehaviorSuggestParams): Promise<{
+  data: { suggestions: BehaviorSuggestion[] };
+  usage?: UsageInfo;
+}> {
+  const response = await this.httpClient.postEnhanced(
+    '/intelligence/behavior/suggest',
+    {
+      user_id: params.userId,
+      context: params.context,
+      limit: params.limit || 5
+    }
+  );
+
+  return { data: response.data, usage: response.usage };
+}
+
+// Usage
+// const res = await client.suggestBehavior({ userId, context: { currentTask: '...' }, limit: 3 });
+// console.log(res.data.suggestions);
 ```
 
 ### 3. MCP Tools
@@ -172,6 +240,10 @@ New tools for v2.0:
 ### 4. Database Schema (Supabase Migration)
 
 ```sql
+-- pgvector is required for VECTOR(1536) and ivfflat indexes
+-- Ensure the extension is enabled in your Supabase project.
+CREATE EXTENSION IF NOT EXISTS vector;
+
 CREATE TABLE IF NOT EXISTS public.behavior_patterns (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -198,6 +270,13 @@ ALTER TABLE public.behavior_patterns ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view own patterns" ON public.behavior_patterns
   FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own patterns" ON public.behavior_patterns
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own patterns" ON public.behavior_patterns
+  FOR UPDATE USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 ```
 
 ## Migration Path
@@ -212,14 +291,14 @@ await client.analyzePatterns({ userId, timeRangeDays: 30 });
 // v2.0 - New behavior methods available
 await client.recordBehavior({ userId, trigger, context, actions, finalOutcome });
 await client.recallBehavior({ userId, context });
-await client.suggestBehavior({ userId, currentState });
+await client.suggestBehavior({ userId, context: currentState, limit: 3 });
 ```
 
 ## Release Checklist
 
 - [ ] Add new types to `core/types.ts`
 - [ ] Implement client methods in `core/client.ts`
-- [ ] Register MCP tools in `server/mcp-server.ts`
+- [ ] Register MCP tools in `server/mcp-server.ts` (source) and ensure build outputs `server/index.js` (compiled)
 - [ ] Run Supabase migration
 - [ ] Deploy edge functions
 - [ ] Update documentation
