@@ -7,6 +7,7 @@
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const STRIPE_SHARED_SECRET = process.env.STRIPE_SHARED_SECRET;
 
 if (!SUPABASE_URL) {
   console.error('❌ SUPABASE_URL not set');
@@ -26,24 +27,59 @@ if (!SUPABASE_ANON_KEY) {
 async function callEdgeFunction(functionName, action, params = {}) {
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
+  const headers = {
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+  };
+
+  // Stripe edge function requires an auth gate. If configured, pass the shared secret.
+  if (STRIPE_SHARED_SECRET) {
+    headers['X-SHARED-SECRET'] = STRIPE_SHARED_SECRET;
+  }
+
   const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       action,
       ...params,
     }),
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  let data = null;
+  let rawBody = null;
+  let parseError = null;
+
+  if (contentType.includes('application/json')) {
+    const clone = response.clone();
+    try {
+      data = await response.json();
+    } catch (err) {
+      parseError = err;
+      try {
+        rawBody = await clone.text();
+      } catch (_) {
+        rawBody = null;
+      }
+    }
+  } else {
+    rawBody = await response.text();
+    try {
+      data = rawBody ? JSON.parse(rawBody) : null;
+    } catch (err) {
+      parseError = err;
+    }
+  }
 
   return {
     status: response.status,
     ok: response.ok,
     data,
+    rawBody,
+    parseError: parseError
+      ? (parseError instanceof Error ? parseError.message : String(parseError))
+      : null,
   };
 }
 
@@ -56,21 +92,30 @@ async function testFunction(functionName, action, params = {}, expectSuccess = t
   try {
     const result = await callEdgeFunction(functionName, action, params);
 
-    if (result.ok && result.data.success) {
-      console.log('✅ PASS');
-      return true;
-    } else if (!expectSuccess && !result.ok) {
-      console.log('✅ PASS (expected failure)');
-      return true;
+    const isSuccess = !!(result.ok && result.data && result.data.success === true);
+
+    if (expectSuccess) {
+      if (isSuccess) {
+        console.log('✅ PASS');
+        return true;
+      }
     } else {
-      console.log('❌ FAIL');
-      console.log(`    Status: ${result.status}`);
-      console.log(`    Response:`, JSON.stringify(result.data, null, 2).split('\n').map(l => '    ' + l).join('\n'));
-      return false;
+      if (!isSuccess) {
+        console.log('✅ PASS (expected failure)');
+        return true;
+      }
     }
+
+    console.log('❌ FAIL');
+    console.log(`    Status: ${result.status}`);
+    if (result.parseError) console.log(`    JSON Parse Error: ${result.parseError}`);
+    if (result.rawBody) console.log(`    Raw Body: ${result.rawBody}`);
+    console.log(`    Parsed:`, JSON.stringify(result.data, null, 2).split('\n').map(l => '    ' + l).join('\n'));
+    return false;
   } catch (error) {
     console.log('❌ ERROR');
-    console.log(`    ${error.message}`);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.log(`    ${msg}`);
     return false;
   }
 }
