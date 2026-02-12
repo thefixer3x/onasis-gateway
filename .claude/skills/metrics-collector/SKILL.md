@@ -67,6 +67,9 @@ The Metrics Collector provides:
 
 ## Required Patterns (Must Follow)
 
+### Metric Prefix Convention
+Metric examples use the `onasis_` prefix (for example, `onasis_new_metric_total`) as a placeholder. Replace it with your actual project/service prefix (for example, `gateway_new_metric_total`) and apply that prefix consistently across your metrics.
+
 ### Metric Registration
 ```javascript
 // Must register with proper name, help, labelNames
