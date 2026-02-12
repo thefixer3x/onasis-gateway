@@ -190,6 +190,8 @@ vendors: {
 | payment | initializeTransaction | amount, email | currency, reference, metadata |
 | payment | verifyTransaction | reference | |
 | payment | createCustomer | email | firstName, lastName, phone |
+| payment | purchaseAirtime | amount, phone, network | reference, metadata |
+| payment | getTransaction | transactionId | |
 | banking | getAccountBalance | accountId | |
 | banking | transferFunds | fromAccount, toAccount, amount | currency, reference |
 | banking | verifyAccount | accountNumber, bankCode | |

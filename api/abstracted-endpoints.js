@@ -29,10 +29,10 @@ class AbstractedAPIEndpoints {
   }
 
   getStatusCode(error) {
-    if (!error) return 400;
+    if (!error) return 500;
     const s = error.status;
     if (typeof s === 'number' && s >= 100 && s <= 599) return s;
-    return 400;
+    return 500;
   }
 
   shouldExposeVendor() {
@@ -40,9 +40,6 @@ class AbstractedAPIEndpoints {
   }
 
   setupRoutes() {
-    // Generic abstracted endpoint
-    this.router.post('/api/v1/:category/:operation', this.handleAbstractedCall.bind(this));
-    
     // Specific payment endpoints (for convenience)
     this.router.post('/api/v1/payments/initialize', this.handlePaymentInitialize.bind(this));
     this.router.post('/api/v1/payments/verify', this.handlePaymentVerify.bind(this));
@@ -61,6 +58,17 @@ class AbstractedAPIEndpoints {
     this.router.get('/api/v1/categories', this.handleGetCategories.bind(this));
     this.router.get('/api/v1/categories/:category', this.handleGetCategoryInfo.bind(this));
     this.router.get('/api/v1/categories/:category/schema/:operation', this.handleGetSchema.bind(this));
+
+    // Internal service endpoints
+    this.router.post('/api/v1/auth/:operation', this.handleAuthOperation.bind(this));
+    this.router.post('/api/v1/ai/:operation', this.handleAIOperation.bind(this));
+    this.router.post('/api/v1/memory/:operation', this.handleMemoryOperation.bind(this));
+    this.router.post('/api/v1/intelligence/:operation', this.handleIntelligenceOperation.bind(this));
+    this.router.post('/api/v1/security/:operation', this.handleSecurityOperation.bind(this));
+    this.router.post('/api/v1/verification/:operation', this.handleVerificationOperation.bind(this));
+
+    // Generic abstracted endpoint (catch-all): keep last so it doesn't shadow internal/specific routes
+    this.router.post('/api/v1/:category/:operation', this.handleAbstractedCall.bind(this));
   }
 
   async handleAbstractedCall(req, res) {
@@ -413,14 +421,14 @@ class AbstractedAPIEndpoints {
     try {
       const { category, operation } = req.params;
       const schema = this.abstraction.getClientSchema(category, operation);
-      
+
       if (!schema) {
         return res.status(404).json({
           success: false,
           error: `Schema not found for ${category}/${operation}`
         });
       }
-      
+
       res.json({
         success: true,
         category,
@@ -431,6 +439,297 @@ class AbstractedAPIEndpoints {
       res.status(400).json({
         success: false,
         error: error.message
+      });
+    }
+  }
+
+  // Internal service handlers
+  async handleAuthOperation(req, res) {
+    try {
+      const { operation } = req.params;
+      const { ...input } = req.body;
+      const context = this.buildContext(req);
+
+      // Map operation to the appropriate auth gateway tool
+      const operationMap = {
+        'login': 'login',
+        'exchange-supabase-token': 'exchange-supabase-token',
+        'logout': 'logout',
+        'get-session': 'get-session',
+        'verify-token': 'verify-token',
+        'list-sessions': 'list-sessions',
+        'initiate-oauth': 'initiate-oauth',
+        'request-magic-link': 'request-magic-link',
+        'verify-api-key': 'verify-api-key',
+        'create-api-key': 'create-api-key',
+        'list-api-keys': 'list-api-keys',
+        'get-api-key': 'get-api-key',
+        'rotate-api-key': 'rotate-api-key',
+        'revoke-api-key': 'revoke-api-key',
+        'delete-api-key': 'delete-api-key'
+      };
+
+      const toolName = operationMap[operation] || operation;
+      const result = await this.abstraction.executeAbstractedCall(
+        'auth',
+        toolName,
+        input,
+        null, // No vendor for internal services
+        context
+      );
+
+      res.json({
+        success: true,
+        operation,
+        data: result.data,
+        metadata: {
+          ...result.metadata,
+          requestId: req.headers['x-request-id'] || this.generateRequestId(),
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      res.status(this.getStatusCode(error)).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        operation: req.params.operation,
+        requestId: req.headers['x-request-id'] || this.generateRequestId()
+      });
+    }
+  }
+
+  async handleAIOperation(req, res) {
+    try {
+      const { operation } = req.params;
+      const { ...input } = req.body;
+      const context = this.buildContext(req);
+
+      // Map operation to the appropriate AI router tool
+      const operationMap = {
+        'chat': 'ai-chat',
+        'ollama': 'ollama',
+        'list-services': 'list-ai-services',
+        'health': 'ai-health'
+      };
+
+      const toolName = operationMap[operation] || operation;
+      const result = await this.abstraction.executeAbstractedCall(
+        'ai',
+        toolName,
+        input,
+        null, // No vendor for internal services
+        context
+      );
+
+      res.json({
+        success: true,
+        operation,
+        data: result.data,
+        metadata: {
+          ...result.metadata,
+          requestId: req.headers['x-request-id'] || this.generateRequestId(),
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      res.status(this.getStatusCode(error)).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        operation: req.params.operation,
+        requestId: req.headers['x-request-id'] || this.generateRequestId()
+      });
+    }
+  }
+
+  async handleMemoryOperation(req, res) {
+    try {
+      const { operation } = req.params;
+      const { ...input } = req.body;
+      const context = this.buildContext(req);
+
+      // Map operation to the appropriate memory service tool
+      const operationMap = {
+        'create': 'create-memory',
+        'get': 'get-memory',
+        'update': 'update-memory',
+        'delete': 'delete-memory',
+        'list': 'list-memories',
+        'search': 'search-memories',
+        'stats': 'memory-stats',
+        'bulk-delete': 'bulk-delete-memories',
+        'search-documentation': 'search-documentation'
+      };
+
+      const toolName = operationMap[operation] || operation;
+      const result = await this.abstraction.executeAbstractedCall(
+        'memory',
+        toolName,
+        input,
+        null, // No vendor for internal services
+        context
+      );
+
+      res.json({
+        success: true,
+        operation,
+        data: result.data,
+        metadata: {
+          ...result.metadata,
+          requestId: req.headers['x-request-id'] || this.generateRequestId(),
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      res.status(this.getStatusCode(error)).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        operation: req.params.operation,
+        requestId: req.headers['x-request-id'] || this.generateRequestId()
+      });
+    }
+  }
+
+  async handleIntelligenceOperation(req, res) {
+    try {
+      const { operation } = req.params;
+      const { ...input } = req.body;
+      const context = this.buildContext(req);
+
+      // Map operation to the appropriate intelligence API tool
+      const operationMap = {
+        'analyze-patterns': 'intelligence-analyze-patterns',
+        'suggest-tags': 'intelligence-suggest-tags',
+        'find-related': 'intelligence-find-related',
+        'detect-duplicates': 'intelligence-detect-duplicates',
+        'extract-insights': 'intelligence-extract-insights',
+        'health-check': 'intelligence-health-check',
+        'behavior-record': 'intelligence-behavior-record',
+        'behavior-recall': 'intelligence-behavior-recall',
+        'behavior-suggest': 'intelligence-behavior-suggest'
+      };
+
+      const toolName = operationMap[operation] || operation;
+      const result = await this.abstraction.executeAbstractedCall(
+        'intelligence',
+        toolName,
+        input,
+        null, // No vendor for internal services
+        context
+      );
+
+      res.json({
+        success: true,
+        operation,
+        data: result.data,
+        metadata: {
+          ...result.metadata,
+          requestId: req.headers['x-request-id'] || this.generateRequestId(),
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      res.status(this.getStatusCode(error)).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        operation: req.params.operation,
+        requestId: req.headers['x-request-id'] || this.generateRequestId()
+      });
+    }
+  }
+
+  async handleSecurityOperation(req, res) {
+    try {
+      const { operation } = req.params;
+      const { ...input } = req.body;
+      const context = this.buildContext(req);
+
+      // Map operation to the appropriate security service tool
+      const operationMap = {
+        'create-api-key': 'create-api-key',
+        'delete-api-key': 'delete-api-key',
+        'rotate-api-key': 'rotate-api-key',
+        'revoke-api-key': 'revoke-api-key',
+        'list-api-keys': 'list-api-keys',
+        'get-api-key': 'get-api-key',
+        'verify-api-key': 'verify-api-key',
+        'verify-token': 'verify-token'
+      };
+
+      const toolName = operationMap[operation] || operation;
+      const result = await this.abstraction.executeAbstractedCall(
+        'security',
+        toolName,
+        input,
+        null, // No vendor for internal services
+        context
+      );
+
+      res.json({
+        success: true,
+        operation,
+        data: result.data,
+        metadata: {
+          ...result.metadata,
+          requestId: req.headers['x-request-id'] || this.generateRequestId(),
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      res.status(this.getStatusCode(error)).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        operation: req.params.operation,
+        requestId: req.headers['x-request-id'] || this.generateRequestId()
+      });
+    }
+  }
+
+  async handleVerificationOperation(req, res) {
+    try {
+      const { operation } = req.params;
+      const { ...input } = req.body;
+      const context = this.buildContext(req);
+
+      // Map operation to the appropriate verification service tool
+      const operationMap = {
+        'verify-nin': 'verify-nin',
+        'verify-bvn': 'verify-bvn',
+        'verify-passport': 'verify-passport',
+        'verify-document': 'verify-document',
+        'get-history': 'get-verification-history'
+      };
+
+      const toolName = operationMap[operation] || operation;
+      const result = await this.abstraction.executeAbstractedCall(
+        'verification',
+        toolName,
+        input,
+        null, // No vendor for internal services
+        context
+      );
+
+      res.json({
+        success: true,
+        operation,
+        data: result.data,
+        metadata: {
+          ...result.metadata,
+          requestId: req.headers['x-request-id'] || this.generateRequestId(),
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      res.status(this.getStatusCode(error)).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        operation: req.params.operation,
+        requestId: req.headers['x-request-id'] || this.generateRequestId()
       });
     }
   }

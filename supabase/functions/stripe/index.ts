@@ -5,17 +5,44 @@
  * - Action via JSON body (not query string or nested {action, data} structure)
  * - snake_case action names
  * - All 10+ Stripe Issuing operations supported
- * - No JWT required (uses anon key for consistency with other payment adapters)
+ * - Auth required (either X-SHARED-SECRET or a valid JWT in Authorization)
  */
 
 import { successResponse, errorResponse, corsResponse } from '../_shared/response.ts';
 
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
 const STRIPE_BASE_URL = 'https://api.stripe.com/v1';
+const STRIPE_SHARED_SECRET = Deno.env.get('STRIPE_SHARED_SECRET');
 
 interface StripeRequest {
   action: string;
   [key: string]: any;
+}
+
+async function validateJwtWithSupabase(token: string): Promise<boolean> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!supabaseUrl || !anonKey) return false;
+
+  const controller = new AbortController();
+  const timeoutMs = 5000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const resp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': anonKey,
+      },
+      signal: controller.signal,
+    });
+    return resp.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 /**
@@ -40,17 +67,30 @@ async function callStripeAPI(
   if (params && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
     const formData = new URLSearchParams();
 
-    // Flatten nested objects for Stripe's API format
+    // Flatten nested objects/arrays for Stripe's API format
     const flattenParams = (obj: any, prefix = '') => {
       for (const key in obj) {
         const value = obj[key];
         const newKey = prefix ? `${prefix}[${key}]` : key;
 
-        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-          flattenParams(value, newKey);
-        } else {
-          formData.append(newKey, String(value));
+        if (Array.isArray(value)) {
+          value.forEach((v, i) => {
+            const indexedKey = `${newKey}[${i}]`;
+            if (v !== null && typeof v === 'object') {
+              flattenParams(v, indexedKey);
+            } else {
+              formData.append(indexedKey, String(v));
+            }
+          });
+          continue;
         }
+
+        if (value !== null && typeof value === 'object') {
+          flattenParams(value, newKey);
+          continue;
+        }
+
+        formData.append(newKey, String(value));
       }
     };
 
@@ -312,7 +352,8 @@ const actions: Record<string, (params: any) => Promise<any>> = {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      throw new Error(`Health check failed: ${error.message}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new Error(`Health check failed: ${msg}`);
     }
   },
 };
@@ -321,28 +362,58 @@ const actions: Record<string, (params: any) => Promise<any>> = {
  * Main handler
  */
 Deno.serve(async (req: Request) => {
+  const requestOrigin = req.headers.get('origin');
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return corsResponse();
+    return corsResponse(requestOrigin);
   }
 
   try {
     // Only allow POST requests
     if (req.method !== 'POST') {
-      return errorResponse('Method not allowed', 'METHOD_NOT_ALLOWED', null, 405);
+      return errorResponse('Method not allowed', 'METHOD_NOT_ALLOWED', null, 405, requestOrigin);
+    }
+
+    // Authentication gate (must run before dispatching Stripe operations)
+    const shared = req.headers.get('x-shared-secret');
+    const authHeader = req.headers.get('authorization') || '';
+    let authorized = false;
+
+    if (STRIPE_SHARED_SECRET && shared && shared === STRIPE_SHARED_SECRET) {
+      authorized = true;
+    } else if (authHeader.startsWith('Bearer ')) {
+      const token = authHeader.slice('Bearer '.length).trim();
+      authorized = await validateJwtWithSupabase(token);
+    }
+
+    if (!authorized) {
+      return errorResponse(
+        'Unauthorized. Provide X-SHARED-SECRET or a valid JWT in the Authorization header.',
+        'UNAUTHORIZED',
+        null,
+        401,
+        requestOrigin
+      );
     }
 
     // Verify API key
     if (!STRIPE_SECRET_KEY) {
-      return errorResponse('Stripe API key not configured', 'MISSING_API_KEY', null, 500);
+      return errorResponse('Stripe API key not configured', 'MISSING_API_KEY', null, 500, requestOrigin);
     }
 
     // Parse request body
-    const body: StripeRequest = await req.json();
+    let body: StripeRequest;
+    try {
+      body = await req.json();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return errorResponse('Invalid JSON body', 'INVALID_JSON', { message: msg }, 400, requestOrigin);
+    }
     const { action, ...params } = body;
 
     if (!action) {
-      return errorResponse('action is required in request body', 'MISSING_ACTION');
+      return errorResponse('action is required in request body', 'MISSING_ACTION', null, 400, requestOrigin);
     }
 
     // Find and execute action handler
@@ -352,21 +423,23 @@ Deno.serve(async (req: Request) => {
       return errorResponse(
         `Unknown action: ${action}`,
         'UNKNOWN_ACTION',
-        { available_actions: availableActions }
+        { available_actions: availableActions },
+        400,
+        requestOrigin
       );
     }
 
     // Execute the action
     const result = await handler(params);
 
-    return successResponse(result);
+    return successResponse(result, 200, requestOrigin);
   } catch (error) {
-    console.error('[Stripe Error]', error);
-    return errorResponse(
-      error.message || 'Internal server error',
-      error.code || 'INTERNAL_ERROR',
-      error.details,
-      error.status || 500
-    );
+    const err = error instanceof Error ? error : new Error(String(error));
+    const rec = (typeof error === 'object' && error) ? (error as Record<string, unknown>) : {};
+    const status = typeof rec.status === 'number' ? rec.status : 500;
+    const code = typeof rec.code === 'string' ? rec.code : 'INTERNAL_ERROR';
+
+    console.error('[Stripe Error]', { message: err.message, name: err.name });
+    return errorResponse(err.message || 'Internal server error', code, undefined, status, requestOrigin);
   }
 });

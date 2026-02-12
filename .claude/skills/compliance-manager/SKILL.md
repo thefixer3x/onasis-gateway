@@ -80,14 +80,26 @@ maskCardNumber(cardNumber) {
 encryptSensitiveData(data) {
     const algorithm = 'aes-256-gcm';  // Do not change
     const key = process.env.ENCRYPTION_KEY;
-    const iv = crypto.randomBytes(16);
+    if (!key) throw new Error('ENCRYPTION_KEY is required');
 
-    // Prefer @onasis/security-sdk for encryption primitives.
-    const cipher = crypto.createCipher(algorithm, key);
+    // 12-byte IV is recommended for GCM
+    const iv = crypto.randomBytes(12);
+
+    // Prefer @onasis/security-sdk for key handling if available
+    // If ENCRYPTION_KEY is a passphrase, derive a 32-byte key via scrypt.
+    const keyBuf = (key.length === 64 && /^[0-9a-f]+$/i.test(key))
+        ? Buffer.from(key, 'hex')
+        : crypto.scryptSync(key, 'onasis-gateway', 32);
+
+    const cipher = crypto.createCipheriv('aes-256-gcm', keyBuf, iv);
     cipher.setAAD(Buffer.from('compliance-encryption'));
 
+    const plaintext = typeof data === 'string' ? data : JSON.stringify(data);
+    const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+
     return {
-        encrypted,
+        encrypted: ciphertext.toString('base64'),
         iv: iv.toString('hex'),
         authTag: authTag.toString('hex'),
         algorithm

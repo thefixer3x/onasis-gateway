@@ -5,13 +5,19 @@
 /**
  * Get allowed CORS origin from environment or use restrictive default
  */
-function getAllowedOrigin(): string {
+function getAllowedOrigin(requestOrigin: string | null): string {
   const allowedOrigins = Deno.env.get('ALLOWED_ORIGINS');
 
-  // If multiple origins are configured (comma-separated), return the first one
-  // In production, implement proper origin validation against the request Origin header
+  // If multiple origins are configured (comma-separated), reflect only exact matches.
+  // If there's no match, return empty string so callers can omit CORS headers.
   if (allowedOrigins) {
-    return allowedOrigins.split(',')[0].trim();
+    const allowed = allowedOrigins
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (requestOrigin && allowed.includes(requestOrigin)) return requestOrigin;
+    return '';
   }
 
   // Default to localhost for development
@@ -19,7 +25,22 @@ function getAllowedOrigin(): string {
   return 'http://localhost:3000';
 }
 
-export function successResponse(data: any, status: number = 200): Response {
+export function successResponse(
+  data: any,
+  status: number = 200,
+  requestOrigin: string | null = null
+): Response {
+  const allowedOrigin = getAllowedOrigin(requestOrigin);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, x-shared-secret',
+  };
+
+  if (allowedOrigin) {
+    headers['Access-Control-Allow-Origin'] = allowedOrigin;
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+
   return new Response(
     JSON.stringify({
       success: true,
@@ -29,10 +50,7 @@ export function successResponse(data: any, status: number = 200): Response {
     {
       status,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': getAllowedOrigin(),
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
-        'Access-Control-Allow-Credentials': 'true',
+        ...headers,
       },
     }
   );
@@ -42,8 +60,20 @@ export function errorResponse(
   message: string,
   code: string = 'ERROR',
   details?: any,
-  status: number = 400
+  status: number = 400,
+  requestOrigin: string | null = null
 ): Response {
+  const allowedOrigin = getAllowedOrigin(requestOrigin);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, x-shared-secret',
+  };
+
+  if (allowedOrigin) {
+    headers['Access-Control-Allow-Origin'] = allowedOrigin;
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+
   return new Response(
     JSON.stringify({
       success: false,
@@ -57,24 +87,29 @@ export function errorResponse(
     {
       status,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': getAllowedOrigin(),
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
-        'Access-Control-Allow-Credentials': 'true',
+        ...headers,
       },
     }
   );
 }
 
-export function corsResponse(): Response {
+export function corsResponse(requestOrigin: string | null = null): Response {
+  const allowedOrigin = getAllowedOrigin(requestOrigin);
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, x-shared-secret',
+    'Access-Control-Max-Age': '86400',
+  };
+
+  if (allowedOrigin) {
+    headers['Access-Control-Allow-Origin'] = allowedOrigin;
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': getAllowedOrigin(),
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
-      'Access-Control-Allow-Credentials': 'true',
-      'Access-Control-Max-Age': '86400',
+      ...headers,
     },
   });
 }

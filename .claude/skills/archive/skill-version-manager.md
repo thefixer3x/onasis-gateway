@@ -296,6 +296,7 @@ If changes cause issues:
 | Required param removed | BREAKING | Major | Yes |
 | Param type changed | BREAKING | Major | Yes |
 | Auth type changed | BREAKING | Major | Yes |
+| baseUrl_changed | BREAKING | Major | Yes |
 | Optional param added | Compatible | Minor | No |
 | New endpoint added | Compatible | Minor | No |
 | Bug fix | Compatible | Patch | No |
