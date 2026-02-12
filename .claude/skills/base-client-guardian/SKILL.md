@@ -157,11 +157,7 @@ Before any changes to this file:
 npm test -- --grep "BaseClient"
 
 # 2. Verify authentication works for all types
-node -e "
-const BaseClient = require('./core/base-client');
-const client = new BaseClient({ name: 'test', baseUrl: 'https://httpbin.org' });
-console.log('Client initialized:', client.config.name);
-"
+node -e "const BaseClient = require('./core/base-client'); const client = new BaseClient({ name: 'test', baseUrl: 'https://httpbin.org' }); console.log('Client initialized:', client.config.name);"
 
 # 3. Test circuit breaker states
 # Verify: CLOSED -> OPEN (after 5 failures) -> HALF_OPEN (after 60s)

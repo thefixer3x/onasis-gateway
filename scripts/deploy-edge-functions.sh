@@ -62,10 +62,20 @@ echo ""
 
 # Check if project is linked
 echo "🔗 Linking to project $PROJECT_REF..."
-if supabase link --project-ref "$PROJECT_REF" 2>&1 | grep -q "Linked"; then
+link_output="$(supabase link --project-ref "$PROJECT_REF" 2>&1)"
+link_status=$?
+
+if [ $link_status -eq 0 ]; then
     echo "✅ Project linked successfully"
 else
-    echo "⚠️  Project may already be linked"
+    # Treat "already linked" as a non-fatal condition.
+    if echo "$link_output" | grep -qi "already linked"; then
+        echo "⚠️  Project may already be linked"
+    else
+        echo "❌ Failed to link project"
+        echo "$link_output"
+        exit 1
+    fi
 fi
 echo ""
 
