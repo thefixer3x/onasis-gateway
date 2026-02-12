@@ -34,6 +34,9 @@ The Version Manager provides:
 ### Breaking Changes Classification
 - **NEVER** allow these changes in minor/patch versions:
   - Removing endpoints
+  - Changing HTTP method (method_changed)
+  - Changing path (path_changed)
+  - Changing base URL (baseUrl_changed)
   - Adding required parameters
   - Changing parameter types
   - Modifying authentication requirements
@@ -148,6 +151,7 @@ Day 30+:  Safe to remove (after migration verification)
 | Required param removed | BREAKING | Major | Yes |
 | Param type changed | BREAKING | Major | Yes |
 | Auth type changed | BREAKING | Major | Yes |
+| baseUrl_changed | BREAKING | Major | Yes |
 | Optional param added | Compatible | Minor | No |
 | New endpoint added | Compatible | Minor | No |
 | Bug fix | Compatible | Patch | No |
