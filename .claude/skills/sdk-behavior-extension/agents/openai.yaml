@@ -1,0 +1,4 @@
+interface:
+  display_name: "SDK Behavior Extension"
+  short_description: "Design guidance for mem-intel SDK behavior features"
+  default_prompt: "Plan or implement behavior intelligence extensions to mem-intel SDK with minimal breaking changes."
