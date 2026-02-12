@@ -5,13 +5,48 @@
  * Tests all deployed payment Edge Functions
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
+const decodeJwtPayload = (token) => {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  const payload = parts[1];
+  if (!payload) return null;
+
+  const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+  try {
+    const json = Buffer.from(b64 + pad, 'base64').toString('utf8');
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+const deriveSupabaseUrlFromTokens = () => {
+  const candidates = [
+    process.env.SUPABASE_ANON_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.SUPABASE_SERVICE_KEY,
+  ].filter(Boolean);
+
+  for (const token of candidates) {
+    const payload = decodeJwtPayload(token);
+    const ref = payload && payload.ref;
+    if (ref && typeof ref === 'string') {
+      return `https://${ref}.supabase.co`;
+    }
+  }
+  return null;
+};
+
+const SUPABASE_URL = process.env.SUPABASE_URL || deriveSupabaseUrlFromTokens();
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const STRIPE_SHARED_SECRET = process.env.STRIPE_SHARED_SECRET;
 
 if (!SUPABASE_URL) {
   console.error('❌ SUPABASE_URL not set');
   console.error('   Set it with: export SUPABASE_URL="https://your-project-ref.supabase.co"');
+  console.error('   Or ensure SUPABASE_ANON_KEY is set so the project ref can be derived.');
   process.exit(1);
 }
 
