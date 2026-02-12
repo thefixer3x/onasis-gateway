@@ -37,6 +37,9 @@ FROM users
 WHERE email = 'admin@lanonasis.com' OR role = 'superadmin';
 
 -- Step 5: Verify master API key exists
-SELECT id, name, api_key_value, access_level, is_active
+-- NOTE: Never compare or expose plaintext API keys. Validate against the stored hash.
+-- If your environment still stores only api_key_value, migrate to hashed storage and keep only a short prefix for identification.
+SELECT id, name, access_level, is_active
 FROM api_keys
-WHERE api_key_value = '<SET_MASTER_API_KEY>';
+WHERE key_hash IS NOT NULL
+  AND key_hash = crypt('<SET_MASTER_API_KEY>', key_hash);

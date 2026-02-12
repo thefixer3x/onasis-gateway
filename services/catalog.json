@@ -288,6 +288,186 @@
       "toolCount": 6,
       "authType": "apikey",
       "category": "documents"
+    },
+    {
+      "id": "auth-gateway",
+      "name": "Auth Gateway",
+      "description": "Centralized authentication and authorization service",
+      "type": "live",
+      "source": "internal",
+      "adapterPath": "./services/auth-gateway/auth-gateway-adapter.js",
+      "executable": true,
+      "enabled": true,
+      "toolCount": 10,
+      "authType": "bearer",
+      "category": "auth",
+      "supportedCountries": ["global"]
+    },
+    {
+      "id": "ai-router",
+      "name": "AI Router",
+      "description": "AI model routing and orchestration service",
+      "type": "live",
+      "source": "internal",
+      "adapterPath": "./services/ai-router/ai-router-adapter.js",
+      "executable": true,
+      "enabled": true,
+      "toolCount": 8,
+      "authType": "bearer",
+      "category": "ai",
+      "supportedCountries": ["global"]
+    },
+    {
+      "id": "memory-service",
+      "name": "Memory as a Service",
+      "description": "Semantic memory storage with vector embeddings for AI applications",
+      "type": "live",
+      "source": "supabase-edge-functions",
+      "adapterPath": "./services/memory-as-a-service/memory-adapter.js",
+      "functionName": "memory-service",
+      "executable": true,
+      "enabled": true,
+      "toolCount": 9,
+      "authType": "bearer",
+      "category": "ai_infrastructure",
+      "supportedCountries": ["global"]
+    },
+    {
+      "id": "intelligence-api",
+      "name": "Intelligence API",
+      "description": "Business intelligence and analytics services",
+      "type": "live",
+      "source": "supabase-edge-functions",
+      "adapterPath": "./services/intelligence-api/intelligence-adapter.js",
+      "functionName": "intelligence-api",
+      "executable": true,
+      "enabled": true,
+      "toolCount": 9,
+      "authType": "bearer",
+      "category": "analytics",
+      "supportedCountries": ["global"]
+    },
+    {
+      "id": "verification-service",
+      "name": "Verification Service",
+      "description": "Comprehensive KYC, KYB, and AML verification services",
+      "type": "live",
+      "source": "external",
+      "adapterPath": "./services/verification-service/verification-adapter.js",
+      "executable": true,
+      "enabled": true,
+      "toolCount": 5,
+      "authType": "apikey",
+      "category": "identity_verification",
+      "supportedCountries": ["NG", "KE", "GH", "UG", "ZA"]
+    },
+    {
+      "id": "security-service",
+      "name": "Security Service",
+      "description": "API key management and security services",
+      "type": "live",
+      "source": "supabase-edge-functions",
+      "adapterPath": "./services/security-service/security-adapter.js",
+      "functionName": "security-service",
+      "executable": true,
+      "enabled": true,
+      "toolCount": 8,
+      "authType": "bearer",
+      "category": "security",
+      "supportedCountries": ["global"]
+    }
+  ],
+
+  "apiServices": [
+    {
+      "id": "credit-as-a-service",
+      "name": "Credit as a Service",
+      "description": "Comprehensive credit management and lending platform with provider integration",
+      "directory": "credit-as-a-service",
+      "category": "financial",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "flutterwave-payment-gateway",
+      "name": "Flutterwave Payment Gateway",
+      "description": "Comprehensive Flutterwave payment processing with wallet capabilities",
+      "directory": "flutterwave-payment-gateway",
+      "category": "payment_gateway",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "paystack-payment-gateway",
+      "name": "PayStack Payment Gateway",
+      "description": "Comprehensive PayStack payment processing with advanced features for African markets",
+      "directory": "paystack-payment-gateway",
+      "category": "payment_gateway",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "providus-bank",
+      "name": "Providus Bank API",
+      "description": "Nigerian banking and wallet services",
+      "directory": "providus-bank",
+      "category": "banking",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "verification-service",
+      "name": "Verification Service",
+      "description": "Comprehensive KYC, KYB, and AML verification service with multi-provider integration",
+      "directory": "verification-service",
+      "category": "identity_verification",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "memory-as-a-service",
+      "name": "Memory as a Service",
+      "description": "Semantic memory storage with vector embeddings for AI applications",
+      "directory": "memory-as-a-service",
+      "category": "ai_infrastructure",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "auth-gateway",
+      "name": "Auth Gateway",
+      "description": "Centralized authentication and authorization service",
+      "directory": "auth-gateway",
+      "category": "auth",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "ai-router",
+      "name": "AI Router",
+      "description": "AI model routing and orchestration service with memory integration",
+      "directory": "ai-router",
+      "category": "ai",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "intelligence-engine",
+      "name": "Intelligence Engine",
+      "description": "Business intelligence and analytics services",
+      "directory": "intelligence-api",
+      "category": "analytics",
+      "enabled": true,
+      "status": "active"
+    },
+    {
+      "id": "security-service",
+      "name": "Security Service",
+      "description": "API key management and security services",
+      "directory": "security-service",
+      "category": "security",
+      "enabled": true,
+      "status": "active"
     }
   ],
 
@@ -341,6 +521,21 @@
       "name": "Testing",
       "description": "API testing and development tools",
       "icon": "🧪"
+    },
+    "auth": {
+      "name": "Authentication",
+      "description": "Authentication and authorization services",
+      "icon": "🔑"
+    },
+    "ai": {
+      "name": "AI Services",
+      "description": "AI model routing and orchestration services",
+      "icon": "🧠"
+    },
+    "security": {
+      "name": "Security",
+      "description": "Security and API key management services",
+      "icon": "🛡️"
     }
   },
 

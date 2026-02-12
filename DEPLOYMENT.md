@@ -66,12 +66,14 @@ supabase functions deploy stripe --project-ref $SUPABASE_PROJECT_REF
 # Deploy Flutterwave
 supabase functions deploy flutterwave --project-ref $SUPABASE_PROJECT_REF 
 # Deploy SaySwitch
-supabase functions deploy sayswitch --project-ref $SUPABASE_PROJECT_REF ```
+supabase functions deploy sayswitch --project-ref $SUPABASE_PROJECT_REF 
+```
 
 ### Deploy All at Once
 
 ```bash
-supabase functions deploy --project-ref $SUPABASE_PROJECT_REF ```
+supabase functions deploy --project-ref $SUPABASE_PROJECT_REF 
+```
 
 ## Standardized Function Contract
 
@@ -216,7 +218,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/flutterwave" \
 # SaySwitch: Get balance
 curl -X POST "$SUPABASE_URL/functions/v1/sayswitch" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-  -H "Content-Type": "application/json" \
+  -H "Content-Type: application/json" \
   -d '{"action": "get_balance"}'
 ```
 

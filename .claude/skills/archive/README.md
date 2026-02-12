@@ -1,6 +1,6 @@
 # Archived Skill Drafts
 
-These files are legacy, pre-skill-folder drafts that were replaced by structured skills under `/Users/seyederick/onasis-gateway/.claude/skills/`.
+These files are legacy, pre-skill-folder drafts that were replaced by structured skills under `<repo-root>/.claude/skills/`.
 
 Kept for historical reference and content comparison. Do not edit or use directly.
 

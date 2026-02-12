@@ -200,10 +200,20 @@ memory_health_check({
 ### Pattern 1: Session Start - Recall & Inject
 
 ```javascript
+const { MemoryIntelligenceClient } = require('./lib/memory-sdk/lanonasis-memory-sdk.js');
+
 // On session start, recall relevant patterns
 async function onSessionStart(context) {
+  const apiUrl = process.env.LANONASIS_API_URL;
+  const apiKey = process.env.LANONASIS_API_KEY;
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('LANONASIS_API_URL and LANONASIS_API_KEY are required to initialize MemoryIntelligenceClient');
+  }
+
   const client = new MemoryIntelligenceClient({
-    apiKey: process.env.LANONASIS_API_KEY,
+    apiUrl,
+    apiKey,
     processingMode: 'offline-fallback',  // Local-first!
     enableCache: true
   });
@@ -235,52 +245,86 @@ ${insights.data.insights
 ### Pattern 2: Session End - Record Successful Pattern
 
 ```javascript
+const { MemoryIntelligenceClient } = require('./lib/memory-sdk/lanonasis-memory-sdk.js');
+
 // On successful session end, record the pattern
 async function onSessionEnd(context, outcome) {
   if (outcome.status !== 'success') return;
 
+  const apiUrl = process.env.LANONASIS_API_URL;
+  const apiKey = process.env.LANONASIS_API_KEY;
+
+  if (!apiUrl || !apiKey) {
+    console.error('Missing LANONASIS_API_URL or LANONASIS_API_KEY; skipping onSessionEnd memory persist');
+    return;
+  }
+
   const client = new MemoryIntelligenceClient({
-    apiKey: process.env.LANONASIS_API_KEY
+    apiUrl,
+    apiKey
   });
 
   // Store as workflow memory for future recall
-  await client.httpClient.post('/memories', {
-    user_id: context.userId,
-    title: `Workflow: ${context.taskSummary}`,
-    content: JSON.stringify({
-      trigger: context.initialPrompt,
-      actions: context.toolsUsed,
-      outcome: outcome.result,
-      duration: outcome.duration
-    }),
-    type: 'workflow',
-    tags: extractTags(context),
-    metadata: {
-      directory: context.workingDirectory,
-      project_type: context.projectType,
-      confidence: outcome.userSatisfaction || 0.7
-    }
-  });
+  try {
+    await client.httpClient.post('/memories', {
+      user_id: context.userId,
+      title: `Workflow: ${context.taskSummary}`,
+      content: JSON.stringify({
+        trigger: context.initialPrompt,
+        actions: context.toolsUsed,
+        outcome: outcome.result,
+        duration: outcome.duration
+      }),
+      type: 'workflow',
+      tags: extractTags(context),
+      metadata: {
+        directory: context.workingDirectory,
+        project_type: context.projectType,
+        confidence: outcome.userSatisfaction || 0.7
+      }
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('onSessionEnd: failed to persist workflow memory', { message: msg });
+  }
 }
 ```
 
 ### Pattern 3: Real-Time Pattern Matching
 
 ```javascript
+const { MemoryIntelligenceClient } = require('./lib/memory-sdk/lanonasis-memory-sdk.js');
+
 // During execution, match current action to past patterns
 async function matchPattern(currentAction) {
+  const apiUrl = process.env.LANONASIS_API_URL;
+  const apiKey = process.env.LANONASIS_API_KEY;
+
+  if (!apiUrl || !apiKey) {
+    console.error('Missing LANONASIS_API_URL or LANONASIS_API_KEY; matchPattern returning empty result');
+    return [];
+  }
+
   const client = new MemoryIntelligenceClient({
-    apiKey: process.env.LANONASIS_API_KEY,
+    apiUrl,
+    apiKey,
     processingMode: 'offline-fallback'
   });
 
   // Find related workflows
-  const related = await client.findRelated({
-    memoryId: currentAction.contextMemoryId,
-    userId: currentAction.userId,
-    limit: 5,
-    similarityThreshold: 0.75
-  });
+  let related;
+  try {
+    related = await client.findRelated({
+      memoryId: currentAction.contextMemoryId,
+      userId: currentAction.userId,
+      limit: 5,
+      similarityThreshold: 0.75
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('matchPattern: client.findRelated failed', { message: msg });
+    return [];
+  }
 
   // Return matching patterns for guidance
   return related.data.related_memories.map(m => ({
@@ -328,8 +372,14 @@ async function matchPattern(currentAction) {
 
 ### Pattern Recall
 ```javascript
+// Required env vars for proper initialization:
+// export LANONASIS_API_URL="https://api.lanonasis.com/api/v1"
+// export LANONASIS_API_KEY="lano_xxx"
+//
 // MUST use offline-fallback for recall operations
 const client = new MemoryIntelligenceClient({
+  apiUrl: process.env.LANONASIS_API_URL,
+  apiKey: process.env.LANONASIS_API_KEY,
   processingMode: 'offline-fallback',
   enableCache: true,
   cacheTTL: 300000  // 5 minutes
@@ -482,18 +532,16 @@ If behavior patterns cause issues:
    }
    ```
 
-## Evolution Roadmap
+## Evolution Roadmap (Tool Availability)
 
-The `@lanonasis/mem-intel-sdk` v2.0 should add these tools:
+| Tool | Purpose | Availability |
+|------|---------|--------------|
+| `behavior_record` | Store workflow patterns | Current |
+| `behavior_recall` | Query patterns for context | Current |
+| `behavior_suggest` | Predict next actions | Current |
+| `behavior_prune` | Remove stale patterns | Planned (v2.0+) |
 
-| Tool | Purpose | Priority |
-|------|---------|----------|
-| `behavior_record` | Store workflow patterns | High |
-| `behavior_recall` | Query patterns for context | High |
-| `behavior_suggest` | Predict next actions | Medium |
-| `behavior_prune` | Remove stale patterns | Low |
-
-These will complement the existing analysis tools to complete the behavior learning cycle.
+These tools complement the existing analysis tools to complete the behavior learning cycle.
 ---
 name: behavior-memory-integration
 description: Guidance for behavior pattern capture, recall, and suggestion using the Lanonasis Enterprise MCP server. Use when implementing workflow memory, behavior tools, memory analytics, or integrating behavior patterns with MCP memory and intelligence tools.
