@@ -27,7 +27,7 @@ class NeonMCPBridge {
     this.neonProcess = null;
     this.isConnected = false;
     this.tools = [];
-    this.apiKey = process.env.NEON_API_KEY || '<SET_NEON_API_KEY>';
+    this.apiKey = process.env.NEON_API_KEY || null;
 
     // Initialize tools immediately (don't wait for server)
     this.discoverTools();
@@ -36,6 +36,10 @@ class NeonMCPBridge {
 
   async startNeonServer() {
     try {
+      if (!this.apiKey) {
+        throw new Error('NEON_API_KEY environment variable is required to start Neon MCP bridge');
+      }
+
       // Start Neon MCP server as child process
       this.neonProcess = spawn('npx', [
         '-y',
