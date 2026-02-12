@@ -10,8 +10,15 @@
 
 import { successResponse, errorResponse, corsResponse } from '../_shared/response.ts';
 
+// Secret (server-side) key used for backend API calls.
+// Prefer SAYSWITCH_API_KEY; keep SWS_API_KEY as a backwards-compat fallback.
 const SAYSWITCH_API_KEY = Deno.env.get('SAYSWITCH_API_KEY') || Deno.env.get('SWS_API_KEY');
-const SAYSWITCH_BASE_URL = 'https://api.sayswitch.com/v1';
+
+// Allow env override, defaulting to the currently reachable base.
+// Historical base `https://api.sayswitch.com/v1` has been observed to fail TLS (unrecognized_name)
+// in some environments; the merchant stack uses the backendapi.sayswitchgroup.com host.
+const SAYSWITCH_BASE_URL =
+  Deno.env.get('SAYSWITCH_BASE_URL') || 'https://backendapi.sayswitchgroup.com/api/msw';
 
 interface SaySwitchRequest {
   action: string;
