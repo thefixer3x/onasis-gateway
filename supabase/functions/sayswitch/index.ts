@@ -85,7 +85,8 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('transaction_id or reference is required');
     }
 
-    const identifier = transaction_id || reference;
+    // URL encode to prevent path injection
+    const identifier = encodeURIComponent(transaction_id || reference);
     return await callSaySwitchAPI(`/transactions/${identifier}`, 'GET');
   },
 
@@ -129,10 +130,15 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_billers: async (params) => {
     const { category, page = 1, per_page = 20 } = params;
 
-    let query = `?page=${page}&per_page=${per_page}`;
-    if (category) query += `&category=${category}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
+    });
 
-    return await callSaySwitchAPI(`/billers${query}`, 'GET');
+    if (category) queryParams.append('category', category);
+
+    return await callSaySwitchAPI(`/billers?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -160,10 +166,12 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   get_data_plans: async (params) => {
     const { network } = params;
 
-    let query = '';
-    if (network) query = `?network=${network}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams();
+    if (network) queryParams.append('network', network);
 
-    return await callSaySwitchAPI(`/data/plans${query}`, 'GET');
+    const query = queryParams.toString();
+    return await callSaySwitchAPI(`/data/plans${query ? '?' + query : ''}`, 'GET');
   },
 
   /**
@@ -221,12 +229,17 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_transactions: async (params) => {
     const { from, to, type, page = 1, per_page = 20 } = params;
 
-    let query = `?page=${page}&per_page=${per_page}`;
-    if (from) query += `&from=${from}`;
-    if (to) query += `&to=${to}`;
-    if (type) query += `&type=${type}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
+    });
 
-    return await callSaySwitchAPI(`/transactions${query}`, 'GET');
+    if (from) queryParams.append('from', from);
+    if (to) queryParams.append('to', to);
+    if (type) queryParams.append('type', type);
+
+    return await callSaySwitchAPI(`/transactions?${queryParams.toString()}`, 'GET');
   },
 
   /**

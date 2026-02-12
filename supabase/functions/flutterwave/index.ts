@@ -81,11 +81,15 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('amount and email are required');
     }
 
+    if (!redirect_url) {
+      throw new Error('redirect_url is required for security. Do not use default redirect URLs.');
+    }
+
     const payload: any = {
       tx_ref: tx_ref || generateTxRef(),
       amount,
       currency,
-      redirect_url: redirect_url || 'https://webhook.site',
+      redirect_url,
       payment_options,
       customer: customer || {
         email,
@@ -111,7 +115,8 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('transaction_id or tx_ref is required');
     }
 
-    const identifier = transaction_id || tx_ref;
+    // URL encode to prevent path injection
+    const identifier = encodeURIComponent(transaction_id || tx_ref);
     return await callFlutterwaveAPI(`/transactions/${identifier}/verify`, 'GET');
   },
 
@@ -143,7 +148,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('transaction_id is required');
     }
 
-    return await callFlutterwaveAPI(`/transactions/${transaction_id}`, 'GET');
+    // URL encode to prevent path injection
+    const encodedId = encodeURIComponent(transaction_id);
+    return await callFlutterwaveAPI(`/transactions/${encodedId}`, 'GET');
   },
 
   /**
@@ -152,11 +159,16 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_transactions: async (params) => {
     const { from, to, page = 1, per_page = 20 } = params;
 
-    let query = `?page=${page}&per_page=${per_page}`;
-    if (from) query += `&from=${from}`;
-    if (to) query += `&to=${to}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
+    });
 
-    return await callFlutterwaveAPI(`/transactions${query}`, 'GET');
+    if (from) queryParams.append('from', from);
+    if (to) queryParams.append('to', to);
+
+    return await callFlutterwaveAPI(`/transactions?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -247,7 +259,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('card_id is required');
     }
 
-    return await callFlutterwaveAPI(`/virtual-cards/${card_id}`, 'GET');
+    // URL encode to prevent path injection
+    const encodedId = encodeURIComponent(card_id);
+    return await callFlutterwaveAPI(`/virtual-cards/${encodedId}`, 'GET');
   },
 
   /**
@@ -256,7 +270,13 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_virtual_cards: async (params) => {
     const { page = 1, per_page = 20 } = params;
 
-    return await callFlutterwaveAPI(`/virtual-cards?page=${page}&per_page=${per_page}`, 'GET');
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
+    });
+
+    return await callFlutterwaveAPI(`/virtual-cards?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -298,7 +318,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('transfer_id is required');
     }
 
-    return await callFlutterwaveAPI(`/transfers/${transfer_id}`, 'GET');
+    // URL encode to prevent path injection
+    const encodedId = encodeURIComponent(transfer_id);
+    return await callFlutterwaveAPI(`/transfers/${encodedId}`, 'GET');
   },
 
   /**
@@ -307,7 +329,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_banks: async (params) => {
     const { country = 'NG' } = params;
 
-    return await callFlutterwaveAPI(`/banks/${country}`, 'GET');
+    // URL encode to prevent path injection
+    const encodedCountry = encodeURIComponent(country);
+    return await callFlutterwaveAPI(`/banks/${encodedCountry}`, 'GET');
   },
 
   /**
@@ -332,7 +356,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   get_balance: async (params) => {
     const { currency = 'NGN' } = params;
 
-    return await callFlutterwaveAPI(`/balances/${currency}`, 'GET');
+    // URL encode to prevent path injection
+    const encodedCurrency = encodeURIComponent(currency);
+    return await callFlutterwaveAPI(`/balances/${encodedCurrency}`, 'GET');
   },
 
   /**

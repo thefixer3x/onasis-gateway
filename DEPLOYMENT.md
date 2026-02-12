@@ -8,7 +8,7 @@ This guide covers deploying the standardized Edge Functions for Paystack, Stripe
 
 1. **Supabase CLI** installed (v2.75.0+)
 2. **Supabase Access Token** with format `sbp_...` (Personal Access Token from Supabase Dashboard)
-3. **Project Reference**: `mxtsdgkwzjzlttpotole`
+3. **Project Reference**: Set via `SUPABASE_PROJECT_REF` environment variable
 
 ## Getting Your Supabase Access Token
 
@@ -41,10 +41,10 @@ Before deploying, ensure these secrets are set in your Supabase project:
 Set secrets via Supabase Dashboard or CLI:
 
 ```bash
-supabase secrets set PSTACK_SECRET_KEY_TEST="sk_test_..." --project-ref mxtsdgkwzjzlttpotole
-supabase secrets set STRIPE_SECRET_KEY="sk_test_..." --project-ref mxtsdgkwzjzlttpotole
-supabase secrets set FLW_SECRET_KEY_TEST="FLWSECK_TEST-..." --project-ref mxtsdgkwzjzlttpotole
-supabase secrets set SAYSWITCH_API_KEY="..." --project-ref mxtsdgkwzjzlttpotole
+supabase secrets set PSTACK_SECRET_KEY_TEST="sk_test_..." --project-ref $SUPABASE_PROJECT_REF
+supabase secrets set STRIPE_SECRET_KEY="sk_test_..." --project-ref $SUPABASE_PROJECT_REF
+supabase secrets set FLW_SECRET_KEY_TEST="FLWSECK_TEST-..." --project-ref $SUPABASE_PROJECT_REF
+supabase secrets set SAYSWITCH_API_KEY="..." --project-ref $SUPABASE_PROJECT_REF
 ```
 
 ## Deployment Commands
@@ -53,30 +53,25 @@ supabase secrets set SAYSWITCH_API_KEY="..." --project-ref mxtsdgkwzjzlttpotole
 
 ```bash
 cd /home/user/onasis-gateway
-supabase link --project-ref mxtsdgkwzjzlttpotole
+supabase link --project-ref $SUPABASE_PROJECT_REF
 ```
 
 ### Deploy All Functions
 
 ```bash
 # Deploy Paystack
-supabase functions deploy paystack --project-ref mxtsdgkwzjzlttpotole --no-verify-jwt
-
+supabase functions deploy paystack --project-ref $SUPABASE_PROJECT_REF 
 # Deploy Stripe
-supabase functions deploy stripe --project-ref mxtsdgkwzjzlttpotole --no-verify-jwt
-
+supabase functions deploy stripe --project-ref $SUPABASE_PROJECT_REF 
 # Deploy Flutterwave
-supabase functions deploy flutterwave --project-ref mxtsdgkwzjzlttpotole --no-verify-jwt
-
+supabase functions deploy flutterwave --project-ref $SUPABASE_PROJECT_REF 
 # Deploy SaySwitch
-supabase functions deploy sayswitch --project-ref mxtsdgkwzjzlttpotole --no-verify-jwt
-```
+supabase functions deploy sayswitch --project-ref $SUPABASE_PROJECT_REF ```
 
 ### Deploy All at Once
 
 ```bash
-supabase functions deploy --project-ref mxtsdgkwzjzlttpotole --no-verify-jwt
-```
+supabase functions deploy --project-ref $SUPABASE_PROJECT_REF ```
 
 ## Standardized Function Contract
 
@@ -196,7 +191,7 @@ All Edge Functions follow the same contract:
 
 ```bash
 # Paystack: Initialize transaction
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/paystack" \
+curl -X POST "$SUPABASE_URL/functions/v1/paystack" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -207,21 +202,21 @@ curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/paystack" \
   }'
 
 # Stripe: Get API key info
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/stripe" \
+curl -X POST "$SUPABASE_URL/functions/v1/stripe" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "get_api_key"}'
 
 # Flutterwave: List banks
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/flutterwave" \
+curl -X POST "$SUPABASE_URL/functions/v1/flutterwave" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "list_banks", "country": "NG"}'
 
 # SaySwitch: Get balance
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/sayswitch" \
+curl -X POST "$SUPABASE_URL/functions/v1/sayswitch" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-  -H "Content-Type: application/json" \
+  -H "Content-Type": "application/json" \
   -d '{"action": "get_balance"}'
 ```
 
@@ -229,7 +224,7 @@ curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/sayswitch" \
 
 ```bash
 # All functions support health checks
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/paystack" \
+curl -X POST "$SUPABASE_URL/functions/v1/paystack" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "paystack_health_check"}'
@@ -280,11 +275,11 @@ If a deployment fails or causes issues:
 ```bash
 # Redeploy previous version (if you have the code)
 git checkout <previous-commit>
-supabase functions deploy <function-name> --project-ref mxtsdgkwzjzlttpotole
+supabase functions deploy <function-name> --project-ref $SUPABASE_PROJECT_REF
 
 # Or delete and redeploy
-supabase functions delete <function-name> --project-ref mxtsdgkwzjzlttpotole
-supabase functions deploy <function-name> --project-ref mxtsdgkwzjzlttpotole
+supabase functions delete <function-name> --project-ref $SUPABASE_PROJECT_REF
+supabase functions deploy <function-name> --project-ref $SUPABASE_PROJECT_REF
 ```
 
 ## Next Steps
