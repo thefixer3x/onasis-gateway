@@ -208,25 +208,25 @@ Set these in Supabase Dashboard → Settings → Edge Functions → Secrets.
 
 ```bash
 # Test Paystack
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/paystack" \
+curl -X POST "$SUPABASE_URL/functions/v1/paystack" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "paystack_health_check"}'
 
 # Test Stripe
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/stripe" \
+curl -X POST "$SUPABASE_URL/functions/v1/stripe" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "get_api_key"}'
 
 # Test Flutterwave
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/flutterwave" \
+curl -X POST "$SUPABASE_URL/functions/v1/flutterwave" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "list_banks", "country": "NG"}'
 
 # Test SaySwitch
-curl -X POST "https://mxtsdgkwzjzlttpotole.supabase.co/functions/v1/sayswitch" \
+curl -X POST "$SUPABASE_URL/functions/v1/sayswitch" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "list_banks"}'

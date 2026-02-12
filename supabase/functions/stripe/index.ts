@@ -133,7 +133,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
       throw new Error('card_id is required');
     }
 
-    return await callStripeAPI(`/issuing/cards/${card_id}`, 'GET');
+    // URL encode to prevent path injection
+    const encodedId = encodeURIComponent(card_id);
+    return await callStripeAPI(`/issuing/cards/${encodedId}`, 'GET');
   },
 
   /**
@@ -151,21 +153,26 @@ const actions: Record<string, (params: any) => Promise<any>> = {
     if (spending_controls) payload.spending_controls = spending_controls;
     if (metadata) payload.metadata = metadata;
 
-    return await callStripeAPI(`/issuing/cards/${card_id}`, 'POST', payload);
+    // URL encode to prevent path injection
+    const encodedId = encodeURIComponent(card_id);
+    return await callStripeAPI(`/issuing/cards/${encodedId}`, 'POST', payload);
   },
 
   /**
-   * Get card details (including sensitive data)
+   * Get card details (REMOVED FOR SECURITY)
+   *
+   * This action has been removed to prevent PCI compliance violations.
+   * Exposing card PAN and CVC through an API endpoint creates unnecessary
+   * security risks and broadens PCI scope.
+   *
+   * Use get_card instead for non-sensitive card metadata.
    */
-  get_card_details: async (params) => {
-    const { card_id } = params;
-
-    if (!card_id) {
-      throw new Error('card_id is required');
-    }
-
-    // Expand sensitive details
-    return await callStripeAPI(`/issuing/cards/${card_id}?expand[]=number&expand[]=cvc`, 'GET');
+  get_card_details: async () => {
+    throw new Error(
+      'get_card_details has been removed for security reasons. ' +
+      'Exposing card PAN and CVC violates PCI compliance best practices. ' +
+      'Use get_card for non-sensitive card information.'
+    );
   },
 
   /**
@@ -174,12 +181,13 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   get_transactions: async (params) => {
     const { card_id, limit = 10, starting_after, ending_before } = params;
 
-    let query = `?limit=${limit}`;
-    if (card_id) query += `&card=${card_id}`;
-    if (starting_after) query += `&starting_after=${starting_after}`;
-    if (ending_before) query += `&ending_before=${ending_before}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({ limit: String(limit) });
+    if (card_id) queryParams.append('card', card_id);
+    if (starting_after) queryParams.append('starting_after', starting_after);
+    if (ending_before) queryParams.append('ending_before', ending_before);
 
-    return await callStripeAPI(`/issuing/transactions${query}`, 'GET');
+    return await callStripeAPI(`/issuing/transactions?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -188,11 +196,12 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_cardholders: async (params) => {
     const { limit = 10, starting_after, ending_before } = params;
 
-    let query = `?limit=${limit}`;
-    if (starting_after) query += `&starting_after=${starting_after}`;
-    if (ending_before) query += `&ending_before=${ending_before}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({ limit: String(limit) });
+    if (starting_after) queryParams.append('starting_after', starting_after);
+    if (ending_before) queryParams.append('ending_before', ending_before);
 
-    return await callStripeAPI(`/issuing/cardholders${query}`, 'GET');
+    return await callStripeAPI(`/issuing/cardholders?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -201,13 +210,14 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_cards: async (params) => {
     const { cardholder, limit = 10, starting_after, ending_before, status } = params;
 
-    let query = `?limit=${limit}`;
-    if (cardholder) query += `&cardholder=${cardholder}`;
-    if (starting_after) query += `&starting_after=${starting_after}`;
-    if (ending_before) query += `&ending_before=${ending_before}`;
-    if (status) query += `&status=${status}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({ limit: String(limit) });
+    if (cardholder) queryParams.append('cardholder', cardholder);
+    if (starting_after) queryParams.append('starting_after', starting_after);
+    if (ending_before) queryParams.append('ending_before', ending_before);
+    if (status) queryParams.append('status', status);
 
-    return await callStripeAPI(`/issuing/cards${query}`, 'GET');
+    return await callStripeAPI(`/issuing/cards?${queryParams.toString()}`, 'GET');
   },
 
   /**
@@ -280,12 +290,13 @@ const actions: Record<string, (params: any) => Promise<any>> = {
   list_customers: async (params) => {
     const { limit = 10, starting_after, ending_before, email } = params;
 
-    let query = `?limit=${limit}`;
-    if (starting_after) query += `&starting_after=${starting_after}`;
-    if (ending_before) query += `&ending_before=${ending_before}`;
-    if (email) query += `&email=${email}`;
+    // Use URLSearchParams to safely construct query string
+    const queryParams = new URLSearchParams({ limit: String(limit) });
+    if (starting_after) queryParams.append('starting_after', starting_after);
+    if (ending_before) queryParams.append('ending_before', ending_before);
+    if (email) queryParams.append('email', email);
 
-    return await callStripeAPI(`/customers${query}`, 'GET');
+    return await callStripeAPI(`/customers?${queryParams.toString()}`, 'GET');
   },
 
   /**
