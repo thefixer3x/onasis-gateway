@@ -37,7 +37,7 @@ describe('Phase 4 Adapters', () => {
     expect(payload.transactionAmount).toBe('1000');
   });
 
-  it('CreditAsAServiceAdapter maps kebab tools to client methods', async () => {
+  it('CreditAsAServiceAdapter maps legacy kebab tools to client methods', async () => {
     const client = {
       submitCreditApplication: vi.fn().mockResolvedValue({ success: true }),
       healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
@@ -62,5 +62,58 @@ describe('Phase 4 Adapters', () => {
     await adapter.callTool('credit-health-check', {});
     expect(client.healthCheck).toHaveBeenCalled();
   });
-});
 
+  it('CreditAsAServiceAdapter maps SDK-style contract fields for credit-create-application', async () => {
+    const client = {
+      submitCreditApplication: vi.fn().mockResolvedValue({ success: true }),
+      getCreditApplications: vi.fn().mockResolvedValue({ success: true }),
+      updateApplicationStatus: vi.fn().mockResolvedValue({ success: true }),
+      getCreditAnalytics: vi.fn().mockResolvedValue({ success: true }),
+      performCreditCheck: vi.fn().mockResolvedValue({ success: true }),
+      healthCheck: vi.fn().mockResolvedValue({ status: 'healthy' }),
+    };
+
+    const adapter = new CreditAdapter({ client });
+    await adapter.initialize();
+
+    expect(adapter.tools.find((t) => t.name === 'credit-create-application')).toBeTruthy();
+    expect(adapter.tools.find((t) => t.name === 'credit-list-applications')).toBeTruthy();
+
+    await adapter.callTool('credit-create-application', {
+      userId: 'user-123',
+      requestedAmount: 120000,
+      purpose: 'business',
+      annualIncome: 2400000,
+      requestId: 'req-1',
+    });
+
+    expect(client.submitCreditApplication).toHaveBeenCalledWith(
+      {
+        application_type: 'business',
+        requested_amount: 120000,
+        currency: 'NGN',
+        loan_purpose: 'business',
+        applicant_income: 2400000,
+        user_id: 'user-123',
+        request_id: 'req-1',
+      },
+      {}
+    );
+
+    await adapter.callTool('credit-list-applications', { userId: 'user-123', page: 2, limit: 10 });
+    expect(client.getCreditApplications).toHaveBeenCalledWith(
+      { status: undefined, user_id: 'user-123', page: 2, limit: 10 },
+      {}
+    );
+
+    await adapter.callTool('credit-make-decision', {
+      applicationId: 'app-1',
+      decision: 'approve',
+      reason: 'Good profile',
+    });
+    expect(client.updateApplicationStatus).toHaveBeenCalledWith(
+      { applicationId: 'app-1', status: 'approved', notes: 'Good profile' },
+      {}
+    );
+  });
+});
