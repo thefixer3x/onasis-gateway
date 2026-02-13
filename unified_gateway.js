@@ -83,6 +83,15 @@ const parseCsv = (value) => (value || '')
     .map((entry) => entry.trim())
     .filter(Boolean);
 
+const getHeaderValue = (headers, key) => {
+    if (!headers || typeof headers !== 'object') return '';
+    if (key in headers) return headers[key];
+    const lower = key.toLowerCase();
+    if (lower in headers) return headers[lower];
+    const found = Object.keys(headers).find((name) => name.toLowerCase() === lower);
+    return found ? headers[found] : '';
+};
+
 const allowedOrigins = [
     ...parseCsv(process.env.ALLOWED_ORIGINS),
     ...parseCsv(process.env.CORS_ORIGIN)
@@ -189,11 +198,17 @@ class UnifiedGateway {
         this.versionManager = new VersionManager();
         this.complianceManager = new ComplianceManager();
         this.metricsCollector = new MetricsCollector();
+        this.routePolicyMode = (process.env.GATEWAY_ROUTE_POLICY_MODE || 'warn').toLowerCase();
+        this.centralGatewayBaseUrl = process.env.GATEWAY_PUBLIC_BASE_URL
+            || process.env.CENTRAL_GATEWAY_URL
+            || 'https://gateway.lanonasis.com';
 
         // MCP Server components
         this.adapters = new Map();
         this.adapterRegistry = null;
-        this.abstractedAPI = new AbstractedAPIEndpoints();
+        this.abstractedAPI = new AbstractedAPIEndpoints({
+            getAdapterRegistry: () => this.adapterRegistry
+        });
         this.authBridge = new OnasisAuthBridge({
             authApiUrl: process.env.AUTH_GATEWAY_URL
                 || process.env.ONASIS_AUTH_API_URL
@@ -613,6 +628,113 @@ class UnifiedGateway {
         return `${base}/v1/auth/verify`;
     }
 
+    resolveSupabaseUrl() {
+        const adapter = this.adapters.get('supabase-edge-functions');
+        const adapterUrl =
+            (adapter && adapter.config && adapter.config.supabaseUrl) ||
+            '';
+        const envUrl = process.env.SUPABASE_URL || '';
+        return (adapterUrl || envUrl || '').replace(/\/+$/, '');
+    }
+
+    isValidFunctionSlug(slug) {
+        return typeof slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(slug);
+    }
+
+    getForwardHeadersForSupabaseProxy(req) {
+        const context = this.buildMcpRequestContext(req);
+        const headers = {
+            ...(context.headers || {})
+        };
+
+        if (!headers['X-Request-ID'] && req.id) {
+            headers['X-Request-ID'] = req.id;
+        }
+        if (!headers['X-Project-Scope'] && this.projectScope) {
+            headers['X-Project-Scope'] = this.projectScope;
+        }
+
+        const anonKey = process.env.SUPABASE_ANON_KEY || '';
+        if (!headers.apikey && anonKey) {
+            headers.apikey = anonKey;
+        }
+        if (!headers.Authorization && anonKey) {
+            headers.Authorization = `Bearer ${anonKey}`;
+        }
+
+        return headers;
+    }
+
+    async proxySupabaseFunction(req, res) {
+        await this.ensureAdaptersReady();
+
+        const functionName = req.params.functionName;
+        if (!this.isValidFunctionSlug(functionName)) {
+            return res.status(400).json({
+                error: 'Invalid function name',
+                requestId: req.id
+            });
+        }
+
+        const supabaseUrl = this.resolveSupabaseUrl();
+        if (!supabaseUrl) {
+            return res.status(503).json({
+                error: 'SUPABASE_URL is not configured',
+                requestId: req.id
+            });
+        }
+
+        const targetUrl = new URL(`${supabaseUrl}/functions/v1/${functionName}`);
+        for (const [key, value] of Object.entries(req.query || {})) {
+            if (Array.isArray(value)) {
+                for (const item of value) targetUrl.searchParams.append(key, `${item}`);
+            } else if (value !== undefined && value !== null) {
+                targetUrl.searchParams.set(key, `${value}`);
+            }
+        }
+
+        const method = (req.method || 'POST').toUpperCase();
+        const forwardHeaders = this.getForwardHeadersForSupabaseProxy(req);
+        const requestHeaders = {
+            ...forwardHeaders,
+            'Content-Type': getHeaderValue(req.headers, 'content-type') || 'application/json'
+        };
+        if (getHeaderValue(req.headers, 'accept')) {
+            requestHeaders.Accept = getHeaderValue(req.headers, 'accept');
+        }
+
+        const shouldSendBody = !['GET', 'HEAD'].includes(method);
+        const hasBody = req.body !== undefined && req.body !== null;
+        const body = shouldSendBody
+            ? JSON.stringify(hasBody ? req.body : {})
+            : undefined;
+
+        try {
+            const upstreamResponse = await fetchWithTimeout(targetUrl.toString(), {
+                method,
+                headers: requestHeaders,
+                body
+            }, 30000);
+
+            const contentType = upstreamResponse.headers.get('content-type') || 'application/json';
+            const text = await upstreamResponse.text();
+
+            res.setHeader('X-Gateway-Route', 'central-supabase-proxy');
+            res.setHeader('X-Upstream-Target', 'supabase-edge-function');
+            res.setHeader('X-Upstream-Function', functionName);
+            res.setHeader('Content-Type', contentType);
+
+            return res.status(upstreamResponse.status).send(text);
+        } catch (error) {
+            return res.status(502).json({
+                error: 'Supabase function proxy failed',
+                message: error.message,
+                function: functionName,
+                requestId: req.id
+            });
+        }
+    }
+
     async verifyVpsAuth(req, requireAdmin = true) {
         const authHeader = req.headers.authorization || req.headers.Authorization;
 
@@ -734,6 +856,31 @@ class UnifiedGateway {
                 version: '1.0.0'
             });
         });
+
+        // ==================== CENTRAL ROUTE POLICY ====================
+        this.app.get('/api/v1/gateway/route-policy', async (req, res) => {
+            await this.ensureAdaptersReady();
+            const supabaseUrl = this.resolveSupabaseUrl();
+            res.json({
+                mode: this.routePolicyMode,
+                centralGatewayBaseUrl: this.centralGatewayBaseUrl,
+                proxyRoutes: [
+                    '/functions/v1/:functionName',
+                    '/api/v1/functions/:functionName',
+                    '/mcp (gateway-execute)'
+                ],
+                sourceOfTruth: 'All client/API traffic must enter via central gateway, then route to adapters/upstreams.',
+                upstreams: {
+                    supabaseFunctions: supabaseUrl || null
+                },
+                timestamp: new Date().toISOString()
+            });
+        });
+
+        // Gateway-owned compatibility routes for clients that previously called
+        // Supabase /functions/v1 directly. This keeps central controls in-path.
+        this.app.all('/functions/v1/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
+        this.app.all('/api/v1/functions/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
 
         // ==================== API GATEWAY ROUTES ====================
 
