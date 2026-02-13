@@ -82,6 +82,15 @@
 - **Health aggregation** - Single `/health` endpoint checks all backends
 - **MaaS adapter layer** - Generated from OpenAPI + Direct API route registry
 
+### Non-Negotiable Routing Guardrails
+
+To prevent the exact drift that created the current fragmentation, the route policy is:
+
+1. **Gateway-first entrypoint is mandatory:** all clients and internal consumers call the gateway domain first (`gateway.lanonasis.com` / `api.connectionpoint.tech`), never Supabase public URLs directly.
+2. **Supabase compatibility path stays gateway-owned:** use gateway-managed passthrough (`/functions/v1/:functionName` and `/api/v1/functions/:functionName`) so auth, rate limits, logging, and request tracing stay centralized.
+3. **No silent bypasses:** any new service/adaptor integration must document its gateway route and must not introduce direct client-to-provider or client-to-Supabase shortcuts outside approved exceptions (for example provider webhooks).
+4. **Policy visibility:** gateway exposes route policy status through `GET /api/v1/gateway/route-policy` so rollout checks can verify enforcement mode and upstream mapping.
+
 ---
 
 ## MaaS Onboarding via OpenAPI (Authoritative)
