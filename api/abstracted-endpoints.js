@@ -697,11 +697,30 @@ class AbstractedAPIEndpoints {
 
       // Map operation to the appropriate verification service tool
       const operationMap = {
-        'verify-nin': 'verify-nin',
-        'verify-bvn': 'verify-bvn',
-        'verify-passport': 'verify-passport',
-        'verify-document': 'verify-document',
-        'get-history': 'get-verification-history'
+        // Legacy operations
+        'verify-nin': 'verifyNIN',
+        'verify-bvn': 'verifyBVN',
+        'verify-passport': 'verifyPassport',
+        'verify-document': 'verifyDocument',
+        'get-history': 'getHistory',
+        // Modern operations
+        'verify-identity-document': 'verifyIdentityDocument',
+        'verify-phone-email': 'verifyPhoneEmail',
+        'verify-address': 'verifyAddress',
+        'verify-business-registration': 'verifyBusinessRegistration',
+        'verify-tax-identification': 'verifyTaxIdentification',
+        'verify-bank-account': 'verifyBankAccount',
+        'facial-recognition': 'facialRecognition',
+        'liveness-detection': 'livenessDetection',
+        'age-gender-detection': 'ageGenderDetection',
+        'sanctions-screening': 'sanctionsScreening',
+        'pep-screening': 'pepScreening',
+        'adverse-media-screening': 'adverseMediaScreening',
+        'criminal-background-check': 'criminalBackgroundCheck',
+        'employment-history-check': 'employmentHistoryCheck',
+        'get-verification-status': 'getVerificationStatus',
+        'list-supported-countries': 'listSupportedCountries',
+        'get-verification-providers': 'getVerificationProviders'
       };
 
       const toolName = operationMap[operation] || operation;
