@@ -252,6 +252,34 @@
       "category": "payments"
     },
     {
+      "id": "providus-bank",
+      "name": "Providus Bank API",
+      "description": "Nigerian banking and transfer services",
+      "type": "live",
+      "source": "external",
+      "adapterPath": "./services/providus-bank/providus-adapter.js",
+      "executable": true,
+      "enabled": true,
+      "toolCount": 5,
+      "authType": "bearer",
+      "category": "banking",
+      "supportedCountries": ["NG"]
+    },
+    {
+      "id": "credit-as-a-service",
+      "name": "Credit as a Service",
+      "description": "Comprehensive credit management and lending platform",
+      "type": "live",
+      "source": "internal",
+      "adapterPath": "./services/credit-as-a-service/credit-adapter.js",
+      "executable": true,
+      "enabled": true,
+      "toolCount": 7,
+      "authType": "bearer",
+      "category": "financial",
+      "supportedCountries": ["NG", "global"]
+    },
+    {
       "id": "ngrok-examples",
       "name": "ngrok Examples",
       "description": "ngrok integration examples",
