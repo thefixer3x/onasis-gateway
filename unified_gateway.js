@@ -571,6 +571,7 @@ class UnifiedGateway {
     buildMcpRequestContext(req) {
         const authorization = req.headers.authorization || req.headers.Authorization || '';
         const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key'] || '';
+        const clientId = req.headers['client-id'] || req.headers['x-client-id'] || '';
         const projectScope = req.headers['x-project-scope'] || req.headers['X-Project-Scope'] || this.projectScope || '';
         const requestId = req.id || '';
         const sessionId = req.headers['x-session-id'] || req.headers['X-Session-ID'] || '';
@@ -579,6 +580,7 @@ class UnifiedGateway {
         const headers = {
             ...(authorization && { Authorization: authorization }),
             ...(apiKey && { 'X-API-Key': apiKey }),
+            ...(clientId && { 'client-id': clientId }),
             ...(apikey && { apikey }),
             ...(projectScope && { 'X-Project-Scope': projectScope }),
             ...(requestId && { 'X-Request-ID': requestId }),
@@ -588,6 +590,7 @@ class UnifiedGateway {
         return {
             authorization,
             apiKey,
+            clientId,
             projectScope,
             requestId,
             sessionId,
