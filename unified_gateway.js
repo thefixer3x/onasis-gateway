@@ -224,6 +224,8 @@ class UnifiedGateway {
         this.aiRouterUrl = process.env.AI_ROUTER_URL || '';
         this.aiRouterTimeoutMs = parseInt(process.env.AI_ROUTER_TIMEOUT_MS || '12000', 10);
         this.authGatewayTimeoutMs = parseInt(process.env.AUTH_GATEWAY_TIMEOUT_MS || '8000', 10);
+        this.enforceIdentityVerification = (process.env.GATEWAY_ENFORCE_IDENTITY_VERIFICATION || 'true') === 'true';
+        this.allowInsecureAuthBypass = (process.env.GATEWAY_ALLOW_INSECURE_AUTH_BYPASS || 'false') === 'true';
         this.supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
         this.supabaseAiChatUrl = process.env.SUPABASE_AI_CHAT_URL
             || (process.env.SUPABASE_URL
@@ -434,6 +436,25 @@ class UnifiedGateway {
         const catalogAdapters = Array.isArray(this.serviceCatalog?.mcpAdapters) && this.serviceCatalog.mcpAdapters.length > 0
             ? this.serviceCatalog.mcpAdapters.filter(adapter => adapter.enabled !== false)
             : buildDefaultMcpCatalog();
+        const seenAdapterIds = new Set();
+        const duplicateAdapterIds = new Set();
+        const uniqueCatalogAdapters = [];
+
+        for (const entry of catalogAdapters) {
+            if (!entry || !entry.id) continue;
+            if (seenAdapterIds.has(entry.id)) {
+                duplicateAdapterIds.add(entry.id);
+                continue;
+            }
+            seenAdapterIds.add(entry.id);
+            uniqueCatalogAdapters.push(entry);
+        }
+
+        if (duplicateAdapterIds.size > 0) {
+            console.warn(
+                `⚠️ Duplicate adapter IDs detected in catalog: ${Array.from(duplicateAdapterIds).join(', ')}. Keeping first occurrence only.`
+            );
+        }
 
         const adapterFactories = {
             'supabase-edge-functions': async ({ gateway }) => {
@@ -497,7 +518,7 @@ class UnifiedGateway {
             supabase: async (context) => adapterFactories['supabase-edge-functions'](context)
         };
 
-        for (const adapterEntry of catalogAdapters) {
+        for (const adapterEntry of uniqueCatalogAdapters) {
             if (!adapterEntry || !adapterEntry.id) continue;
 
             const factory =
@@ -665,8 +686,105 @@ class UnifiedGateway {
         return headers;
     }
 
+    async verifyRequestIdentity(req) {
+        if (!this.enforceIdentityVerification) {
+            return { ok: true, method: 'disabled' };
+        }
+
+        const context = this.buildMcpRequestContext(req);
+        const hasCredential = Boolean(
+            context.authorization ||
+            context.apiKey ||
+            (context.headers && context.headers.apikey)
+        );
+
+        if (!hasCredential) {
+            return { ok: false, status: 401, error: 'Authentication required' };
+        }
+
+        const verifyUrl = this.buildAuthVerifyUrl();
+        if (!verifyUrl) {
+            if (this.allowInsecureAuthBypass) {
+                return { ok: true, method: 'insecure_bypass' };
+            }
+            return { ok: false, status: 503, error: 'Auth gateway URL not configured' };
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-Project-Scope': context.projectScope || this.projectScope,
+            ...(context.requestId && { 'X-Request-ID': context.requestId }),
+            ...(context.authorization && { Authorization: context.authorization }),
+            ...(context.apiKey && { 'X-API-Key': context.apiKey }),
+            ...(context.headers?.apikey && { apikey: context.headers.apikey })
+        };
+
+        try {
+            const response = await fetchWithTimeout(
+                verifyUrl,
+                {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({})
+                },
+                this.authGatewayTimeoutMs
+            );
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                return {
+                    ok: false,
+                    status: response.status || 401,
+                    error: data.error || 'Unauthorized'
+                };
+            }
+
+            return {
+                ok: true,
+                method: 'auth_gateway',
+                payload: data.payload || data.user || data
+            };
+        } catch (error) {
+            if (this.allowInsecureAuthBypass) {
+                return { ok: true, method: 'insecure_bypass' };
+            }
+            return { ok: false, status: 502, error: 'Auth gateway unavailable' };
+        }
+    }
+
+    async enforceIdentity(req, res, options = {}) {
+        const { asJsonRpc = false, rpcId = null } = options;
+        const auth = await this.verifyRequestIdentity(req);
+        if (auth.ok) {
+            req.authContext = auth;
+            if (auth.method === 'insecure_bypass') {
+                res.setHeader('X-Gateway-Warning', 'identity-verification-bypassed');
+            }
+            return true;
+        }
+
+        if (asJsonRpc) {
+            res.status(auth.status || 401).json({
+                jsonrpc: '2.0',
+                error: { code: -32001, message: auth.error || 'Unauthorized' },
+                id: rpcId
+            });
+            return false;
+        }
+
+        res.status(auth.status || 401).json({
+            error: auth.error || 'Unauthorized',
+            requestId: req.id
+        });
+        return false;
+    }
+
     async proxySupabaseFunction(req, res) {
         await this.ensureAdaptersReady();
+
+        if (!(await this.enforceIdentity(req, res))) {
+            return;
+        }
 
         const functionName = req.params.functionName;
         if (!this.isValidFunctionSlug(functionName)) {
@@ -1140,6 +1258,10 @@ class UnifiedGateway {
             const endpoint = req.path.substring(1); // Remove leading slash
 
             try {
+                if (!(await this.enforceIdentity(req, res))) {
+                    return;
+                }
+
                 const service = this.services.get(serviceName);
                 if (!service) {
                     return res.status(404).json({
@@ -1259,6 +1381,16 @@ class UnifiedGateway {
 
             if (method === 'ping') {
                 return res.json({ jsonrpc: '2.0', result: {}, id });
+            }
+
+            if (method === 'tools/call') {
+                const allowed = await this.enforceIdentity(req, res, {
+                    asJsonRpc: true,
+                    rpcId: req.body.id
+                });
+                if (!allowed) {
+                    return;
+                }
             }
 
             // ============ LAZY MODE: 5 Meta-Tools ============
