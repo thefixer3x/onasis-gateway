@@ -171,6 +171,25 @@ async recordBehavior(params: BehaviorRecordParams): Promise<{
 }
 
 /**
+ * Private helper: increment usage for an existing pattern
+ */
+private async updateBehaviorUsage(patternId: string): Promise<{
+  data: WorkflowPattern;
+  usage?: UsageInfo;
+}> {
+  const response = await this.httpClient.postEnhanced(
+    '/intelligence/behavior/update-usage',
+    { pattern_id: patternId }
+  );
+
+  if (response.error) {
+    throw new DatabaseError(response.error.message);
+  }
+
+  return { data: response.data, usage: response.usage };
+}
+
+/**
  * Recall relevant behavior patterns for current context
  * Uses local-first approach with cached embeddings
  */
@@ -254,9 +273,21 @@ private async localBehaviorSearch(params: BehaviorRecallParams): Promise<Behavio
 
   // Semantic search on trigger text (using cached embeddings)
   const taskEmbedding = await this.getEmbedding(params.context.currentTask);
-  const scored = contextMatches.map((p: WorkflowPattern) => ({
+  const embeddingDim = Array.isArray(taskEmbedding) ? taskEmbedding.length : 0;
+
+  const validEmbeddingMatches = contextMatches.filter((p: WorkflowPattern) => {
+    return (
+      embeddingDim > 0 &&
+      Array.isArray(p.trigger_embedding) &&
+      p.trigger_embedding.length === embeddingDim
+    );
+  });
+
+  const skippedInvalidEmbeddings = contextMatches.length - validEmbeddingMatches.length;
+
+  const scored = validEmbeddingMatches.map((p: WorkflowPattern) => ({
     pattern: p,
-    similarity_score: cosineSimilarity(taskEmbedding, p.trigger_embedding || []),
+    similarity_score: cosineSimilarity(taskEmbedding, p.trigger_embedding),
     relevance_reason: `Matched trigger: "${p.trigger.substring(0, 50)}..."`
   }));
 
@@ -268,7 +299,8 @@ private async localBehaviorSearch(params: BehaviorRecallParams): Promise<Behavio
 
   return {
     patterns: filtered,
-    total_found: filtered.length
+    total_found: filtered.length,
+    skipped_invalid_embeddings: skippedInvalidEmbeddings
   };
 }
 
@@ -505,6 +537,9 @@ server.registerTool(
 -- Migration: Add behavior_patterns table
 -- Version: 2.0.0
 
+-- pgvector is required for VECTOR(1536) and ivfflat indexes
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Behavior patterns table for workflow learning
 CREATE TABLE IF NOT EXISTS public.behavior_patterns (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -590,6 +625,57 @@ BEGIN
   WHERE id = pattern_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Find similar patterns by user + vector similarity (used by edge functions)
+CREATE OR REPLACE FUNCTION find_similar_patterns(
+  query_embedding vector(1536),
+  match_threshold float,
+  match_count int,
+  p_user_id uuid
+)
+RETURNS TABLE (
+  id uuid,
+  user_id uuid,
+  trigger text,
+  trigger_embedding vector(1536),
+  context jsonb,
+  actions jsonb,
+  final_outcome text,
+  confidence float,
+  use_count int,
+  last_used_at timestamptz,
+  created_at timestamptz,
+  updated_at timestamptz,
+  similarity float
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    bp.id,
+    bp.user_id,
+    bp.trigger,
+    bp.trigger_embedding,
+    bp.context,
+    bp.actions,
+    bp.final_outcome,
+    bp.confidence,
+    bp.use_count,
+    bp.last_used_at,
+    bp.created_at,
+    bp.updated_at,
+    (1 - (bp.trigger_embedding <=> query_embedding))::float AS similarity
+  FROM public.behavior_patterns bp
+  WHERE bp.user_id = p_user_id
+    AND bp.trigger_embedding IS NOT NULL
+    AND (1 - (bp.trigger_embedding <=> query_embedding)) >= match_threshold
+  ORDER BY bp.trigger_embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$;
 ```
 
 ### 5. API Routes (Edge Functions)

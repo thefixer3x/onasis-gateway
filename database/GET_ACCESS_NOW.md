@@ -25,10 +25,10 @@ After script runs, you'll see output showing:
 ```
 ✅ SUPERADMIN USER CREATED:
 Email: admin@lanonasis.com
-Password: Admin@2024!
+Password: <SET_SECURE_PASSWORD>
 
 ✅ MASTER API KEY CREATED:
-Key: lano_master_key_2024
+Key: <SET_MASTER_API_KEY>
 Access: superadmin (all services)
 Expires: Never
 ```
@@ -54,7 +54,7 @@ Expires: Never
 ```
 URL: https://your-dashboard-url.com/login
 Email: admin@lanonasis.com
-Password: Admin@2024!
+Password: <SET_SECURE_PASSWORD>
 
 ⚠️ CHANGE PASSWORD IMMEDIATELY AFTER FIRST LOGIN!
 ```
@@ -63,7 +63,7 @@ Password: Admin@2024!
 ```bash
 # Test MCP Core
 curl -X POST http://localhost:3001/tools/core_create_memory \
-  -H "X-API-Key: lano_master_key_2024" \
+  -H "X-API-Key: <SET_MASTER_API_KEY>" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "First Memory!",
@@ -73,7 +73,7 @@ curl -X POST http://localhost:3001/tools/core_create_memory \
 
 # Test any service - this key works EVERYWHERE
 curl -X GET http://localhost:3001/health \
-  -H "X-API-Key: lano_master_key_2024"
+  -H "X-API-Key: <SET_MASTER_API_KEY>"
 ```
 
 ---
@@ -143,7 +143,7 @@ pm2 logs auth --lines 50
 ```sql
 SELECT id, name, api_key_value, access_level, is_active
 FROM api_keys
-WHERE api_key_value = 'lano_master_key_2024';
+WHERE api_key_value = '<SET_MASTER_API_KEY>';
 ```
 
 **Expected**: One row with access_level='superadmin', is_active=true
@@ -158,7 +158,7 @@ INSERT INTO api_keys (
 SELECT
     gen_random_uuid(),
     'SUPERADMIN MASTER KEY',
-    'lano_master_key_2024',
+    '<SET_MASTER_API_KEY>',
     'superadmin',
     'all',
     true,

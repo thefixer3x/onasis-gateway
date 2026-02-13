@@ -1,0 +1,4 @@
+interface:
+  display_name: "Behavior Memory Integration"
+  short_description: "Workflow memory capture and recall"
+  default_prompt: "Use mem-intel SDK to store and recall workflow patterns with local-first behavior."
