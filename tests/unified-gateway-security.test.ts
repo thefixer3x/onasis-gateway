@@ -107,4 +107,15 @@ describe('UnifiedGateway security middleware', () => {
     expect(res.body.message).toBe('boom');
     expect(res.body.requestId).toBeDefined();
   });
+
+  it('exposes central route policy details', async () => {
+    const gateway = buildGateway();
+    const res = await request(gateway.app).get('/api/v1/gateway/route-policy');
+
+    expect(res.status).toBe(200);
+    expect(res.body.centralGatewayBaseUrl).toBeDefined();
+    expect(Array.isArray(res.body.proxyRoutes)).toBe(true);
+    expect(res.body.proxyRoutes).toContain('/functions/v1/:functionName');
+    expect(res.body.proxyRoutes).toContain('/api/v1/functions/:functionName');
+  });
 });
