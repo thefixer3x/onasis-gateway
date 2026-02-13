@@ -22,6 +22,17 @@
     "background_checks",
     "risk_assessment"
   ],
+  "enabledTools": [
+    "verify_identity_document",
+    "verify_phone_email",
+    "verify_address",
+    "verify_business_registration",
+    "get_verification_status",
+    "list_supported_countries",
+    "get_verification_providers",
+    "facial_recognition",
+    "liveness_detection"
+  ],
   "authentication": {
     "type": "api_key",
     "config": {

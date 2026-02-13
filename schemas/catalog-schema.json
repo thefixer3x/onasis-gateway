@@ -190,6 +190,11 @@
           "type": "boolean",
           "default": false,
           "description": "Whether this adapter can execute real operations (has callTool)"
+        },
+        "enabledTools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "If set, only these tool names are exposed (e.g. enable ~52% of verification tools); omit to expose all"
         }
       }
     },

@@ -61,6 +61,9 @@ export interface AdapterConfig {
   // Additional service-specific configs
   merchantId?: string;
   webhookSecret?: string;
+
+  /** If set, only these tool names are exposed (e.g. enable ~52% of verification tools); omit to expose all */
+  enabledTools?: string[];
 }
 
 export interface AdapterStatus {
