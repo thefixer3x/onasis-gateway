@@ -68,7 +68,8 @@ class VendorAbstractionLayer {
               tool: 'initialize-transaction',
               transform: (input) => ({
                 email: input.email,
-                amount: input.amount * 100, // Convert to kobo
+                // Keep amount in major unit; live edge/client layers handle provider conversion.
+                amount: input.amount,
                 currency: input.currency,
                 reference: input.reference || `ref_${Date.now()}`,
                 callback_url: process.env.CALLBACK_URL
@@ -94,7 +95,11 @@ class VendorAbstractionLayer {
             },
             verifyTransaction: {
               tool: 'verify-payment',
-              transform: (input) => ({ tx_ref: input.reference })
+              transform: (input) => ({
+                // Support both common keys while contracts are being normalized.
+                transaction_id: input.reference,
+                tx_ref: input.reference
+              })
             }
           }
         },
@@ -803,10 +808,119 @@ class VendorAbstractionLayer {
             offset: { type: 'integer', minimum: 0, default: 0 },
             type: { type: 'string', required: false }
           }
+        },
+        verifyIdentityDocument: {
+          schema: {
+            document_type: { type: 'string', required: true },
+            document_number: { type: 'string', required: true },
+            customer_id: { type: 'string', required: true },
+            country: { type: 'string', required: false }
+          }
+        },
+        verifyPhoneEmail: {
+          schema: {
+            customer_id: { type: 'string', required: true },
+            phone_number: { type: 'string', required: false },
+            email: { type: 'string', required: false },
+            send_otp: { type: 'boolean', required: false },
+            otp_code: { type: 'string', required: false }
+          }
+        },
+        verifyAddress: {
+          schema: {
+            address: { type: 'string', required: true },
+            proof_document: { type: 'string', required: true },
+            customer_id: { type: 'string', required: true }
+          }
+        },
+        verifyBusinessRegistration: {
+          schema: {
+            business_name: { type: 'string', required: true },
+            registration_number: { type: 'string', required: true },
+            country: { type: 'string', required: false }
+          }
+        },
+        verifyTaxIdentification: {
+          schema: {
+            tax_id: { type: 'string', required: true },
+            business_name: { type: 'string', required: true },
+            country: { type: 'string', required: false }
+          }
+        },
+        verifyBankAccount: {
+          schema: {
+            account_number: { type: 'string', required: true },
+            bank_code: { type: 'string', required: true },
+            business_name: { type: 'string', required: true }
+          }
+        },
+        facialRecognition: {
+          schema: {
+            image1: { type: 'string', required: true },
+            image2: { type: 'string', required: true }
+          }
+        },
+        livenessDetection: {
+          schema: {
+            image: { type: 'string', required: true },
+            check_type: { type: 'string', required: false }
+          }
+        },
+        ageGenderDetection: {
+          schema: {
+            image: { type: 'string', required: true }
+          }
+        },
+        sanctionsScreening: {
+          schema: {
+            full_name: { type: 'string', required: true },
+            country: { type: 'string', required: false }
+          }
+        },
+        pepScreening: {
+          schema: {
+            full_name: { type: 'string', required: true },
+            country: { type: 'string', required: true }
+          }
+        },
+        adverseMediaScreening: {
+          schema: {
+            full_name: { type: 'string', required: true },
+            business_name: { type: 'string', required: false }
+          }
+        },
+        criminalBackgroundCheck: {
+          schema: {
+            full_name: { type: 'string', required: true },
+            date_of_birth: { type: 'string', required: true }
+          }
+        },
+        employmentHistoryCheck: {
+          schema: {
+            full_name: { type: 'string', required: true },
+            employers: { type: 'object', required: false }
+          }
+        },
+        getVerificationStatus: {
+          schema: {
+            verification_id: { type: 'string', required: false },
+            reference: { type: 'string', required: false }
+          }
+        },
+        listSupportedCountries: {
+          schema: {
+            service_type: { type: 'string', required: false }
+          }
+        },
+        getVerificationProviders: {
+          schema: {
+            service_type: { type: 'string', required: false },
+            country: { type: 'string', required: false }
+          }
         }
       },
       vendors: {
-        'verification-service': {
+        prembly: {
           adapter: 'verification-service',
           mappings: {
             verifyNIN: {
@@ -827,6 +941,183 @@ class VendorAbstractionLayer {
             },
             getHistory: {
               tool: 'get-verification-history',
+              transform: (input) => input
+            },
+            verifyIdentityDocument: {
+              tool: 'verify-identity-document',
+              transform: (input) => input
+            },
+            verifyPhoneEmail: {
+              tool: 'verify-phone-email',
+              transform: (input) => input
+            },
+            verifyAddress: {
+              tool: 'verify-address',
+              transform: (input) => input
+            },
+            verifyBusinessRegistration: {
+              tool: 'verify-business-registration',
+              transform: (input) => input
+            },
+            verifyTaxIdentification: {
+              tool: 'verify-tax-identification',
+              transform: (input) => input
+            },
+            verifyBankAccount: {
+              tool: 'verify-bank-account',
+              transform: (input) => input
+            },
+            facialRecognition: {
+              tool: 'facial-recognition',
+              transform: (input) => input
+            },
+            livenessDetection: {
+              tool: 'liveness-detection',
+              transform: (input) => input
+            },
+            ageGenderDetection: {
+              tool: 'age-gender-detection',
+              transform: (input) => input
+            },
+            sanctionsScreening: {
+              tool: 'sanctions-screening',
+              transform: (input) => input
+            },
+            pepScreening: {
+              tool: 'pep-screening',
+              transform: (input) => input
+            },
+            adverseMediaScreening: {
+              tool: 'adverse-media-screening',
+              transform: (input) => input
+            },
+            criminalBackgroundCheck: {
+              tool: 'criminal-background-check',
+              transform: (input) => input
+            },
+            employmentHistoryCheck: {
+              tool: 'employment-history-check',
+              transform: (input) => input
+            },
+            getVerificationStatus: {
+              tool: 'get-verification-status',
+              transform: (input) => input
+            },
+            listSupportedCountries: {
+              tool: 'list-supported-countries',
+              transform: (input) => input
+            },
+            getVerificationProviders: {
+              tool: 'get-verification-providers',
+              transform: (input) => input
+            }
+          }
+        },
+        sourceid: {
+          adapter: 'verification-service',
+          mappings: {
+            verifyNIN: {
+              tool: 'verify-identity-document',
+              transform: (input) => ({
+                ...input,
+                document_type: 'nin',
+                document_number: input.nin || input.document_number,
+                customer_id: input.customer_id || input.nin || input.document_number || 'sourceid-nin'
+              })
+            },
+            verifyBVN: {
+              tool: 'verify-identity-document',
+              transform: (input) => ({
+                ...input,
+                document_type: 'bvn',
+                document_number: input.bvn || input.document_number,
+                customer_id: input.customer_id || input.bvn || input.document_number || 'sourceid-bvn'
+              })
+            },
+            verifyPassport: {
+              tool: 'verify-identity-document',
+              transform: (input) => ({
+                ...input,
+                document_type: 'passport',
+                document_number: input.passportNumber || input.document_number,
+                customer_id: input.customer_id || input.passportNumber || input.document_number || 'sourceid-passport'
+              })
+            },
+            verifyDocument: {
+              tool: 'verify-identity-document',
+              transform: (input) => ({
+                ...input,
+                document_type: input.documentType || input.document_type || 'national_id',
+                document_number: input.documentNumber || input.document_number,
+                customer_id: input.customer_id || input.documentNumber || input.document_number || 'sourceid-document'
+              })
+            },
+            verifyIdentityDocument: {
+              tool: 'verify-identity-document',
+              transform: (input) => input
+            },
+            verifyPhoneEmail: {
+              tool: 'verify-phone-email',
+              transform: (input) => input
+            },
+            verifyAddress: {
+              tool: 'verify-address',
+              transform: (input) => input
+            },
+            verifyBusinessRegistration: {
+              tool: 'verify-business-registration',
+              transform: (input) => input
+            },
+            verifyTaxIdentification: {
+              tool: 'verify-tax-identification',
+              transform: (input) => input
+            },
+            verifyBankAccount: {
+              tool: 'verify-bank-account',
+              transform: (input) => input
+            },
+            facialRecognition: {
+              tool: 'facial-recognition',
+              transform: (input) => input
+            },
+            livenessDetection: {
+              tool: 'liveness-detection',
+              transform: (input) => input
+            },
+            ageGenderDetection: {
+              tool: 'age-gender-detection',
+              transform: (input) => input
+            },
+            sanctionsScreening: {
+              tool: 'sanctions-screening',
+              transform: (input) => input
+            },
+            pepScreening: {
+              tool: 'pep-screening',
+              transform: (input) => input
+            },
+            adverseMediaScreening: {
+              tool: 'adverse-media-screening',
+              transform: (input) => input
+            },
+            criminalBackgroundCheck: {
+              tool: 'criminal-background-check',
+              transform: (input) => input
+            },
+            employmentHistoryCheck: {
+              tool: 'employment-history-check',
+              transform: (input) => input
+            },
+            getVerificationStatus: {
+              tool: 'get-verification-status',
+              transform: (input) => input
+            },
+            listSupportedCountries: {
+              tool: 'list-supported-countries',
+              transform: (input) => input
+            },
+            getVerificationProviders: {
+              tool: 'get-verification-providers',
               transform: (input) => input
             }
           }
