@@ -2,6 +2,8 @@
 
 Use this doc **once** to implement SourceID into your backend and gateway. Plug all ready-built endpoints, then enable only the subset you need (e.g. 52%) via config.
 
+**End-to-end:** If you follow this doc + [ONBOARDING-APPS.md](../docs/ONBOARDING-APPS.md), you get a **working due-diligence service** end-to-end: your apps/SDKs (e.g. [v-secure privacy-sdk](https://github.com/lanonasis/v-secure/tree/main/privacy-sdk)) call the **gateway** (central point); the gateway calls your **backend**; the backend calls **SourceID**. One integration per layer; onboard new projects by giving them gateway URL + API key.
+
 ---
 
 ## 1. SourceID at a glance

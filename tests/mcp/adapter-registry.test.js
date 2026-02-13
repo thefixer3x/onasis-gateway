@@ -113,6 +113,27 @@ describe('AdapterRegistry', () => {
     expect(adapter.toolCount).toBe(3);
   });
 
+  it('register() rejects duplicate adapter IDs to avoid routing conflicts', async () => {
+    const first = {
+      id: 'dup-adapter',
+      tools: [{ name: 'ping', description: 'ping' }],
+      initialize: async function () { /* no-op */ },
+      callTool: async function () { return { ok: true }; }
+    };
+
+    const second = {
+      id: 'dup-adapter',
+      tools: [{ name: 'pong', description: 'pong' }],
+      initialize: async function () { /* no-op */ },
+      callTool: async function () { return { ok: true }; }
+    };
+
+    await registry.register(first);
+    await expect(registry.register(second)).rejects.toMatchObject({
+      code: 'DUPLICATE_ADAPTER_ID'
+    });
+  });
+
   it('register() rejects tool names that mix "-" and "_" separators', async () => {
     const adapter = {
       id: 'bad-adapter',

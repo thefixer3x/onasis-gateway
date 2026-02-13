@@ -18,6 +18,10 @@ const toSnakeAction = (toolName) => (toolName || '').toString().trim().replace(/
 class PaystackAdapter extends BaseMCPAdapter {
   constructor(config = {}) {
     const functionName = config.functionName || 'paystack';
+    const contractMode =
+      config.contractMode ||
+      process.env.PAYSTACK_EDGE_CONTRACT_MODE ||
+      'live-query';
     const client = config.client || new UniversalSupabaseClient({
       serviceName: 'paystack',
       functionName
@@ -32,6 +36,13 @@ class PaystackAdapter extends BaseMCPAdapter {
       client,
       ...config
     });
+
+    this.functionName = functionName;
+    this.contractMode = contractMode;
+    this.liveActionMap = {
+      'initialize-transaction': 'initialize',
+      'verify-transaction': 'verify'
+    };
   }
 
   async initialize() {
@@ -43,7 +54,7 @@ class PaystackAdapter extends BaseMCPAdapter {
         inputSchema: {
           type: 'object',
           properties: {
-            amount: { type: 'integer', minimum: 1, description: 'Payment amount in kobo (NGN)' },
+            amount: { type: 'number', minimum: 1, description: 'Payment amount in major unit (e.g., naira)' },
             email: { type: 'string', format: 'email', description: "Customer's email address" },
             currency: { type: 'string', enum: ['NGN', 'GHS', 'ZAR', 'KES'], default: 'NGN' },
             reference: { type: 'string', description: 'Unique transaction reference' },
@@ -57,7 +68,7 @@ class PaystackAdapter extends BaseMCPAdapter {
             },
             split_code: { type: 'string', description: 'Split payment configuration' },
             subaccount: { type: 'string', description: 'Subaccount code for split payments' },
-            transaction_charge: { type: 'integer', description: 'Transaction charge in kobo' },
+            transaction_charge: { type: 'number', description: 'Optional transaction charge in major unit' },
             bearer: { type: 'string', enum: ['account', 'subaccount'], description: 'Who bears Paystack charges' }
           },
           required: ['amount', 'email']
@@ -82,7 +93,7 @@ class PaystackAdapter extends BaseMCPAdapter {
           properties: {
             authorization_code: { type: 'string', description: 'Authorization code from previous transaction' },
             email: { type: 'string', format: 'email' },
-            amount: { type: 'integer', minimum: 1 },
+            amount: { type: 'number', minimum: 1, description: 'Charge amount in major unit' },
             currency: { type: 'string', default: 'NGN' }
           },
           required: ['authorization_code', 'email', 'amount']
@@ -178,7 +189,7 @@ class PaystackAdapter extends BaseMCPAdapter {
           type: 'object',
           properties: {
             source: { type: 'string', enum: ['balance'], description: 'Transfer source' },
-            amount: { type: 'integer', minimum: 1, description: 'Transfer amount in kobo' },
+            amount: { type: 'number', minimum: 1, description: 'Transfer amount in major unit' },
             recipient: { type: 'string', description: 'Recipient code' },
             reason: { type: 'string', description: 'Transfer reason' },
             currency: { type: 'string', default: 'NGN' },
@@ -203,8 +214,23 @@ class PaystackAdapter extends BaseMCPAdapter {
 
     try {
       const params = (args && typeof args === 'object') ? args : {};
+      const liveAction = this.liveActionMap[toolName];
+
+      // Current deployed Paystack edge function reads `action` from query string.
+      // Keep this as the default contract while preserving action-dispatch fallback.
+      if (this.contractMode === 'live-query' && liveAction) {
+        return await this.client.call(this.functionName, params, {
+          ...context,
+          method: 'POST',
+          params: {
+            ...((context && context.params) || {}),
+            action: liveAction
+          }
+        });
+      }
+
       const payload = { action: toSnakeAction(toolName), ...params };
-      return await this.client.call(payload, context);
+      return await this.client.call(this.functionName, payload, context);
     } catch (error) {
       this._stats.errors++;
       throw error;
