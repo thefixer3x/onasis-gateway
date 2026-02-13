@@ -200,7 +200,7 @@ class CreditAsAServiceClient extends BaseClient {
         }
 
         // Generate reference ID
-        const reference_id = `CAAS-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        const reference_id = `CAAS-${Date.now()}-${Math.random().toString(36).slice(2, 11).toUpperCase()}`;
 
         // Insert application
         const query = `
@@ -378,7 +378,7 @@ class CreditAsAServiceClient extends BaseClient {
         } = params;
 
         // Generate payment reference
-        const payment_reference = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        const payment_reference = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 11).toUpperCase()}`;
 
         const query = `
             INSERT INTO credit.transactions (
