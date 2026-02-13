@@ -393,10 +393,10 @@
       "adapterPath": "./services/verification-service/verification-adapter.js",
       "executable": true,
       "enabled": true,
-      "toolCount": 5,
+      "toolCount": 22,
       "authType": "apikey",
       "category": "identity_verification",
-      "supportedCountries": ["NG", "KE", "GH", "UG", "ZA"]
+      "supportedCountries": ["NG", "KE", "GH", "UG", "ZA", "GLOBAL"]
     },
     {
       "id": "security-service",
