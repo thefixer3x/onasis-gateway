@@ -68,7 +68,8 @@ class VendorAbstractionLayer {
               tool: 'initialize-transaction',
               transform: (input) => ({
                 email: input.email,
-                amount: input.amount * 100, // Convert to kobo
+                // Keep amount in major unit; live edge/client layers handle provider conversion.
+                amount: input.amount,
                 currency: input.currency,
                 reference: input.reference || `ref_${Date.now()}`,
                 callback_url: process.env.CALLBACK_URL
@@ -94,7 +95,11 @@ class VendorAbstractionLayer {
             },
             verifyTransaction: {
               tool: 'verify-payment',
-              transform: (input) => ({ tx_ref: input.reference })
+              transform: (input) => ({
+                // Support both common keys while contracts are being normalized.
+                transaction_id: input.reference,
+                tx_ref: input.reference
+              })
             }
           }
         },

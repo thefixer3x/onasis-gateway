@@ -63,6 +63,18 @@ class AdapterRegistry {
     // Ensure the adapter has a stable id field.
     if (!adapter.id) adapter.id = adapterId;
 
+    // Reject duplicate adapter ids to prevent silent routing conflicts.
+    if (this.adapters.has(adapterId)) {
+      const existing = this.adapters.get(adapterId);
+      if (existing !== adapter) {
+        throw createRegistryError(
+          'DUPLICATE_ADAPTER_ID',
+          `Duplicate adapter id '${adapterId}' detected during registration`
+        );
+      }
+      return existing;
+    }
+
     const isAlreadyInitialized = !!(adapter._initialized || adapter.isInitialized || adapter.initialized);
 
     if (!options.skipInitialize && typeof adapter.initialize === 'function' && !isAlreadyInitialized) {
@@ -135,6 +147,11 @@ class AdapterRegistry {
    */
   registerMock(entry = {}) {
     if (!entry.id) return;
+    const existing = this.adapters.get(entry.id);
+    if (existing && !existing.is_mock) {
+      // Never let a mock override a real executable adapter.
+      return;
+    }
     const toolCount =
       (typeof entry.toolCount === 'number' ? entry.toolCount : undefined) ??
       (typeof entry.tools === 'number' ? entry.tools : undefined) ??
