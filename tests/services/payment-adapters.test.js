@@ -12,7 +12,7 @@ const StripeAdapter = StripeAdapterImport?.default || StripeAdapterImport;
 const SayswitchAdapter = SayswitchAdapterImport?.default || SayswitchAdapterImport;
 
 describe('Phase 1.5 Payment Adapters', () => {
-  it('PaystackAdapter maps kebab-case toolName to snake_case action payload', async () => {
+  it('PaystackAdapter uses live query-action contract for initialize-transaction', async () => {
     const client = { call: vi.fn().mockResolvedValue({ ok: true }) };
     const adapter = new PaystackAdapter({ client, functionName: 'paystack' });
 
@@ -26,12 +26,17 @@ describe('Phase 1.5 Payment Adapters', () => {
     );
 
     expect(client.call).toHaveBeenCalledWith(
-      { action: 'initialize_transaction', amount: 100, email: 'user@example.com' },
-      { authorization: 'Bearer token' }
+      'paystack',
+      { amount: 100, email: 'user@example.com' },
+      {
+        authorization: 'Bearer token',
+        method: 'POST',
+        params: { action: 'initialize' }
+      }
     );
   });
 
-  it('FlutterwaveAdapter applies mobile money defaults (Kenya -> type mobile_money_mpesa)', async () => {
+  it('FlutterwaveAdapter keeps action-dispatch payload for non-live mapped tools', async () => {
     const client = { call: vi.fn().mockResolvedValue({ ok: true }) };
     const adapter = new FlutterwaveAdapter({ client, functionName: 'flutterwave' });
 
@@ -45,12 +50,31 @@ describe('Phase 1.5 Payment Adapters', () => {
     );
 
     expect(client.call).toHaveBeenCalledWith(
+      'flutterwave',
       {
         action: 'mobile_money_kenya',
         type: 'mobile_money_mpesa',
         amount: 50,
         phone_number: '+254700000000'
       },
+      { authorization: 'Bearer token' }
+    );
+  });
+
+  it('FlutterwaveAdapter uses live path contract for initiate-payment', async () => {
+    const client = { call: vi.fn().mockResolvedValue({ ok: true }) };
+    const adapter = new FlutterwaveAdapter({ client, functionName: 'flutterwave' });
+
+    await adapter.initialize();
+    await adapter.callTool(
+      'initiate-payment',
+      { amount: 5000, currency: 'NGN', tx_ref: 'fw_ref_1', customer: { email: 'user@example.com' } },
+      { authorization: 'Bearer token' }
+    );
+
+    expect(client.call).toHaveBeenCalledWith(
+      'flutterwave/createPayment',
+      { amount: 5000, currency: 'NGN', tx_ref: 'fw_ref_1', customer: { email: 'user@example.com' } },
       { authorization: 'Bearer token' }
     );
   });
