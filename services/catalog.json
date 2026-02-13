@@ -274,7 +274,7 @@
       "adapterPath": "./services/credit-as-a-service/credit-adapter.js",
       "executable": true,
       "enabled": true,
-      "toolCount": 7,
+      "toolCount": 16,
       "authType": "bearer",
       "category": "financial",
       "supportedCountries": ["NG", "global"]
