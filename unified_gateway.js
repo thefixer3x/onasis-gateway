@@ -528,7 +528,7 @@ class UnifiedGateway {
 
                     const adapter = new AdapterClass(adapterEntry);
                     if (typeof adapter.initialize === 'function') {
-                        await adapter.initialize();
+                        await adapter.initialize(adapterEntry);
                         if (!adapter._initialized) {
                             adapter._initialized = true;
                         }
