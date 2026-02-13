@@ -14,7 +14,7 @@ Verified that SQL scripts were partially executed. Master API key exists and wor
 {
   "id": "a1738f79-1f58-4efe-8c41-c00167c1318d",
   "name": "SUPERADMIN MASTER KEY",
-  "api_key_value": "lano_master_key_2024",
+  "api_key_value": "<SET_MASTER_API_KEY>",
   "access_level": "superadmin",
   "is_active": true
 }
@@ -96,7 +96,7 @@ curl -s -X GET 'https://mxtsdgkwzjzlttpotole.supabase.co/rest/v1/api_keys?select
 
 **What it does**:
 - Temporarily disables email constraint triggers
-- Creates superadmin user: `admin@lanonasis.com` / `Admin@2024!`
+- Creates superadmin user: `admin@lanonasis.com` / `<SET_SECURE_PASSWORD>`
 - Re-enables triggers
 - Verifies user and API key exist
 
@@ -108,13 +108,13 @@ After running the SQL script:
 # Test with master API key (should work)
 curl -X POST http://localhost:3001/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -H "x-api-key: lano_master_key_2024" \
-  -d '{"email": "admin@lanonasis.com", "password": "Admin@2024!"}'
+  -H "x-api-key: <SET_MASTER_API_KEY>" \
+  -d '{"email": "admin@lanonasis.com", "password": "<SET_SECURE_PASSWORD>"}'
 
 # Test dashboard login
 # URL: http://your-dashboard-url/login
 # Email: admin@lanonasis.com
-# Password: Admin@2024!
+# Password: <SET_SECURE_PASSWORD>
 ```
 
 ---
@@ -133,7 +133,7 @@ curl -X POST http://localhost:3001/api/v1/auth/login \
 ### Current API Keys Count: **3**
 1. Superadmin API Key (info@lanonasis.com)
 2. Onasis-CORE Live Key
-3. SUPERADMIN MASTER KEY (lano_master_key_2024) ✅
+3. SUPERADMIN MASTER KEY (<SET_MASTER_API_KEY>) ✅
 
 ---
 
@@ -197,7 +197,7 @@ user_id: data.user_id || '00000000-0000-0000-0000-000000000001'
 
 ## 🔐 Security Notes
 
-- Master API key `lano_master_key_2024` is **ACTIVE** and **WORKING**
+- Master API key `<SET_MASTER_API_KEY>` is **ACTIVE** and **WORKING**
 - Service role key is **VALID** until 2062-06-26
 - No users currently exist in database (empty table)
 - Email constraint is blocking user creation via REST API

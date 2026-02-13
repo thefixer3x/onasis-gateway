@@ -182,6 +182,48 @@ if [[ "${INCLUDE_NEGATIVE_TESTS}" == "1" ]]; then
   }' "2xx"
 fi
 
+# Internal service tests
+run_case "Auth service: get session info" "POST" "/api/v1/auth/get-session" '{}'
+run_case "Auth service: verify token" "POST" "/api/v1/auth/verify-token" '{"token": "test-token"}'
+run_case "Auth service: list API keys" "POST" "/api/v1/auth/list-api-keys" '{}'
+
+run_case "AI service: chat completion" "POST" "/api/v1/ai/chat" '{
+  "messages": [{"role": "user", "content": "Hello, how are you?"}]
+}'
+run_case "AI service: health check" "POST" "/api/v1/ai/health" '{}'
+
+run_case "Memory service: create memory" "POST" "/api/v1/memory/create" '{
+  "title": "Test Memory",
+  "content": "This is a test memory entry",
+  "memory_type": "context"
+}'
+run_case "Memory service: search memories" "POST" "/api/v1/memory/search" '{
+  "query": "test"
+}'
+
+run_case "Intelligence service: analyze patterns" "POST" "/api/v1/intelligence/analyze-patterns" '{}'
+run_case "Intelligence service: suggest tags" "POST" "/api/v1/intelligence/suggest-tags" '{
+  "content": "This is sample content for tag suggestion"
+}'
+
+run_case "Security service: verify API key" "POST" "/api/v1/security/verify-api-key" '{
+  "api_key": "test-api-key"
+}'
+run_case "Security service: list API keys" "POST" "/api/v1/security/list-api-keys" '{}'
+
+run_case "Verification service: verify NIN" "POST" "/api/v1/verification/verify-nin" '{
+  "nin": "12345678901",
+  "firstName": "John",
+  "lastName": "Doe",
+  "dateOfBirth": "1990-01-01"
+}'
+run_case "Verification service: verify BVN" "POST" "/api/v1/verification/verify-bvn" '{
+  "bvn": "12345678901",
+  "firstName": "John",
+  "lastName": "Doe",
+  "dateOfBirth": "1990-01-01"
+}'
+
 echo ""
 echo "=========================================="
 echo "Summary: PASS=${PASSED} FAIL=${FAILED}"

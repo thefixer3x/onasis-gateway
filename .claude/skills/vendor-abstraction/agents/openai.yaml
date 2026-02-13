@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vendor Abstraction Guardian"
+  short_description: "Guardrails for vendor abstraction edits"
+  default_prompt: "Keep client schemas stable and vendor mappings isolated when updating vendor abstraction logic."
