@@ -333,7 +333,9 @@ const actions: Record<string, (params: any) => Promise<any>> = {
    */
   sayswitch_health_check: async () => {
     try {
-      const balance = await callSaySwitchAPI('/balance', 'GET');
+      // Use a known-live, low-risk endpoint for health validation.
+      // `/balance` is not available on some SaySwitch environments and returns 404.
+      await callSaySwitchAPI('/banks', 'GET');
       return {
         status: 'healthy',
         service: 'sayswitch',
