@@ -1,10 +1,16 @@
 /**
  * Verification Service MCP Adapter
  * Integration adapter for the standalone Verification Service at verify.seftechub.com:9985
+ * Supports enabledTools (e.g. ~52%) so only selected tools are exposed; see schemas/sourceid-integration.md
  */
 
 import axios, { AxiosInstance } from 'axios';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { MCPAdapter, MCPTool, AdapterConfig, AdapterStatus } from '../../src/types/mcp.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export class VerificationServiceMCPAdapter implements MCPAdapter {
   name = 'verification-service';
@@ -13,6 +19,8 @@ export class VerificationServiceMCPAdapter implements MCPAdapter {
   
   private client: AxiosInstance;
   private config: AdapterConfig;
+  /** If set, only these tool names are exposed; null = expose all */
+  private enabledToolsSet: Set<string> | null = null;
   private stats = {
     requestCount: 0,
     errorCount: 0,
@@ -502,9 +510,10 @@ export class VerificationServiceMCPAdapter implements MCPAdapter {
       }
     });
 
-    // Setup authentication
-    if (config.apiKey) {
-      this.client.defaults.headers.common['X-API-Key'] = config.apiKey;
+    // Setup authentication (config or env for backend/SourceID proxy)
+    const apiKey = config?.apiKey ?? process.env.VERIFICATION_API_KEY;
+    if (apiKey) {
+      this.client.defaults.headers.common['X-API-Key'] = apiKey;
     }
 
     // Setup request/response interceptors
@@ -512,10 +521,25 @@ export class VerificationServiceMCPAdapter implements MCPAdapter {
   }
 
   async listTools(): Promise<MCPTool[]> {
+    if (this.enabledToolsSet) {
+      return this.tools.filter((t) => this.enabledToolsSet!.has(t.name));
+    }
     return this.tools;
   }
 
   async callTool(name: string, args: any): Promise<any> {
+    if (this.enabledToolsSet && !this.enabledToolsSet.has(name)) {
+      return {
+        success: false,
+        tool: name,
+        error: {
+          message: 'Tool not enabled. Add this tool to enabledTools in verification-service.json or catalog to enable it.',
+          code: 'TOOL_DISABLED'
+        },
+        timestamp: new Date().toISOString()
+      };
+    }
+
     const startTime = Date.now();
     
     try {
