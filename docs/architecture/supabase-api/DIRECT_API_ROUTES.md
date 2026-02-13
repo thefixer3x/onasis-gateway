@@ -15,8 +15,8 @@ All authenticated endpoints require one of:
 
 | Header | Format | Example |
 |--------|--------|---------|
-| `X-API-Key` | `lano_*`, `vibe_*`, `sk_*`, `pk_*` | `X-API-Key: lano_master_key_2024` |
-| `Authorization` | `Bearer <token>` | `Authorization: Bearer lano_master_key_2024` |
+| `X-API-Key` | `lano_*`, `vibe_*`, `sk_*`, `pk_*` | `X-API-Key: <SET_MASTER_API_KEY>` |
+| `Authorization` | `Bearer <token>` | `Authorization: Bearer <SET_MASTER_API_KEY>` |
 | `apikey` | Supabase anon/service key | For PostgREST direct access |
 
 ---
@@ -41,7 +41,7 @@ All authenticated endpoints require one of:
 ```bash
 curl -X POST "https://lanonasis.supabase.co/functions/v1/memory-create" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: lano_master_key_2024" \
+  -H "X-API-Key: <SET_MASTER_API_KEY>" \
   -d '{
     "title": "API Configuration Guide",
     "content": "Step-by-step guide for configuring the API...",
@@ -53,14 +53,14 @@ curl -X POST "https://lanonasis.supabase.co/functions/v1/memory-create" \
 **Example - Memory Get:**
 ```bash
 curl "https://lanonasis.supabase.co/functions/v1/memory-get?id=UUID_HERE" \
-  -H "X-API-Key: lano_master_key_2024"
+  -H "X-API-Key: <SET_MASTER_API_KEY>"
 ```
 
 **Example - Memory Update:**
 ```bash
 curl -X POST "https://lanonasis.supabase.co/functions/v1/memory-update" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: lano_master_key_2024" \
+  -H "X-API-Key: <SET_MASTER_API_KEY>" \
   -d '{
     "id": "UUID_HERE",
     "title": "Updated Title",
@@ -72,20 +72,20 @@ curl -X POST "https://lanonasis.supabase.co/functions/v1/memory-update" \
 **Example - Memory Delete:**
 ```bash
 curl -X DELETE "https://lanonasis.supabase.co/functions/v1/memory-delete?id=UUID_HERE" \
-  -H "X-API-Key: lano_master_key_2024"
+  -H "X-API-Key: <SET_MASTER_API_KEY>"
 ```
 
 **Example - Memory List:**
 ```bash
 curl "https://lanonasis.supabase.co/functions/v1/memory-list?limit=10&type=knowledge&sortBy=updated_at&sortOrder=desc" \
-  -H "X-API-Key: lano_master_key_2024"
+  -H "X-API-Key: <SET_MASTER_API_KEY>"
 ```
 
 **Example - Memory Search:**
 ```bash
 curl -X POST "https://lanonasis.supabase.co/functions/v1/memory-search" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: lano_master_key_2024" \
+  -H "X-API-Key: <SET_MASTER_API_KEY>" \
   -d '{
     "query": "how to configure MCP",
     "limit": 10,
@@ -97,14 +97,14 @@ curl -X POST "https://lanonasis.supabase.co/functions/v1/memory-search" \
 **Example - Memory Stats:**
 ```bash
 curl "https://lanonasis.supabase.co/functions/v1/memory-stats" \
-  -H "X-API-Key: lano_master_key_2024"
+  -H "X-API-Key: <SET_MASTER_API_KEY>"
 ```
 
 **Example - Memory Bulk Delete:**
 ```bash
 curl -X POST "https://lanonasis.supabase.co/functions/v1/memory-bulk-delete" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: lano_master_key_2024" \
+  -H "X-API-Key: <SET_MASTER_API_KEY>" \
   -d '{
     "ids": ["uuid-1", "uuid-2", "uuid-3"]
   }'
@@ -331,7 +331,7 @@ curl https://lanonasis.supabase.co/functions/v1/system-health
 
 # Test memory search (with auth)
 curl -X POST https://lanonasis.supabase.co/functions/v1/memory-search \
-  -H "X-API-Key: lano_master_key_2024" \
+  -H "X-API-Key: <SET_MASTER_API_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"query": "test", "limit": 5}'
 

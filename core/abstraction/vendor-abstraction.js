@@ -4,10 +4,19 @@
  */
 
 class VendorAbstractionLayer {
-  constructor() {
+  /**
+   * @param {object} [options]
+   * @param {object} [options.adapterRegistry] AdapterRegistry instance (preferred)
+   * @param {function} [options.getAdapterRegistry] Lazy provider for AdapterRegistry
+   */
+  constructor(options = {}) {
     this.vendorMappings = new Map();
     this.clientSchemas = new Map();
     this.vendorConfigs = new Map();
+    this.adapterRegistry = options.adapterRegistry || null;
+    this.getAdapterRegistry = typeof options.getAdapterRegistry === 'function'
+      ? options.getAdapterRegistry
+      : null;
     this.initializeAbstractions();
   }
 
@@ -36,11 +45,24 @@ class VendorAbstractionLayer {
             lastName: { type: 'string', required: false },
             phone: { type: 'string', required: false }
           }
+        },
+        purchaseAirtime: {
+          schema: {
+            phone: { type: 'string', required: true },
+            amount: { type: 'number', required: true },
+            network: { type: 'string', required: true },
+            reference: { type: 'string', required: false }
+          }
+        },
+        getTransaction: {
+          schema: {
+            transactionId: { type: 'string', required: true }
+          }
         }
       },
       vendors: {
         'paystack': {
-          adapter: 'paystack-api',
+          adapter: 'paystack',
           mappings: {
             initializeTransaction: {
               tool: 'initialize-transaction',
@@ -55,15 +77,6 @@ class VendorAbstractionLayer {
             verifyTransaction: {
               tool: 'verify-transaction',
               transform: (input) => ({ reference: input.reference })
-            },
-            createCustomer: {
-              tool: 'create-customer',
-              transform: (input) => ({
-                email: input.email,
-                first_name: input.firstName,
-                last_name: input.lastName,
-                phone: input.phone
-              })
             }
           }
         },
@@ -71,54 +84,36 @@ class VendorAbstractionLayer {
           adapter: 'flutterwave-v3',
           mappings: {
             initializeTransaction: {
-              tool: 'initialize-transaction',
+              tool: 'initiate-payment',
               transform: (input) => ({
-                email: input.email,
                 amount: input.amount,
                 currency: input.currency,
-                reference: input.reference || `fw_${Date.now()}`,
-                callback_url: process.env.CALLBACK_URL
+                tx_ref: input.reference || `fw_${Date.now()}`,
+                customer: { email: input.email }
               })
             },
             verifyTransaction: {
-              tool: 'verify-transaction',
-              transform: (input) => ({ reference: input.reference })
-            },
-            createCustomer: {
-              tool: 'create-customer',
-              transform: (input) => ({
-                email: input.email,
-                first_name: input.firstName,
-                last_name: input.lastName,
-                phone: input.phone
-              })
+              tool: 'verify-payment',
+              transform: (input) => ({ tx_ref: input.reference })
             }
           }
         },
         'sayswitch': {
           adapter: 'sayswitch-api-integration',
           mappings: {
-            initializeTransaction: {
-              tool: 'initialize-transaction',
+            purchaseAirtime: {
+              tool: 'purchase-airtime',
               transform: (input) => ({
-                email: input.email,
+                phone: input.phone,
                 amount: input.amount,
-                currency: input.currency,
-                reference: input.reference || `ss_${Date.now()}`,
-                callback_url: process.env.CALLBACK_URL
+                network: input.network,
+                reference: input.reference || `ss_${Date.now()}`
               })
             },
-            verifyTransaction: {
-              tool: 'verify-transaction',
-              transform: (input) => ({ reference: input.reference })
-            },
-            createCustomer: {
-              tool: 'create-customer',
+            getTransaction: {
+              tool: 'get-transaction',
               transform: (input) => ({
-                email: input.email,
-                first_name: input.firstName,
-                last_name: input.lastName,
-                phone: input.phone
+                txn_id: input.transactionId
               })
             }
           }
@@ -218,6 +213,626 @@ class VendorAbstractionLayer {
         }
       }
     });
+
+    // Authentication Abstraction
+    this.registerAbstraction('auth', {
+      client: {
+        login: {
+          schema: {
+            email: { type: 'string', required: true },
+            password: { type: 'string', required: true },
+            project_scope: { type: 'string', required: false },
+            platform: { type: 'string', enum: ['mcp', 'cli', 'web', 'api'], default: 'web' }
+          }
+        },
+        exchangeSupabaseToken: {
+          schema: {
+            project_scope: { type: 'string', required: false },
+            platform: { type: 'string', enum: ['mcp', 'cli', 'web', 'api'], default: 'web' }
+          }
+        },
+        logout: {
+          schema: {}
+        },
+        getSession: {
+          schema: {}
+        },
+        verifyToken: {
+          schema: {
+            token: { type: 'string', required: false }
+          }
+        },
+        listSessions: {
+          schema: {}
+        },
+        initiateOAuth: {
+          schema: {
+            provider: { type: 'string', required: true },
+            redirect_uri: { type: 'string', required: true },
+            project_scope: { type: 'string', required: false },
+            platform: { type: 'string', enum: ['mcp', 'cli', 'web', 'api'], default: 'web' }
+          }
+        },
+        requestMagicLink: {
+          schema: {
+            email: { type: 'string', required: true },
+            redirect_uri: { type: 'string', required: false },
+            project_scope: { type: 'string', required: false },
+            platform: { type: 'string', enum: ['mcp', 'cli', 'web', 'api'], default: 'web' }
+          }
+        },
+        verifyAPIKey: {
+          schema: {
+            api_key: { type: 'string', required: true }
+          }
+        },
+        createAPIKey: {
+          schema: {
+            name: { type: 'string', required: true },
+            description: { type: 'string', required: false },
+            access_level: { type: 'string', enum: ['public', 'authenticated', 'team', 'admin', 'enterprise'], default: 'authenticated' },
+            expires_in_days: { type: 'integer', default: 365 }
+          }
+        },
+        listAPIKeys: {
+          schema: {
+            active_only: { type: 'boolean', default: true },
+            project_id: { type: 'string', required: false }
+          }
+        },
+        getAPIKey: {
+          schema: {
+            key_id: { type: 'string', required: true }
+          }
+        },
+        rotateAPIKey: {
+          schema: {
+            key_id: { type: 'string', required: true }
+          }
+        },
+        revokeAPIKey: {
+          schema: {
+            key_id: { type: 'string', required: true }
+          }
+        },
+        deleteAPIKey: {
+          schema: {
+            key_id: { type: 'string', required: true }
+          }
+        }
+      },
+      vendors: {
+        'auth-gateway': {
+          adapter: 'auth-gateway',
+          mappings: {
+            login: {
+              tool: 'login',
+              transform: (input) => input
+            },
+            exchangeSupabaseToken: {
+              tool: 'exchange-supabase-token',
+              transform: (input) => input
+            },
+            logout: {
+              tool: 'logout',
+              transform: (input) => input
+            },
+            getSession: {
+              tool: 'get-session',
+              transform: (input) => input
+            },
+            verifyToken: {
+              tool: 'verify-token',
+              transform: (input) => input
+            },
+            listSessions: {
+              tool: 'list-sessions',
+              transform: (input) => input
+            },
+            initiateOAuth: {
+              tool: 'initiate-oauth',
+              transform: (input) => input
+            },
+            requestMagicLink: {
+              tool: 'request-magic-link',
+              transform: (input) => input
+            },
+            verifyAPIKey: {
+              tool: 'verify-api-key',
+              transform: (input) => input
+            },
+            createAPIKey: {
+              tool: 'create-api-key',
+              transform: (input) => input
+            },
+            listAPIKeys: {
+              tool: 'list-api-keys',
+              transform: (input) => input
+            },
+            getAPIKey: {
+              tool: 'get-api-key',
+              transform: (input) => input
+            },
+            rotateAPIKey: {
+              tool: 'rotate-api-key',
+              transform: (input) => input
+            },
+            revokeAPIKey: {
+              tool: 'revoke-api-key',
+              transform: (input) => input
+            },
+            deleteAPIKey: {
+              tool: 'delete-api-key',
+              transform: (input) => input
+            }
+          }
+        }
+      }
+    });
+
+    // AI Services Abstraction
+    this.registerAbstraction('ai', {
+      client: {
+        chat: {
+          schema: {
+            messages: { 
+              type: 'array', 
+              required: true,
+              items: {
+                type: 'object',
+                properties: {
+                  role: { type: 'string', enum: ['system', 'user', 'assistant'] },
+                  content: { type: 'string' }
+                },
+                required: ['role', 'content']
+              }
+            },
+            model: { type: 'string', default: 'qwen2:1.5b' },
+            temperature: { type: 'number', default: 0.7 },
+            max_tokens: { type: 'integer', required: false }
+          }
+        },
+        ollama: {
+          schema: {
+            model: { type: 'string', required: true },
+            messages: { 
+              type: 'array', 
+              required: true,
+              items: {
+                type: 'object',
+                properties: {
+                  role: { type: 'string', enum: ['system', 'user', 'assistant'] },
+                  content: { type: 'string' }
+                },
+                required: ['role', 'content']
+              }
+            },
+            stream: { type: 'boolean', default: false }
+          }
+        },
+        listServices: {
+          schema: {}
+        },
+        health: {
+          schema: {}
+        }
+      },
+      vendors: {
+        'ai-router': {
+          adapter: 'ai-router',
+          mappings: {
+            chat: {
+              tool: 'ai-chat',
+              transform: (input) => input
+            },
+            ollama: {
+              tool: 'ollama',
+              transform: (input) => input
+            },
+            listServices: {
+              tool: 'list-ai-services',
+              transform: (input) => input
+            },
+            health: {
+              tool: 'ai-health',
+              transform: (input) => input
+            }
+          }
+        }
+      }
+    });
+
+    // Memory Services Abstraction
+    this.registerAbstraction('memory', {
+      client: {
+        create: {
+          schema: {
+            title: { type: 'string', required: true },
+            content: { type: 'string', required: true },
+            memory_type: { type: 'string', enum: ['context', 'project', 'knowledge', 'reference', 'personal', 'workflow'], default: 'context' },
+            tags: { type: 'array', items: { type: 'string' }, required: false },
+            metadata: { type: 'object', required: false }
+          }
+        },
+        get: {
+          schema: {
+            id: { type: 'string', required: true }
+          }
+        },
+        update: {
+          schema: {
+            id: { type: 'string', required: true },
+            title: { type: 'string', required: false },
+            content: { type: 'string', required: false },
+            memory_type: { type: 'string', enum: ['context', 'project', 'knowledge', 'reference', 'personal', 'workflow'] },
+            tags: { type: 'array', items: { type: 'string' }, required: false },
+            metadata: { type: 'object', required: false }
+          }
+        },
+        delete: {
+          schema: {
+            id: { type: 'string', required: true }
+          }
+        },
+        list: {
+          schema: {
+            limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+            offset: { type: 'integer', minimum: 0, default: 0 },
+            type: { type: 'string', enum: ['context', 'project', 'knowledge', 'reference', 'personal', 'workflow'] },
+            tags: { type: 'string', required: false }
+          }
+        },
+        search: {
+          schema: {
+            query: { type: 'string', required: true },
+            type: { type: 'string', enum: ['context', 'project', 'knowledge', 'reference', 'personal', 'workflow'] },
+            threshold: { type: 'number', minimum: 0, maximum: 1, default: 0.8 },
+            limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+            tags: { type: 'string', required: false }
+          }
+        },
+        stats: {
+          schema: {}
+        },
+        bulkDelete: {
+          schema: {
+            ids: { 
+              type: 'array', 
+              required: true,
+              items: { type: 'string' },
+              minItems: 1,
+              maxItems: 100
+            }
+          }
+        },
+        searchDocumentation: {
+          schema: {
+            query: { type: 'string', required: true },
+            section: { type: 'string', enum: ['all', 'api', 'guides', 'sdks'], default: 'all' },
+            limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 }
+          }
+        }
+      },
+      vendors: {
+        'memory-service': {
+          adapter: 'memory-service',
+          mappings: {
+            create: {
+              tool: 'create-memory',
+              transform: (input) => input
+            },
+            get: {
+              tool: 'get-memory',
+              transform: (input) => input
+            },
+            update: {
+              tool: 'update-memory',
+              transform: (input) => input
+            },
+            delete: {
+              tool: 'delete-memory',
+              transform: (input) => input
+            },
+            list: {
+              tool: 'list-memories',
+              transform: (input) => input
+            },
+            search: {
+              tool: 'search-memories',
+              transform: (input) => input
+            },
+            stats: {
+              tool: 'memory-stats',
+              transform: (input) => input
+            },
+            bulkDelete: {
+              tool: 'bulk-delete-memories',
+              transform: (input) => input
+            },
+            searchDocumentation: {
+              tool: 'search-documentation',
+              transform: (input) => input
+            }
+          }
+        }
+      }
+    });
+
+    // Intelligence Services Abstraction
+    this.registerAbstraction('intelligence', {
+      client: {
+        analyzePatterns: {
+          schema: {
+            time_range_days: { type: 'integer', minimum: 1, maximum: 365, default: 30 },
+            include_insights: { type: 'boolean', default: true }
+          }
+        },
+        suggestTags: {
+          schema: {
+            memory_id: { type: 'string', required: false },
+            content: { type: 'string', required: false },
+            title: { type: 'string', required: false },
+            existing_tags: { type: 'array', items: { type: 'string' }, required: false },
+            max_suggestions: { type: 'integer', minimum: 1, maximum: 10, default: 5 }
+          }
+        },
+        findRelated: {
+          schema: {
+            memory_id: { type: 'string', required: false },
+            query: { type: 'string', required: false },
+            limit: { type: 'integer', minimum: 1, maximum: 20, default: 5 },
+            similarity_threshold: { type: 'number', minimum: 0, maximum: 1, default: 0.7 }
+          }
+        },
+        detectDuplicates: {
+          schema: {
+            similarity_threshold: { type: 'number', minimum: 0.8, maximum: 0.99, default: 0.85 },
+            include_archived: { type: 'boolean', default: false }
+          }
+        },
+        extractInsights: {
+          schema: {
+            memory_ids: { type: 'array', items: { type: 'string' }, required: false },
+            topic: { type: 'string', required: false },
+            time_range_days: { type: 'integer', minimum: 1, maximum: 365, default: 30 }
+          }
+        },
+        healthCheck: {
+          schema: {
+            include_recommendations: { type: 'boolean', default: true }
+          }
+        },
+        behaviorRecord: {
+          schema: {
+            pattern_name: { type: 'string', required: true },
+            description: { type: 'string', required: true },
+            context: { type: 'string', required: false },
+            steps: { type: 'array', items: { type: 'string' }, required: false },
+            tags: { type: 'array', items: { type: 'string' }, required: false }
+          }
+        },
+        behaviorRecall: {
+          schema: {
+            query: { type: 'string', required: true },
+            context: { type: 'string', required: false },
+            limit: { type: 'integer', minimum: 1, maximum: 10, default: 5 }
+          }
+        },
+        behaviorSuggest: {
+          schema: {
+            current_context: { type: 'string', required: false },
+            previous_actions: { type: 'array', items: { type: 'string' }, required: false },
+            limit: { type: 'integer', minimum: 1, maximum: 10, default: 5 }
+          }
+        }
+      },
+      vendors: {
+        'intelligence-api': {
+          adapter: 'intelligence-api',
+          mappings: {
+            analyzePatterns: {
+              tool: 'intelligence-analyze-patterns',
+              transform: (input) => input
+            },
+            suggestTags: {
+              tool: 'intelligence-suggest-tags',
+              transform: (input) => input
+            },
+            findRelated: {
+              tool: 'intelligence-find-related',
+              transform: (input) => input
+            },
+            detectDuplicates: {
+              tool: 'intelligence-detect-duplicates',
+              transform: (input) => input
+            },
+            extractInsights: {
+              tool: 'intelligence-extract-insights',
+              transform: (input) => input
+            },
+            healthCheck: {
+              tool: 'intelligence-health-check',
+              transform: (input) => input
+            },
+            behaviorRecord: {
+              tool: 'intelligence-behavior-record',
+              transform: (input) => input
+            },
+            behaviorRecall: {
+              tool: 'intelligence-behavior-recall',
+              transform: (input) => input
+            },
+            behaviorSuggest: {
+              tool: 'intelligence-behavior-suggest',
+              transform: (input) => input
+            }
+          }
+        }
+      }
+    });
+
+    // Security Services Abstraction
+    this.registerAbstraction('security', {
+      client: {
+        createAPIKey: {
+          schema: {
+            name: { type: 'string', required: true },
+            description: { type: 'string', required: false },
+            access_level: { type: 'string', enum: ['public', 'authenticated', 'team', 'admin', 'enterprise'], default: 'authenticated' },
+            expires_in_days: { type: 'integer', default: 365 }
+          }
+        },
+        deleteAPIKey: {
+          schema: {
+            key_id: { type: 'string', required: true }
+          }
+        },
+        rotateAPIKey: {
+          schema: {
+            key_id: { type: 'string', required: true }
+          }
+        },
+        revokeAPIKey: {
+          schema: {
+            key_id: { type: 'string', required: true }
+          }
+        },
+        listAPIKeys: {
+          schema: {
+            active_only: { type: 'boolean', default: true },
+            project_id: { type: 'string', required: false }
+          }
+        },
+        getAPIKey: {
+          schema: {
+            key_id: { type: 'string', required: true }
+          }
+        },
+        verifyAPIKey: {
+          schema: {
+            api_key: { type: 'string', required: true }
+          }
+        },
+        verifyToken: {
+          schema: {
+            token: { type: 'string', required: true }
+          }
+        }
+      },
+      vendors: {
+        'security-service': {
+          adapter: 'security-service',
+          mappings: {
+            createAPIKey: {
+              tool: 'create-api-key',
+              transform: (input) => input
+            },
+            deleteAPIKey: {
+              tool: 'delete-api-key',
+              transform: (input) => input
+            },
+            rotateAPIKey: {
+              tool: 'rotate-api-key',
+              transform: (input) => input
+            },
+            revokeAPIKey: {
+              tool: 'revoke-api-key',
+              transform: (input) => input
+            },
+            listAPIKeys: {
+              tool: 'list-api-keys',
+              transform: (input) => input
+            },
+            getAPIKey: {
+              tool: 'get-api-key',
+              transform: (input) => input
+            },
+            verifyAPIKey: {
+              tool: 'verify-api-key',
+              transform: (input) => input
+            },
+            verifyToken: {
+              tool: 'verify-token',
+              transform: (input) => input
+            }
+          }
+        }
+      }
+    });
+
+    // Verification Services Abstraction
+    this.registerAbstraction('verification', {
+      client: {
+        verifyNIN: {
+          schema: {
+            nin: { type: 'string', required: true },
+            firstName: { type: 'string', required: true },
+            lastName: { type: 'string', required: true },
+            dateOfBirth: { type: 'string', required: false }
+          }
+        },
+        verifyBVN: {
+          schema: {
+            bvn: { type: 'string', required: true },
+            firstName: { type: 'string', required: true },
+            lastName: { type: 'string', required: true },
+            dateOfBirth: { type: 'string', required: false }
+          }
+        },
+        verifyPassport: {
+          schema: {
+            passportNumber: { type: 'string', required: true },
+            firstName: { type: 'string', required: true },
+            lastName: { type: 'string', required: true },
+            dateOfBirth: { type: 'string', required: true },
+            nationality: { type: 'string', required: false }
+          }
+        },
+        verifyDocument: {
+          schema: {
+            documentType: { type: 'string', required: true },
+            documentNumber: { type: 'string', required: true },
+            firstName: { type: 'string', required: true },
+            lastName: { type: 'string', required: true },
+            dateOfBirth: { type: 'string', required: false }
+          }
+        },
+        getHistory: {
+          schema: {
+            limit: { type: 'integer', minimum: 1, maximum: 100, default: 50 },
+            offset: { type: 'integer', minimum: 0, default: 0 },
+            type: { type: 'string', required: false }
+          }
+        }
+      },
+      vendors: {
+        'verification-service': {
+          adapter: 'verification-service',
+          mappings: {
+            verifyNIN: {
+              tool: 'verify-nin',
+              transform: (input) => input
+            },
+            verifyBVN: {
+              tool: 'verify-bvn',
+              transform: (input) => input
+            },
+            verifyPassport: {
+              tool: 'verify-passport',
+              transform: (input) => input
+            },
+            verifyDocument: {
+              tool: 'verify-document',
+              transform: (input) => input
+            },
+            getHistory: {
+              tool: 'get-verification-history',
+              transform: (input) => input
+            }
+          }
+        }
+      }
+    });
   }
 
   registerAbstraction(category, config) {
@@ -225,19 +840,34 @@ class VendorAbstractionLayer {
     this.clientSchemas.set(category, config.client);
   }
 
-  async executeAbstractedCall(category, operation, input, vendorPreference = null) {
+  createError(status, code, message, meta = {}) {
+    const err = new Error(message);
+    err.status = status;
+    err.code = code;
+    err.meta = meta;
+    return err;
+  }
+
+  getRegistry() {
+    if (this.getAdapterRegistry) return this.getAdapterRegistry();
+    return this.adapterRegistry;
+  }
+
+  async executeAbstractedCall(category, operation, input, vendorPreference = null, context = {}) {
     const abstraction = this.vendorMappings.get(category);
     if (!abstraction) {
-      throw new Error(`Unknown category: ${category}`);
+      throw this.createError(404, 'UNKNOWN_CATEGORY', `Unknown category: ${category}`);
     }
 
     // Validate client input against schema
     const clientSchema = abstraction.client[operation];
     if (!clientSchema) {
-      throw new Error(`Unknown operation: ${operation} in category: ${category}`);
+      throw this.createError(404, 'UNKNOWN_OPERATION', `Unknown operation: ${operation} in category: ${category}`);
     }
 
-    this.validateInput(input, clientSchema.schema);
+    // Do not mutate caller input; defaults are applied to a copy.
+    const validatedInput = { ...(input && typeof input === 'object' ? input : {}) };
+    this.validateInput(validatedInput, clientSchema.schema);
 
     // Select vendor (use preference or default to first available)
     const vendors = Object.keys(abstraction.vendors);
@@ -246,18 +876,23 @@ class VendorAbstractionLayer {
       : vendors[0];
 
     if (!selectedVendor) {
-      throw new Error(`No vendors available for category: ${category}`);
+      throw this.createError(503, 'NO_VENDORS', `No vendors available for category: ${category}`);
     }
 
     const vendorConfig = abstraction.vendors[selectedVendor];
     const mapping = vendorConfig.mappings[operation];
 
     if (!mapping) {
-      throw new Error(`Operation ${operation} not supported by vendor: ${selectedVendor}`);
+      throw this.createError(
+        501,
+        'OPERATION_NOT_SUPPORTED',
+        `Operation ${operation} not supported by vendor: ${selectedVendor}`,
+        { category, operation, vendor: selectedVendor }
+      );
     }
 
     // Transform client input to vendor format
-    const vendorInput = mapping.transform(input);
+    const vendorInput = mapping.transform(validatedInput);
 
     // Execute vendor call through adapter
     return await this.executeVendorCall(
@@ -268,8 +903,9 @@ class VendorAbstractionLayer {
         category,
         operation,
         vendor: selectedVendor,
-        clientInput: input
-      }
+        clientInput: validatedInput
+      },
+      context
     );
   }
 
@@ -293,25 +929,48 @@ class VendorAbstractionLayer {
     }
   }
 
-  async executeVendorCall(adapter, tool, input, metadata) {
-    // This would integrate with your MCP adapter system
-    // For now, return a mock response structure
-    return {
-      success: true,
-      data: {
-        // Vendor response would be here
-        message: `Executed ${tool} on ${adapter}`,
-        input,
-        metadata
-      },
-      metadata: {
-        vendor: metadata.vendor,
-        category: metadata.category,
-        operation: metadata.operation,
-        timestamp: new Date().toISOString(),
-        abstracted: true
+  async executeVendorCall(adapterId, toolName, input, metadata, context = {}) {
+    const registry = this.getRegistry();
+    if (!registry) {
+      throw this.createError(
+        503,
+        'ADAPTER_REGISTRY_NOT_READY',
+        'Adapter registry not available yet (gateway still initializing).',
+        { adapterId, toolName }
+      );
+    }
+
+    const toolId = `${adapterId}:${toolName}`;
+    try {
+      const result = await registry.callTool(toolId, input, context);
+      return {
+        success: true,
+        data: result,
+        metadata: {
+          category: metadata.category,
+          operation: metadata.operation,
+          timestamp: new Date().toISOString(),
+          abstracted: true
+        }
+      };
+    } catch (err) {
+      const code = err && err.code ? err.code : 'VENDOR_CALL_FAILED';
+      if (code === 'TOOL_NOT_FOUND') {
+        throw this.createError(501, 'TOOL_NOT_FOUND', `Tool not found for abstraction mapping: ${toolId}`, {
+          adapterId,
+          toolName,
+          category: metadata.category,
+          operation: metadata.operation
+        });
       }
-    };
+
+      // Registry will throw non-executable (mock) adapters as a normal Error.
+      if (err && typeof err.message === 'string' && err.message.includes('not executable')) {
+        throw this.createError(501, 'ADAPTER_NOT_EXECUTABLE', err.message, { adapterId, toolName });
+      }
+
+      throw err;
+    }
   }
 
   getAvailableCategories() {
