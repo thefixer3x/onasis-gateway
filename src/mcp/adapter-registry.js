@@ -214,6 +214,11 @@ class AdapterRegistry {
       getHeader(headers, 'X-API-Key') ||
       getHeader(headers, 'x-api-key');
 
+    const clientId =
+      context.clientId ||
+      getHeader(headers, 'client-id') ||
+      getHeader(headers, 'x-client-id');
+
     const apikey =
       getHeader(headers, 'apikey');
 
@@ -235,6 +240,7 @@ class AdapterRegistry {
     const forwarded = {};
     if (authorization) forwarded.Authorization = authorization;
     if (apiKey) forwarded['X-API-Key'] = apiKey;
+    if (clientId) forwarded['client-id'] = clientId;
     if (apikey) forwarded.apikey = apikey;
     if (projectScope) forwarded['X-Project-Scope'] = projectScope;
     if (requestId) forwarded['X-Request-ID'] = requestId;
@@ -263,10 +269,17 @@ class AdapterRegistry {
 
     const forwardedHeaders = this.buildForwardHeaders(context);
 
-    // Prefer explicit legacy marker. Keep arity-based detection as temporary shim.
-    const isLegacyAdapter = adapter.legacyCallTool === true || adapter.callToolVersion === 'v1';
-    const isLegacyByArity = typeof adapter.callTool === 'function' && adapter.callTool.length < 3;
-    if (isLegacyAdapter || isLegacyByArity) {
+    // Prefer explicit markers. Keep arity-based detection only as temporary shim
+    // when the adapter has no declared call tool version.
+    const hasExplicitLegacy = adapter.legacyCallTool === true || adapter.callToolVersion === 'v1';
+    const hasExplicitModern = adapter.legacyCallTool === false || adapter.callToolVersion === 'v2';
+    const isLegacyByArity =
+      !hasExplicitLegacy &&
+      !hasExplicitModern &&
+      typeof adapter.callTool === 'function' &&
+      adapter.callTool.length < 3;
+
+    if (hasExplicitLegacy || isLegacyByArity) {
       return adapter.callTool(resolved.tool.name, { data: args, headers: forwardedHeaders });
     }
 

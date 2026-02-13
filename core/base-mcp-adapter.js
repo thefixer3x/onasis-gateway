@@ -30,6 +30,11 @@ class BaseMCPAdapter {
       ...(config.metadata || {})
     };
 
+    // Explicit call signature marker for AdapterRegistry routing.
+    // v2 => callTool(toolName, args, context)
+    this.callToolVersion = config.callToolVersion || 'v2';
+    this.legacyCallTool = config.legacyCallTool === true;
+
     this._initialized = false;
     this._stats = { calls: 0, errors: 0, lastCall: null };
   }
@@ -91,4 +96,3 @@ class BaseMCPAdapter {
 }
 
 module.exports = BaseMCPAdapter;
-
