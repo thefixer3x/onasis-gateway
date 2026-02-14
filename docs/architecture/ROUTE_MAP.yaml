@@ -6,7 +6,7 @@ domains:
   primary:
     - gateway.lanonasis.com
   future_cutover:
-    - api.landonnet.com
+    - api.lanonasis.com
 
 upstreams:
   central_gateway:
