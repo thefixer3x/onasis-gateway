@@ -107,4 +107,33 @@ describe('UnifiedGateway security middleware', () => {
     expect(res.body.message).toBe('boom');
     expect(res.body.requestId).toBeDefined();
   });
+
+  it('exposes central route policy details', async () => {
+    const gateway = buildGateway();
+    const res = await request(gateway.app).get('/api/v1/gateway/route-policy');
+
+    expect(res.status).toBe(200);
+    expect(res.body.centralGatewayBaseUrl).toBeDefined();
+    expect(Array.isArray(res.body.proxyRoutes)).toBe(true);
+    expect(res.body.proxyRoutes).toContain('/functions/v1/:functionName');
+    expect(res.body.proxyRoutes).toContain('/api/v1/functions/:functionName');
+  });
+
+  it('enforces identity on canonical and legacy AI chat routes', async () => {
+    process.env.AI_CHAT_REQUIRE_IDENTITY = 'true';
+    const gateway = buildGateway();
+
+    const canonical = await request(gateway.app)
+      .post('/api/v1/ai/chat')
+      .send({ messages: [{ role: 'user', content: 'hello' }] });
+
+    const legacy = await request(gateway.app)
+      .post('/api/v1/ai-chat')
+      .send({ messages: [{ role: 'user', content: 'hello' }] });
+
+    expect(canonical.status).toBe(401);
+    expect(canonical.body.error).toBe('Authentication required');
+    expect(legacy.status).toBe(401);
+    expect(legacy.body.error).toBe('Authentication required');
+  });
 });

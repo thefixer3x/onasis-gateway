@@ -5,12 +5,48 @@
  * Tests all deployed payment Edge Functions
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
+const decodeJwtPayload = (token) => {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  const payload = parts[1];
+  if (!payload) return null;
+
+  const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+  try {
+    const json = Buffer.from(b64 + pad, 'base64').toString('utf8');
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+const deriveSupabaseUrlFromTokens = () => {
+  const candidates = [
+    process.env.SUPABASE_ANON_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.SUPABASE_SERVICE_KEY,
+  ].filter(Boolean);
+
+  for (const token of candidates) {
+    const payload = decodeJwtPayload(token);
+    const ref = payload && payload.ref;
+    if (ref && typeof ref === 'string') {
+      return `https://${ref}.supabase.co`;
+    }
+  }
+  return null;
+};
+
+const SUPABASE_URL = process.env.SUPABASE_URL || deriveSupabaseUrlFromTokens();
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const STRIPE_SHARED_SECRET = process.env.STRIPE_SHARED_SECRET;
 
 if (!SUPABASE_URL) {
   console.error('❌ SUPABASE_URL not set');
   console.error('   Set it with: export SUPABASE_URL="https://your-project-ref.supabase.co"');
+  console.error('   Or ensure SUPABASE_ANON_KEY is set so the project ref can be derived.');
   process.exit(1);
 }
 
@@ -26,24 +62,59 @@ if (!SUPABASE_ANON_KEY) {
 async function callEdgeFunction(functionName, action, params = {}) {
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
+  const headers = {
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+  };
+
+  // Stripe edge function requires an auth gate. If configured, pass the shared secret.
+  if (STRIPE_SHARED_SECRET) {
+    headers['X-SHARED-SECRET'] = STRIPE_SHARED_SECRET;
+  }
+
   const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       action,
       ...params,
     }),
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  let data = null;
+  let rawBody = null;
+  let parseError = null;
+
+  if (contentType.includes('application/json')) {
+    const clone = response.clone();
+    try {
+      data = await response.json();
+    } catch (err) {
+      parseError = err;
+      try {
+        rawBody = await clone.text();
+      } catch (_) {
+        rawBody = null;
+      }
+    }
+  } else {
+    rawBody = await response.text();
+    try {
+      data = rawBody ? JSON.parse(rawBody) : null;
+    } catch (err) {
+      parseError = err;
+    }
+  }
 
   return {
     status: response.status,
     ok: response.ok,
     data,
+    rawBody,
+    parseError: parseError
+      ? (parseError instanceof Error ? parseError.message : String(parseError))
+      : null,
   };
 }
 
@@ -56,21 +127,30 @@ async function testFunction(functionName, action, params = {}, expectSuccess = t
   try {
     const result = await callEdgeFunction(functionName, action, params);
 
-    if (result.ok && result.data.success) {
-      console.log('✅ PASS');
-      return true;
-    } else if (!expectSuccess && !result.ok) {
-      console.log('✅ PASS (expected failure)');
-      return true;
+    const isSuccess = !!(result.ok && result.data && result.data.success === true);
+
+    if (expectSuccess) {
+      if (isSuccess) {
+        console.log('✅ PASS');
+        return true;
+      }
     } else {
-      console.log('❌ FAIL');
-      console.log(`    Status: ${result.status}`);
-      console.log(`    Response:`, JSON.stringify(result.data, null, 2).split('\n').map(l => '    ' + l).join('\n'));
-      return false;
+      if (!isSuccess) {
+        console.log('✅ PASS (expected failure)');
+        return true;
+      }
     }
+
+    console.log('❌ FAIL');
+    console.log(`    Status: ${result.status}`);
+    if (result.parseError) console.log(`    JSON Parse Error: ${result.parseError}`);
+    if (result.rawBody) console.log(`    Raw Body: ${result.rawBody}`);
+    console.log(`    Parsed:`, JSON.stringify(result.data, null, 2).split('\n').map(l => '    ' + l).join('\n'));
+    return false;
   } catch (error) {
     console.log('❌ ERROR');
-    console.log(`    ${error.message}`);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.log(`    ${msg}`);
     return false;
   }
 }

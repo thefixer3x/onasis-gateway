@@ -63,6 +63,18 @@ class AdapterRegistry {
     // Ensure the adapter has a stable id field.
     if (!adapter.id) adapter.id = adapterId;
 
+    // Reject duplicate adapter ids to prevent silent routing conflicts.
+    if (this.adapters.has(adapterId)) {
+      const existing = this.adapters.get(adapterId);
+      if (existing !== adapter) {
+        throw createRegistryError(
+          'DUPLICATE_ADAPTER_ID',
+          `Duplicate adapter id '${adapterId}' detected during registration`
+        );
+      }
+      return existing;
+    }
+
     const isAlreadyInitialized = !!(adapter._initialized || adapter.isInitialized || adapter.initialized);
 
     if (!options.skipInitialize && typeof adapter.initialize === 'function' && !isAlreadyInitialized) {
@@ -135,6 +147,11 @@ class AdapterRegistry {
    */
   registerMock(entry = {}) {
     if (!entry.id) return;
+    const existing = this.adapters.get(entry.id);
+    if (existing && !existing.is_mock) {
+      // Never let a mock override a real executable adapter.
+      return;
+    }
     const toolCount =
       (typeof entry.toolCount === 'number' ? entry.toolCount : undefined) ??
       (typeof entry.tools === 'number' ? entry.tools : undefined) ??
@@ -214,6 +231,11 @@ class AdapterRegistry {
       getHeader(headers, 'X-API-Key') ||
       getHeader(headers, 'x-api-key');
 
+    const clientId =
+      context.clientId ||
+      getHeader(headers, 'client-id') ||
+      getHeader(headers, 'x-client-id');
+
     const apikey =
       getHeader(headers, 'apikey');
 
@@ -235,6 +257,7 @@ class AdapterRegistry {
     const forwarded = {};
     if (authorization) forwarded.Authorization = authorization;
     if (apiKey) forwarded['X-API-Key'] = apiKey;
+    if (clientId) forwarded['client-id'] = clientId;
     if (apikey) forwarded.apikey = apikey;
     if (projectScope) forwarded['X-Project-Scope'] = projectScope;
     if (requestId) forwarded['X-Request-ID'] = requestId;
@@ -263,10 +286,17 @@ class AdapterRegistry {
 
     const forwardedHeaders = this.buildForwardHeaders(context);
 
-    // Prefer explicit legacy marker. Keep arity-based detection as temporary shim.
-    const isLegacyAdapter = adapter.legacyCallTool === true || adapter.callToolVersion === 'v1';
-    const isLegacyByArity = typeof adapter.callTool === 'function' && adapter.callTool.length < 3;
-    if (isLegacyAdapter || isLegacyByArity) {
+    // Prefer explicit markers. Keep arity-based detection only as temporary shim
+    // when the adapter has no declared call tool version.
+    const hasExplicitLegacy = adapter.legacyCallTool === true || adapter.callToolVersion === 'v1';
+    const hasExplicitModern = adapter.legacyCallTool === false || adapter.callToolVersion === 'v2';
+    const isLegacyByArity =
+      !hasExplicitLegacy &&
+      !hasExplicitModern &&
+      typeof adapter.callTool === 'function' &&
+      adapter.callTool.length < 3;
+
+    if (hasExplicitLegacy || isLegacyByArity) {
       return adapter.callTool(resolved.tool.name, { data: args, headers: forwardedHeaders });
     }
 

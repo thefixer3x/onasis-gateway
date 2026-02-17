@@ -78,7 +78,13 @@ const fallbackWss = new WebSocketServer({
 const API_KEYS = new Set([
   process.env.MASTER_API_KEY,
   process.env.VIBE_API_KEY
-].filter(Boolean));
+].filter((k) => typeof k === 'string' && k.length > 0));
+
+// Fail fast if no environment-provided keys are configured.
+if (API_KEYS.size === 0) {
+  logger.error('No API keys configured. Set MASTER_API_KEY and/or VIBE_API_KEY before starting the gateway.');
+  process.exit(1);
+}
 
 // API Key validation middleware (optional for public endpoints)
 function validateApiKey(req, res, next) {

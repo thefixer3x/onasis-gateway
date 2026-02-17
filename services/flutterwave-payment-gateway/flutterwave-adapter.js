@@ -29,6 +29,10 @@ const applyFlutterwaveDefaults = (action, params) => {
 class FlutterwaveAdapter extends BaseMCPAdapter {
   constructor(config = {}) {
     const functionName = config.functionName || 'flutterwave';
+    const contractMode =
+      config.contractMode ||
+      process.env.FLUTTERWAVE_EDGE_CONTRACT_MODE ||
+      'live-path';
     const client = config.client || new UniversalSupabaseClient({
       serviceName: 'flutterwave',
       functionName
@@ -43,6 +47,13 @@ class FlutterwaveAdapter extends BaseMCPAdapter {
       client,
       ...config
     });
+
+    this.functionName = functionName;
+    this.contractMode = contractMode;
+    this.liveActionMap = {
+      'initiate-payment': 'createPayment',
+      'verify-payment': 'verify'
+    };
   }
 
   async initialize() {
@@ -218,9 +229,17 @@ class FlutterwaveAdapter extends BaseMCPAdapter {
 
     try {
       const params = (args && typeof args === 'object') ? args : {};
+      const liveAction = this.liveActionMap[toolName];
+
+      // Current deployed Flutterwave edge function reads action from URL path.
+      // Keep path-based calls as default while preserving action-dispatch fallback.
+      if (this.contractMode === 'live-path' && liveAction) {
+        return await this.client.call(`${this.functionName}/${liveAction}`, params, context);
+      }
+
       const action = toSnakeAction(toolName);
       const payload = { action, ...applyFlutterwaveDefaults(action, params) };
-      return await this.client.call(payload, context);
+      return await this.client.call(this.functionName, payload, context);
     } catch (error) {
       this._stats.errors++;
       throw error;

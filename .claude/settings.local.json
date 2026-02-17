@@ -7,8 +7,7 @@
     ],
     "additionalDirectories": [
       "/Users/seyederick/DevOps/_project_folders/Onasis-CORE",
-      "/Users/seyederick/DevOps/_project_folders/onasis-mcp-standalone",
-      "/Users/seyederick/my_nx"
+      "/Users/seyederick/DevOps/_project_folders/onasis-mcp-standalone"
     ]
   },
   "enabledMcpjsonServers": [
@@ -17,4 +16,3 @@
   ],
   "enableAllProjectMcpServers": true
 }
-

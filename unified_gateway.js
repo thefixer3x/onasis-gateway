@@ -83,6 +83,15 @@ const parseCsv = (value) => (value || '')
     .map((entry) => entry.trim())
     .filter(Boolean);
 
+const getHeaderValue = (headers, key) => {
+    if (!headers || typeof headers !== 'object') return '';
+    if (key in headers) return headers[key];
+    const lower = key.toLowerCase();
+    if (lower in headers) return headers[lower];
+    const found = Object.keys(headers).find((name) => name.toLowerCase() === lower);
+    return found ? headers[found] : '';
+};
+
 const allowedOrigins = [
     ...parseCsv(process.env.ALLOWED_ORIGINS),
     ...parseCsv(process.env.CORS_ORIGIN)
@@ -189,11 +198,17 @@ class UnifiedGateway {
         this.versionManager = new VersionManager();
         this.complianceManager = new ComplianceManager();
         this.metricsCollector = new MetricsCollector();
+        this.routePolicyMode = (process.env.GATEWAY_ROUTE_POLICY_MODE || 'warn').toLowerCase();
+        this.centralGatewayBaseUrl = process.env.GATEWAY_PUBLIC_BASE_URL
+            || process.env.CENTRAL_GATEWAY_URL
+            || 'https://gateway.lanonasis.com';
 
         // MCP Server components
         this.adapters = new Map();
         this.adapterRegistry = null;
-        this.abstractedAPI = new AbstractedAPIEndpoints();
+        this.abstractedAPI = new AbstractedAPIEndpoints({
+            getAdapterRegistry: () => this.adapterRegistry
+        });
         this.authBridge = new OnasisAuthBridge({
             authApiUrl: process.env.AUTH_GATEWAY_URL
                 || process.env.ONASIS_AUTH_API_URL
@@ -209,6 +224,8 @@ class UnifiedGateway {
         this.aiRouterUrl = process.env.AI_ROUTER_URL || '';
         this.aiRouterTimeoutMs = parseInt(process.env.AI_ROUTER_TIMEOUT_MS || '12000', 10);
         this.authGatewayTimeoutMs = parseInt(process.env.AUTH_GATEWAY_TIMEOUT_MS || '8000', 10);
+        this.enforceIdentityVerification = (process.env.GATEWAY_ENFORCE_IDENTITY_VERIFICATION || 'true') === 'true';
+        this.allowInsecureAuthBypass = (process.env.GATEWAY_ALLOW_INSECURE_AUTH_BYPASS || 'false') === 'true';
         this.supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
         this.supabaseAiChatUrl = process.env.SUPABASE_AI_CHAT_URL
             || (process.env.SUPABASE_URL
@@ -419,6 +436,25 @@ class UnifiedGateway {
         const catalogAdapters = Array.isArray(this.serviceCatalog?.mcpAdapters) && this.serviceCatalog.mcpAdapters.length > 0
             ? this.serviceCatalog.mcpAdapters.filter(adapter => adapter.enabled !== false)
             : buildDefaultMcpCatalog();
+        const seenAdapterIds = new Set();
+        const duplicateAdapterIds = new Set();
+        const uniqueCatalogAdapters = [];
+
+        for (const entry of catalogAdapters) {
+            if (!entry || !entry.id) continue;
+            if (seenAdapterIds.has(entry.id)) {
+                duplicateAdapterIds.add(entry.id);
+                continue;
+            }
+            seenAdapterIds.add(entry.id);
+            uniqueCatalogAdapters.push(entry);
+        }
+
+        if (duplicateAdapterIds.size > 0) {
+            console.warn(
+                `⚠️ Duplicate adapter IDs detected in catalog: ${Array.from(duplicateAdapterIds).join(', ')}. Keeping first occurrence only.`
+            );
+        }
 
         const adapterFactories = {
             'supabase-edge-functions': async ({ gateway }) => {
@@ -482,7 +518,7 @@ class UnifiedGateway {
             supabase: async (context) => adapterFactories['supabase-edge-functions'](context)
         };
 
-        for (const adapterEntry of catalogAdapters) {
+        for (const adapterEntry of uniqueCatalogAdapters) {
             if (!adapterEntry || !adapterEntry.id) continue;
 
             const factory =
@@ -528,7 +564,7 @@ class UnifiedGateway {
 
                     const adapter = new AdapterClass(adapterEntry);
                     if (typeof adapter.initialize === 'function') {
-                        await adapter.initialize();
+                        await adapter.initialize(adapterEntry);
                         if (!adapter._initialized) {
                             adapter._initialized = true;
                         }
@@ -571,6 +607,7 @@ class UnifiedGateway {
     buildMcpRequestContext(req) {
         const authorization = req.headers.authorization || req.headers.Authorization || '';
         const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key'] || '';
+        const clientId = req.headers['client-id'] || req.headers['x-client-id'] || '';
         const projectScope = req.headers['x-project-scope'] || req.headers['X-Project-Scope'] || this.projectScope || '';
         const requestId = req.id || '';
         const sessionId = req.headers['x-session-id'] || req.headers['X-Session-ID'] || '';
@@ -579,6 +616,7 @@ class UnifiedGateway {
         const headers = {
             ...(authorization && { Authorization: authorization }),
             ...(apiKey && { 'X-API-Key': apiKey }),
+            ...(clientId && { 'client-id': clientId }),
             ...(apikey && { apikey }),
             ...(projectScope && { 'X-Project-Scope': projectScope }),
             ...(requestId && { 'X-Request-ID': requestId }),
@@ -588,6 +626,7 @@ class UnifiedGateway {
         return {
             authorization,
             apiKey,
+            clientId,
             projectScope,
             requestId,
             sessionId,
@@ -608,6 +647,210 @@ class UnifiedGateway {
 
         // Always append the canonical path exactly once
         return `${base}/v1/auth/verify`;
+    }
+
+    resolveSupabaseUrl() {
+        const adapter = this.adapters.get('supabase-edge-functions');
+        const adapterUrl =
+            (adapter && adapter.config && adapter.config.supabaseUrl) ||
+            '';
+        const envUrl = process.env.SUPABASE_URL || '';
+        return (adapterUrl || envUrl || '').replace(/\/+$/, '');
+    }
+
+    isValidFunctionSlug(slug) {
+        return typeof slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(slug);
+    }
+
+    getForwardHeadersForSupabaseProxy(req) {
+        const context = this.buildMcpRequestContext(req);
+        const headers = {
+            ...(context.headers || {})
+        };
+
+        if (!headers['X-Request-ID'] && req.id) {
+            headers['X-Request-ID'] = req.id;
+        }
+        if (!headers['X-Project-Scope'] && this.projectScope) {
+            headers['X-Project-Scope'] = this.projectScope;
+        }
+
+        const anonKey = process.env.SUPABASE_ANON_KEY || '';
+        if (!headers.apikey && anonKey) {
+            headers.apikey = anonKey;
+        }
+        if (!headers.Authorization && anonKey) {
+            headers.Authorization = `Bearer ${anonKey}`;
+        }
+
+        return headers;
+    }
+
+    async verifyRequestIdentity(req) {
+        if (!this.enforceIdentityVerification) {
+            return { ok: true, method: 'disabled' };
+        }
+
+        const context = this.buildMcpRequestContext(req);
+        const hasCredential = Boolean(
+            context.authorization ||
+            context.apiKey ||
+            (context.headers && context.headers.apikey)
+        );
+
+        if (!hasCredential) {
+            return { ok: false, status: 401, error: 'Authentication required' };
+        }
+
+        const verifyUrl = this.buildAuthVerifyUrl();
+        if (!verifyUrl) {
+            if (this.allowInsecureAuthBypass) {
+                return { ok: true, method: 'insecure_bypass' };
+            }
+            return { ok: false, status: 503, error: 'Auth gateway URL not configured' };
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-Project-Scope': context.projectScope || this.projectScope,
+            ...(context.requestId && { 'X-Request-ID': context.requestId }),
+            ...(context.authorization && { Authorization: context.authorization }),
+            ...(context.apiKey && { 'X-API-Key': context.apiKey }),
+            ...(context.headers?.apikey && { apikey: context.headers.apikey })
+        };
+
+        try {
+            const response = await fetchWithTimeout(
+                verifyUrl,
+                {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({})
+                },
+                this.authGatewayTimeoutMs
+            );
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                return {
+                    ok: false,
+                    status: response.status || 401,
+                    error: data.error || 'Unauthorized'
+                };
+            }
+
+            return {
+                ok: true,
+                method: 'auth_gateway',
+                payload: data.payload || data.user || data
+            };
+        } catch (error) {
+            if (this.allowInsecureAuthBypass) {
+                return { ok: true, method: 'insecure_bypass' };
+            }
+            return { ok: false, status: 502, error: 'Auth gateway unavailable' };
+        }
+    }
+
+    async enforceIdentity(req, res, options = {}) {
+        const { asJsonRpc = false, rpcId = null } = options;
+        const auth = await this.verifyRequestIdentity(req);
+        if (auth.ok) {
+            req.authContext = auth;
+            if (auth.method === 'insecure_bypass') {
+                res.setHeader('X-Gateway-Warning', 'identity-verification-bypassed');
+            }
+            return true;
+        }
+
+        if (asJsonRpc) {
+            res.status(auth.status || 401).json({
+                jsonrpc: '2.0',
+                error: { code: -32001, message: auth.error || 'Unauthorized' },
+                id: rpcId
+            });
+            return false;
+        }
+
+        res.status(auth.status || 401).json({
+            error: auth.error || 'Unauthorized',
+            requestId: req.id
+        });
+        return false;
+    }
+
+    async proxySupabaseFunction(req, res) {
+        await this.ensureAdaptersReady();
+
+        if (!(await this.enforceIdentity(req, res))) {
+            return;
+        }
+
+        const functionName = req.params.functionName;
+        if (!this.isValidFunctionSlug(functionName)) {
+            return res.status(400).json({
+                error: 'Invalid function name',
+                requestId: req.id
+            });
+        }
+
+        const supabaseUrl = this.resolveSupabaseUrl();
+        if (!supabaseUrl) {
+            return res.status(503).json({
+                error: 'SUPABASE_URL is not configured',
+                requestId: req.id
+            });
+        }
+
+        const targetUrl = new URL(`${supabaseUrl}/functions/v1/${functionName}`);
+        for (const [key, value] of Object.entries(req.query || {})) {
+            if (Array.isArray(value)) {
+                for (const item of value) targetUrl.searchParams.append(key, `${item}`);
+            } else if (value !== undefined && value !== null) {
+                targetUrl.searchParams.set(key, `${value}`);
+            }
+        }
+
+        const method = (req.method || 'POST').toUpperCase();
+        const forwardHeaders = this.getForwardHeadersForSupabaseProxy(req);
+        const requestHeaders = {
+            ...forwardHeaders,
+            'Content-Type': getHeaderValue(req.headers, 'content-type') || 'application/json'
+        };
+        if (getHeaderValue(req.headers, 'accept')) {
+            requestHeaders.Accept = getHeaderValue(req.headers, 'accept');
+        }
+
+        const shouldSendBody = !['GET', 'HEAD'].includes(method);
+        const hasBody = req.body !== undefined && req.body !== null;
+        const body = shouldSendBody
+            ? JSON.stringify(hasBody ? req.body : {})
+            : undefined;
+
+        try {
+            const upstreamResponse = await fetchWithTimeout(targetUrl.toString(), {
+                method,
+                headers: requestHeaders,
+                body
+            }, 30000);
+
+            const contentType = upstreamResponse.headers.get('content-type') || 'application/json';
+            const text = await upstreamResponse.text();
+
+            res.setHeader('X-Gateway-Route', 'central-supabase-proxy');
+            res.setHeader('X-Upstream-Target', 'supabase-edge-function');
+            res.setHeader('X-Upstream-Function', functionName);
+            res.setHeader('Content-Type', contentType);
+
+            return res.status(upstreamResponse.status).send(text);
+        } catch (error) {
+            return res.status(502).json({
+                error: 'Supabase function proxy failed',
+                message: error.message,
+                function: functionName,
+                requestId: req.id
+            });
+        }
     }
 
     async verifyVpsAuth(req, requireAdmin = true) {
@@ -732,48 +975,66 @@ class UnifiedGateway {
             });
         });
 
+        // ==================== CENTRAL ROUTE POLICY ====================
+        this.app.get('/api/v1/gateway/route-policy', async (req, res) => {
+            await this.ensureAdaptersReady();
+            const supabaseUrl = this.resolveSupabaseUrl();
+            res.json({
+                mode: this.routePolicyMode,
+                centralGatewayBaseUrl: this.centralGatewayBaseUrl,
+                proxyRoutes: [
+                    '/functions/v1/:functionName',
+                    '/api/v1/functions/:functionName',
+                    '/mcp (gateway-execute)'
+                ],
+                sourceOfTruth: 'All client/API traffic must enter via central gateway, then route to adapters/upstreams.',
+                upstreams: {
+                    supabaseFunctions: supabaseUrl || null
+                },
+                timestamp: new Date().toISOString()
+            });
+        });
+
+        // Gateway-owned compatibility routes for clients that previously called
+        // Supabase /functions/v1 directly. This keeps central controls in-path.
+        this.app.all('/functions/v1/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
+        this.app.all('/api/v1/functions/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
+
         // ==================== API GATEWAY ROUTES ====================
 
-        // AI chat (primary: AIServiceRouter, fallback: Supabase edge function)
-        this.app.post('/api/v1/ai-chat', async (req, res) => {
+        // AI chat (canonical external route).
+        // Primary: AI Router service
+        // Fallback: Supabase edge function (disabled for identity-required requests by default)
+        const handleAIChat = async (req, res) => {
             const requestId = req.id || crypto.randomUUID();
-            const body = req.body || {};
+            const allowProviderOverride = (process.env.AI_ALLOW_PROVIDER_OVERRIDE || 'false') === 'true';
+            const managedProvider = (process.env.AI_MANAGED_PROVIDER || '').trim().toLowerCase();
+            const rawBody = (req.body && typeof req.body === 'object') ? req.body : {};
+            const body = { ...rawBody };
+            const requireIdentity = (process.env.AI_CHAT_REQUIRE_IDENTITY || 'true') === 'true';
+            const allowIdentityFallback = (process.env.AI_CHAT_ALLOW_IDENTITY_FALLBACK || 'false') === 'true';
+
+            // Enforce backend-managed provider policy by default.
+            if (!allowProviderOverride && 'provider' in body) {
+                delete body.provider;
+            }
+            if (managedProvider) {
+                body.provider = managedProvider;
+            }
+
+            if (requireIdentity) {
+                const allowed = await this.enforceIdentity(req, res);
+                if (!allowed) {
+                    return;
+                }
+            }
 
             const forwardHeaders = {
                 'Content-Type': 'application/json',
-                ...(req.headers.authorization && { 'Authorization': req.headers.authorization }),
+                ...(req.headers.authorization && { Authorization: req.headers.authorization }),
                 ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
+                ...(req.headers['x-project-scope'] && { 'X-Project-Scope': req.headers['x-project-scope'] }),
                 'X-Request-ID': requestId
-            };
-
-            const tryPrimary = async () => {
-                if (!this.aiRouterUrl) return null;
-                const base = this.aiRouterUrl.replace(/\/+$/, '');
-                const url = `${base}/api/v1/ai-chat`;
-                const response = await fetchWithTimeout(url, {
-                    method: 'POST',
-                    headers: forwardHeaders,
-                    body: JSON.stringify(body)
-                }, this.aiRouterTimeoutMs);
-                return response;
-            };
-
-            const tryFallback = async () => {
-                if (!this.supabaseAiChatUrl) return null;
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'X-Request-ID': requestId,
-                    ...(this.supabaseAnonKey && {
-                        Authorization: `Bearer ${this.supabaseAnonKey}`,
-                        apikey: this.supabaseAnonKey
-                    })
-                };
-                const response = await fetchWithTimeout(this.supabaseAiChatUrl, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(body)
-                }, this.aiRouterTimeoutMs);
-                return response;
             };
 
             const sendResponse = async (response, source) => {
@@ -791,13 +1052,77 @@ class UnifiedGateway {
                 return res.status(response.status).send(payload);
             };
 
+            const tryPrimary = async () => {
+                if (!this.aiRouterUrl) return null;
+                const base = this.aiRouterUrl.replace(/\/+$/, '');
+                const candidates = ['/api/v1/ai/chat', '/api/v1/ai-chat'];
+
+                for (let i = 0; i < candidates.length; i++) {
+                    const url = `${base}${candidates[i]}`;
+                    const response = await fetchWithTimeout(url, {
+                        method: 'POST',
+                        headers: forwardHeaders,
+                        body: JSON.stringify(body)
+                    }, this.aiRouterTimeoutMs);
+
+                    // Try legacy path only when canonical path is not implemented upstream.
+                    const shouldTryLegacy = i < candidates.length - 1 && (response.status === 404 || response.status === 405);
+                    if (shouldTryLegacy) {
+                        continue;
+                    }
+                    return response;
+                }
+
+                return null;
+            };
+
+            const tryFallback = async () => {
+                if (!this.supabaseAiChatUrl) return null;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-Request-ID': requestId,
+                    ...(req.headers.authorization && { Authorization: req.headers.authorization }),
+                    ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
+                    ...(req.headers['x-project-scope'] && { 'X-Project-Scope': req.headers['x-project-scope'] })
+                };
+
+                // For non-identity routes we allow anon fallback credentials.
+                if (!headers.Authorization && this.supabaseAnonKey) {
+                    headers.Authorization = `Bearer ${this.supabaseAnonKey}`;
+                }
+                if (this.supabaseAnonKey) {
+                    headers.apikey = this.supabaseAnonKey;
+                }
+
+                return fetchWithTimeout(this.supabaseAiChatUrl, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body)
+                }, this.aiRouterTimeoutMs);
+            };
+
             try {
                 const primaryResponse = await tryPrimary();
-                if (primaryResponse && primaryResponse.ok) {
-                    return await sendResponse(primaryResponse, 'ai-router');
+                if (primaryResponse) {
+                    if (primaryResponse.ok) {
+                        return await sendResponse(primaryResponse, 'ai-router');
+                    }
+
+                    // Preserve upstream 4xx/validation errors from primary backend.
+                    if (primaryResponse.status >= 400 && primaryResponse.status < 500) {
+                        return await sendResponse(primaryResponse, 'ai-router');
+                    }
                 }
             } catch (error) {
-                console.warn('AI router unavailable, falling back', error.message);
+                console.warn('AI router unavailable, considering fallback', error.message);
+            }
+
+            // Identity routes should not silently fallback to anon-backed execution.
+            if (requireIdentity && !allowIdentityFallback) {
+                return res.status(502).json({
+                    error: 'AI router unavailable; identity-safe fallback disabled',
+                    requestId
+                });
             }
 
             try {
@@ -816,7 +1141,11 @@ class UnifiedGateway {
                     requestId
                 });
             }
-        });
+        };
+
+        // Canonical + legacy compatibility route
+        this.app.post('/api/v1/ai/chat', handleAIChat);
+        this.app.post('/api/v1/ai-chat', handleAIChat);
 
         // List all API services
         this.app.get('/api/services', (req, res) => {
@@ -990,6 +1319,10 @@ class UnifiedGateway {
             const endpoint = req.path.substring(1); // Remove leading slash
 
             try {
+                if (!(await this.enforceIdentity(req, res))) {
+                    return;
+                }
+
                 const service = this.services.get(serviceName);
                 if (!service) {
                     return res.status(404).json({
@@ -1109,6 +1442,16 @@ class UnifiedGateway {
 
             if (method === 'ping') {
                 return res.json({ jsonrpc: '2.0', result: {}, id });
+            }
+
+            if (method === 'tools/call') {
+                const allowed = await this.enforceIdentity(req, res, {
+                    asJsonRpc: true,
+                    rpcId: req.body.id
+                });
+                if (!allowed) {
+                    return;
+                }
             }
 
             // ============ LAZY MODE: 5 Meta-Tools ============
