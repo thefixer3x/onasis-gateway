@@ -173,7 +173,7 @@ class VendorAbstractionLayer {
           adapter: 'bap',
           mappings: {
             verifyAccount: {
-              tool: 'account-name-verify',
+              tool: 'validate-account-number',
               transform: (input) => ({
                 account_number: input.accountNumber,
                 bank_code: input.bankCode
@@ -1207,7 +1207,7 @@ class VendorAbstractionLayer {
       }
 
       if (input[field] !== undefined && rules.type) {
-        const actualType = typeof input[field];
+        const actualType = Array.isArray(input[field]) ? 'array' : typeof input[field];
         if (actualType !== rules.type) {
           throw new Error(`Invalid type for field ${field}: expected ${rules.type}, got ${actualType}`);
         }
