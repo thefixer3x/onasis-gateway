@@ -1,24 +1,30 @@
 # AI Router Service
 
-This service provides AI model routing and orchestration capabilities for the Onasis Gateway ecosystem.
+AI Router is the central orchestration point for multi-provider AI execution.
 
-## Features
-- Chat completion generation
-- Text embeddings
-- Model selection and routing
-- Rate limiting and quota management
-- Content moderation
-- Text translation and summarization
+## Canonical Gateway Contract
 
-## Integration
-This service connects to AI providers and provides MCP-compatible tools for AI operations.
+- `POST /api/v1/ai/chat`
+- `GET /api/v1/ai/health`
+- `GET /api/v1/ai/services` (optional)
+
+Legacy compatibility remains for `/api/v1/ai-chat`.
 
 ## MCP Tools
-- `chat-completion` - Generate chat completions using AI models
-- `generate-embedding` - Generate embeddings for text inputs
-- `stream-chat` - Stream chat completions in real-time
-- `list-models` - List available AI models
-- `moderate-content` - Moderate content for safety
-- `translate-text` - Translate text between languages
-- `summarize-text` - Summarize long text content
-- `classify-text` - Classify text into categories
+
+- `ai-chat` - Routed chat completion (provider-agnostic)
+- `chat` - Backward-compatible alias for `ai-chat`
+- `ollama` - Direct local Ollama route
+- `list-ai-services` - Available backends/providers
+- `ai-health` - Router/provider health status
+
+## Routing Model
+
+1. Primary backend: `${AI_ROUTER_URL}/api/v1/ai/chat`
+2. Internal fallback backend: `${SUPABASE_URL}/functions/v1/ai-router` (policy-controlled)
+
+## Auth Model
+
+- Forwarded caller `Authorization` is preserved when present.
+- Service token auth is opt-in via `serviceAuth` / `AI_ROUTER_SERVICE_AUTH=true`.
+- `Bearer undefined` injection is blocked.
