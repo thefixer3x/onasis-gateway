@@ -280,15 +280,15 @@ class MemoryAdapter extends BaseMCPAdapter {
     try {
       // Map tool names to their dedicated Edge Functions based on actual API
       const functionMap = {
-        'create-memory': 'memories',
-        'get-memory': 'memories/{id}',
-        'update-memory': 'memories/{id}',
-        'delete-memory': 'memories/{id}',
-        'list-memories': 'memories',
-        'search-memories': 'memories/search',
-        'memory-stats': 'memories/stats',
-        'bulk-delete-memories': 'memories/bulk-delete',
-        'search-documentation': 'docs/search'
+        'create-memory': 'memory-create',
+        'get-memory': 'memory-get',
+        'update-memory': 'memory-update',
+        'delete-memory': 'memory-delete',
+        'list-memories': 'memory-list',
+        'search-memories': 'memory-search',
+        'memory-stats': 'memory-stats',
+        'bulk-delete-memories': 'memory-bulk-delete',
+        'search-documentation': 'memory-search'
       };
       
       let functionName = functionMap[toolName];

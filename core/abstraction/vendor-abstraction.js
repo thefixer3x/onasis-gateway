@@ -173,7 +173,7 @@ class VendorAbstractionLayer {
           adapter: 'bap',
           mappings: {
             verifyAccount: {
-              tool: 'account-name-verify',
+              tool: 'validate-account-number',
               transform: (input) => ({
                 account_number: input.accountNumber,
                 bank_code: input.bankCode
