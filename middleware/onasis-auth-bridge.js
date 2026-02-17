@@ -9,14 +9,16 @@ const fetch = globalThis.fetch
 
 class OnasisAuthBridge {
   constructor(config = {}) {
+    const rawAuthApiUrl = config.authApiUrl
+      || process.env.ONASIS_AUTH_API_URL
+      || process.env.AUTH_GATEWAY_URL
+      || 'http://127.0.0.1:4000';
+
     this.config = {
       ...config,
-      authApiUrl: config.authApiUrl
-        || process.env.ONASIS_AUTH_API_URL
-        || process.env.AUTH_GATEWAY_URL
-        || 'http://127.0.0.1:4000/v1/auth',
+      authApiUrl: this.normalizeAuthApiUrl(rawAuthApiUrl),
       sessionPath: config.sessionPath || process.env.ONASIS_AUTH_SESSION_PATH || '/session',
-      apiKeyPath: config.apiKeyPath || process.env.ONASIS_AUTH_APIKEY_PATH || '/api-keys/verify',
+      apiKeyPath: config.apiKeyPath || process.env.ONASIS_AUTH_APIKEY_PATH || '/verify-api-key',
       projectScope: config.projectScope || 'lanonasis-maas',
       timeout: config.timeout || 10000,
       retries: config.retries || 2
@@ -25,6 +27,29 @@ class OnasisAuthBridge {
     // Cache for session validation
     this.sessionCache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  }
+
+  normalizeAuthApiUrl(value) {
+    const raw = (value || '').trim();
+    if (!raw) {
+      return 'http://127.0.0.1:4000/v1/auth';
+    }
+
+    const trimmed = raw.replace(/\/+$/, '');
+    if (/\/v1\/auth$/i.test(trimmed)) return trimmed;
+    if (/\/v1$/i.test(trimmed)) return `${trimmed}/auth`;
+    return `${trimmed}/v1/auth`;
+  }
+
+  normalizeProxyPath(value) {
+    let path = (value || '').toString();
+    if (!path.startsWith('/')) path = `/${path}`;
+
+    // Accept incoming forms like /api/auth/..., /v1/auth/... or just /...
+    path = path.replace(/^\/api\/auth/i, '');
+    path = path.replace(/^\/v1\/auth/i, '');
+
+    return path || '/';
   }
 
   /**
@@ -279,7 +304,17 @@ class OnasisAuthBridge {
    */
   async proxyAuthRequest(req, res) {
     try {
-      const path = req.path.replace('/api/auth', '');
+      const basePath = this.normalizeProxyPath(req.path || req.originalUrl || '/');
+      const query = req.query && typeof req.query === 'object'
+        ? new URLSearchParams(
+            Object.entries(req.query).flatMap(([key, value]) => {
+              if (value === undefined || value === null) return [];
+              if (Array.isArray(value)) return value.map((item) => [key, `${item}`]);
+              return [[key, `${value}`]];
+            })
+          ).toString()
+        : '';
+      const path = query ? `${basePath}?${query}` : basePath;
       const method = req.method;
       const body = req.body;
       const headers = {
@@ -324,22 +359,25 @@ class OnasisAuthBridge {
    * Make HTTP request to onasis-core auth API
    */
   async makeAuthRequest(path, options = {}) {
-    const url = `${this.config.authApiUrl}${path}`;
-    
-    const requestOptions = {
-      timeout: this.config.timeout,
-      ...options
-    };
+    const normalizedPath = this.normalizeProxyPath(path);
+    const url = `${this.config.authApiUrl}${normalizedPath}`;
 
     for (let attempt = 1; attempt <= this.config.retries; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.config.timeout);
       try {
-        return await fetch(url, requestOptions);
+        return await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
       } catch (error) {
         if (attempt === this.config.retries) {
           throw error;
         }
         console.warn(`Auth API request failed (attempt ${attempt}/${this.config.retries}):`, error.message);
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      } finally {
+        clearTimeout(timeout);
       }
     }
   }
