@@ -674,6 +674,14 @@ class UnifiedGateway {
         return `${base}/v1/auth/verify`;
     }
 
+    buildAuthUrl(pathname) {
+        const verifyUrl = this.buildAuthVerifyUrl();
+        if (!verifyUrl) return null;
+        const base = verifyUrl.replace(/\/v1\/auth\/verify$/i, '');
+        const normalizedPath = `/${(pathname || '').toString().replace(/^\/+/, '')}`;
+        return `${base}${normalizedPath}`;
+    }
+
     resolveSupabaseUrl() {
         const adapter = this.adapters.get('supabase-edge-functions');
         const adapterUrl =
@@ -744,46 +752,105 @@ class UnifiedGateway {
             ...(context.headers?.apikey && { apikey: context.headers.apikey })
         };
 
-        const verifyPayload = {};
         const token = extractBearerToken(context.authorization);
+        const inferredApiKey = (!context.apiKey && !context.headers?.apikey && /^lano_/i.test(token))
+            ? token
+            : '';
+        const apiKeyValue = context.apiKey || context.headers?.apikey || inferredApiKey || '';
+
+        const verifyPayload = {};
         if (token) verifyPayload.token = token;
-        if (context.apiKey) {
-            verifyPayload.api_key = context.apiKey;
-        } else if (context.headers?.apikey) {
-            verifyPayload.api_key = context.headers.apikey;
+        if (apiKeyValue) verifyPayload.api_key = apiKeyValue;
+
+        const candidateRequests = [];
+        const seen = new Set();
+        const addCandidate = (path, payload, extraHeaders = {}, source = 'auth_gateway') => {
+            const url = this.buildAuthUrl(path);
+            if (!url || seen.has(url)) return;
+            seen.add(url);
+            candidateRequests.push({
+                url,
+                payload,
+                headers: {
+                    ...headers,
+                    ...extraHeaders
+                },
+                source
+            });
+        };
+
+        // Preferred endpoint for API key verification
+        if (apiKeyValue) {
+            addCandidate(
+                process.env.AUTH_GATEWAY_VERIFY_APIKEY_PATH || '/v1/auth/verify-api-key',
+                { api_key: apiKeyValue },
+                { 'X-API-Key': apiKeyValue, 'x-api-key': apiKeyValue },
+                'auth_gateway_api_key'
+            );
         }
 
-        try {
-            const response = await fetchWithTimeout(
-                verifyUrl,
-                {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(verifyPayload)
-                },
-                this.authGatewayTimeoutMs
+        // Preferred endpoint for token verification
+        if (token) {
+            addCandidate(
+                process.env.AUTH_GATEWAY_VERIFY_TOKEN_PATH || '/v1/auth/verify-token',
+                { token },
+                {},
+                'auth_gateway_token'
             );
+        }
 
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                return {
+        // Legacy/default endpoint fallback
+        addCandidate('/v1/auth/verify', verifyPayload, {}, 'auth_gateway_legacy');
+
+        let lastFailure = { ok: false, status: 401, error: 'Unauthorized' };
+
+        for (const candidate of candidateRequests) {
+            try {
+                const response = await fetchWithTimeout(
+                    candidate.url,
+                    {
+                        method: 'POST',
+                        headers: candidate.headers,
+                        body: JSON.stringify(candidate.payload || {})
+                    },
+                    this.authGatewayTimeoutMs
+                );
+
+                const data = await response.json().catch(() => ({}));
+                if (response.ok) {
+                    return {
+                        ok: true,
+                        method: candidate.source,
+                        payload: data.payload || data.user || data
+                    };
+                }
+
+                lastFailure = {
                     ok: false,
                     status: response.status || 401,
                     error: data.error || 'Unauthorized'
                 };
-            }
 
-            return {
-                ok: true,
-                method: 'auth_gateway',
-                payload: data.payload || data.user || data
-            };
-        } catch (error) {
-            if (this.allowInsecureAuthBypass) {
-                return { ok: true, method: 'insecure_bypass' };
+                const errorText = typeof data.error === 'string' ? data.error.toLowerCase() : '';
+                const retryable =
+                    response.status === 404
+                    || response.status === 405
+                    || response.status >= 500
+                    || errorText.includes('no token provided')
+                    || errorText.includes('not implemented');
+
+                if (!retryable) {
+                    return lastFailure;
+                }
+            } catch (error) {
+                lastFailure = { ok: false, status: 502, error: 'Auth gateway unavailable' };
             }
-            return { ok: false, status: 502, error: 'Auth gateway unavailable' };
         }
+
+        if (this.allowInsecureAuthBypass) {
+            return { ok: true, method: 'insecure_bypass' };
+        }
+        return lastFailure;
     }
 
     async enforceIdentity(req, res, options = {}) {
