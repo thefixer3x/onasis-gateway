@@ -129,14 +129,14 @@ class SecurityAdapter extends BaseMCPAdapter {
     try {
       // Map tool names to their dedicated Edge Functions based on actual API endpoints
       const functionMap = {
-        'create-api-key': 'auth/api-keys',
-        'delete-api-key': 'auth/api-keys/{key_id}',
-        'rotate-api-key': 'auth/api-keys/{key_id}/rotate',
-        'revoke-api-key': 'auth/api-keys/{key_id}/revoke',
-        'list-api-keys': 'auth/api-keys',
-        'get-api-key': 'auth/api-keys/{key_id}',
-        'verify-api-key': 'auth/verify-api-key',
-        'verify-token': 'auth/verify-token'
+        'create-api-key': 'api-key-create',
+        'delete-api-key': 'api-key-delete',
+        'rotate-api-key': 'api-key-rotate',
+        'revoke-api-key': 'api-key-revoke',
+        'list-api-keys': 'api-key-list',
+        'get-api-key': 'api-key-list',
+        'verify-api-key': 'verify-api-key',
+        'verify-token': 'auth-status'
       };
       
       let functionName = functionMap[toolName];
