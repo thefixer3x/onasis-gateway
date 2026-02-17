@@ -450,23 +450,23 @@ class AbstractedAPIEndpoints {
       const { ...input } = req.body;
       const context = this.buildContext(req);
 
-      // Map operation to the appropriate auth gateway tool
+      // Map kebab-case URL params to camelCase operation names (vendor-abstraction.js client keys)
       const operationMap = {
         'login': 'login',
-        'exchange-supabase-token': 'exchange-supabase-token',
+        'exchange-supabase-token': 'exchangeSupabaseToken',
         'logout': 'logout',
-        'get-session': 'get-session',
-        'verify-token': 'verify-token',
-        'list-sessions': 'list-sessions',
-        'initiate-oauth': 'initiate-oauth',
-        'request-magic-link': 'request-magic-link',
-        'verify-api-key': 'verify-api-key',
-        'create-api-key': 'create-api-key',
-        'list-api-keys': 'list-api-keys',
-        'get-api-key': 'get-api-key',
-        'rotate-api-key': 'rotate-api-key',
-        'revoke-api-key': 'revoke-api-key',
-        'delete-api-key': 'delete-api-key'
+        'get-session': 'getSession',
+        'verify-token': 'verifyToken',
+        'list-sessions': 'listSessions',
+        'initiate-oauth': 'initiateOAuth',
+        'request-magic-link': 'requestMagicLink',
+        'verify-api-key': 'verifyAPIKey',
+        'create-api-key': 'createAPIKey',
+        'list-api-keys': 'listAPIKeys',
+        'get-api-key': 'getAPIKey',
+        'rotate-api-key': 'rotateAPIKey',
+        'revoke-api-key': 'revokeAPIKey',
+        'delete-api-key': 'deleteAPIKey'
       };
 
       const toolName = operationMap[operation] || operation;
@@ -505,12 +505,12 @@ class AbstractedAPIEndpoints {
       const { ...input } = req.body;
       const context = this.buildContext(req);
 
-      // Map operation to the appropriate AI router tool
+      // Map kebab-case URL params to camelCase operation names (vendor-abstraction.js client keys)
       const operationMap = {
-        'chat': 'ai-chat',
+        'chat': 'chat',
         'ollama': 'ollama',
-        'list-services': 'list-ai-services',
-        'health': 'ai-health'
+        'list-services': 'listServices',
+        'health': 'health'
       };
 
       const toolName = operationMap[operation] || operation;
@@ -549,17 +549,17 @@ class AbstractedAPIEndpoints {
       const { ...input } = req.body;
       const context = this.buildContext(req);
 
-      // Map operation to the appropriate memory service tool
+      // Map kebab-case URL params to camelCase operation names (vendor-abstraction.js client keys)
       const operationMap = {
-        'create': 'create-memory',
-        'get': 'get-memory',
-        'update': 'update-memory',
-        'delete': 'delete-memory',
-        'list': 'list-memories',
-        'search': 'search-memories',
-        'stats': 'memory-stats',
-        'bulk-delete': 'bulk-delete-memories',
-        'search-documentation': 'search-documentation'
+        'create': 'create',
+        'get': 'get',
+        'update': 'update',
+        'delete': 'delete',
+        'list': 'list',
+        'search': 'search',
+        'stats': 'stats',
+        'bulk-delete': 'bulkDelete',
+        'search-documentation': 'searchDocumentation'
       };
 
       const toolName = operationMap[operation] || operation;
@@ -598,17 +598,17 @@ class AbstractedAPIEndpoints {
       const { ...input } = req.body;
       const context = this.buildContext(req);
 
-      // Map operation to the appropriate intelligence API tool
+      // Map kebab-case URL params to camelCase operation names (vendor-abstraction.js client keys)
       const operationMap = {
-        'analyze-patterns': 'intelligence-analyze-patterns',
-        'suggest-tags': 'intelligence-suggest-tags',
-        'find-related': 'intelligence-find-related',
-        'detect-duplicates': 'intelligence-detect-duplicates',
-        'extract-insights': 'intelligence-extract-insights',
-        'health-check': 'intelligence-health-check',
-        'behavior-record': 'intelligence-behavior-record',
-        'behavior-recall': 'intelligence-behavior-recall',
-        'behavior-suggest': 'intelligence-behavior-suggest'
+        'analyze-patterns': 'analyzePatterns',
+        'suggest-tags': 'suggestTags',
+        'find-related': 'findRelated',
+        'detect-duplicates': 'detectDuplicates',
+        'extract-insights': 'extractInsights',
+        'health-check': 'healthCheck',
+        'behavior-record': 'behaviorRecord',
+        'behavior-recall': 'behaviorRecall',
+        'behavior-suggest': 'behaviorSuggest'
       };
 
       const toolName = operationMap[operation] || operation;
@@ -647,16 +647,16 @@ class AbstractedAPIEndpoints {
       const { ...input } = req.body;
       const context = this.buildContext(req);
 
-      // Map operation to the appropriate security service tool
+      // Map kebab-case URL params to camelCase operation names (vendor-abstraction.js client keys)
       const operationMap = {
-        'create-api-key': 'create-api-key',
-        'delete-api-key': 'delete-api-key',
-        'rotate-api-key': 'rotate-api-key',
-        'revoke-api-key': 'revoke-api-key',
-        'list-api-keys': 'list-api-keys',
-        'get-api-key': 'get-api-key',
-        'verify-api-key': 'verify-api-key',
-        'verify-token': 'verify-token'
+        'create-api-key': 'createAPIKey',
+        'delete-api-key': 'deleteAPIKey',
+        'rotate-api-key': 'rotateAPIKey',
+        'revoke-api-key': 'revokeAPIKey',
+        'list-api-keys': 'listAPIKeys',
+        'get-api-key': 'getAPIKey',
+        'verify-api-key': 'verifyAPIKey',
+        'verify-token': 'verifyToken'
       };
 
       const toolName = operationMap[operation] || operation;
@@ -695,7 +695,7 @@ class AbstractedAPIEndpoints {
       const { ...input } = req.body;
       const context = this.buildContext(req);
 
-      // Map operation to the appropriate verification service tool
+      // Map kebab-case URL params to camelCase operation names (vendor-abstraction.js client keys)
       const operationMap = {
         // Legacy operations
         'verify-nin': 'verifyNIN',
