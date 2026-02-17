@@ -304,15 +304,15 @@ class IntelligenceAdapter extends BaseMCPAdapter {
     try {
       // Map tool names to their dedicated Edge Functions based on actual API
       const functionMap = {
-        'intelligence-analyze-patterns': 'intelligence/analyze-patterns',
-        'intelligence-suggest-tags': 'intelligence/suggest-tags',
-        'intelligence-find-related': 'intelligence/find-related',
-        'intelligence-detect-duplicates': 'intelligence/detect-duplicates',
-        'intelligence-extract-insights': 'intelligence/extract-insights',
-        'intelligence-health-check': 'intelligence/health-check',
-        'intelligence-behavior-record': 'intelligence/behavior-record',
-        'intelligence-behavior-recall': 'intelligence/behavior-recall',
-        'intelligence-behavior-suggest': 'intelligence/behavior-suggest'
+        'intelligence-analyze-patterns': 'intelligence-analyze-patterns',
+        'intelligence-suggest-tags': 'intelligence-suggest-tags',
+        'intelligence-find-related': 'intelligence-find-related',
+        'intelligence-detect-duplicates': 'intelligence-detect-duplicates',
+        'intelligence-extract-insights': 'intelligence-extract-insights',
+        'intelligence-health-check': 'intelligence-health-check',
+        'intelligence-behavior-record': 'intelligence-behavior-record',
+        'intelligence-behavior-recall': 'intelligence-behavior-recall',
+        'intelligence-behavior-suggest': 'intelligence-behavior-suggest'
       };
       
       const functionName = functionMap[toolName];
