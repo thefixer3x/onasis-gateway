@@ -67,6 +67,12 @@ class SupabaseEdgeFunctionsAdapter {
     this.lastDiscovery = 0;
     this.isInitialized = false;
     this.startedAt = null;
+    this.healthState = {
+      healthy: null,
+      checkedAt: 0,
+      latencyMs: null,
+      error: null
+    };
 
     // Default configuration
     this.config = {
@@ -80,6 +86,8 @@ class SupabaseEdgeFunctionsAdapter {
       includedServices: ['*'], // Include all by default
       authPassthrough: true,
       timeout: 30000,
+      healthCheckTimeoutMs: Number(process.env.SUPABASE_HEALTH_TIMEOUT_MS || 5000),
+      healthCacheTtlMs: Number(process.env.SUPABASE_HEALTH_CACHE_TTL_MS || 30000),
       retryAttempts: 2,
       environment: 'production',
       uaiIntegration: {
@@ -496,6 +504,24 @@ class SupabaseEdgeFunctionsAdapter {
   }
 
   async isHealthy() {
+    const now = Date.now();
+    const cacheTtl = Number.isFinite(this.config.healthCacheTtlMs)
+      ? Math.max(0, this.config.healthCacheTtlMs)
+      : 30000;
+
+    if (
+      this.healthState.healthy !== null &&
+      this.healthState.checkedAt > 0 &&
+      now - this.healthState.checkedAt < cacheTtl
+    ) {
+      return this.healthState.healthy;
+    }
+
+    const healthCheckTimeoutMs = Number.isFinite(this.config.healthCheckTimeoutMs)
+      ? Math.max(500, this.config.healthCheckTimeoutMs)
+      : 5000;
+
+    const startedAt = Date.now();
     try {
       // Check if we can reach Supabase
       const response = await this.fetchWithTimeout(`${this.config.supabaseUrl}/functions/v1/system-health`, {
@@ -503,11 +529,34 @@ class SupabaseEdgeFunctionsAdapter {
         headers: {
           'apikey': this.config.supabaseAnonKey
         }
-      }, 5000);
+      }, healthCheckTimeoutMs);
+
+      this.healthState = {
+        healthy: response.ok,
+        checkedAt: Date.now(),
+        latencyMs: Date.now() - startedAt,
+        error: null
+      };
 
       return response.ok;
     } catch (error) {
-      console.error('Supabase health check failed:', error);
+      const errorName = error && error.name ? error.name : 'Error';
+      const errorMessage = error && error.message ? error.message : String(error);
+      const isTimeoutError = errorName === 'TimeoutError' || errorName === 'AbortError' || /timeout|aborted/i.test(errorMessage);
+
+      // Timeout on remote health probes is common in hosted environments; keep logs actionable but not noisy.
+      if (isTimeoutError) {
+        console.warn(`Supabase health check timeout after ${healthCheckTimeoutMs}ms`);
+      } else {
+        console.error('Supabase health check failed:', error);
+      }
+
+      this.healthState = {
+        healthy: false,
+        checkedAt: Date.now(),
+        latencyMs: Date.now() - startedAt,
+        error: errorMessage
+      };
       return false;
     }
   }
@@ -532,7 +581,13 @@ class SupabaseEdgeFunctionsAdapter {
         supabaseUrl: this.config.supabaseUrl,
         discoveryMode: this.config.discoveryMode,
         uaiEnabled: this.config.uaiIntegration.enabled,
-        cachedFunctions: this.functionCache.size
+        cachedFunctions: this.functionCache.size,
+        health: {
+          checkedAt: this.healthState.checkedAt ? new Date(this.healthState.checkedAt).toISOString() : null,
+          latencyMs: this.healthState.latencyMs,
+          cacheTtlMs: this.config.healthCacheTtlMs,
+          error: this.healthState.error
+        }
       }
     };
   }
