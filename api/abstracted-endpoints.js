@@ -695,13 +695,13 @@ class AbstractedAPIEndpoints {
       const { ...input } = req.body;
       const context = this.buildContext(req);
 
-      // Map operation to the appropriate verification service tool
+      // Map kebab-case URL params to camelCase operation names (vendor-abstraction.js client keys)
       const operationMap = {
-        'verify-nin': 'verify-nin',
-        'verify-bvn': 'verify-bvn',
-        'verify-passport': 'verify-passport',
-        'verify-document': 'verify-document',
-        'get-history': 'get-verification-history'
+        'verify-nin': 'verifyNIN',
+        'verify-bvn': 'verifyBVN',
+        'verify-passport': 'verifyPassport',
+        'verify-document': 'verifyDocument',
+        'get-history': 'getHistory'
       };
 
       const toolName = operationMap[operation] || operation;
