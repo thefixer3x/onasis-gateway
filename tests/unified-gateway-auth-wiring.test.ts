@@ -76,7 +76,7 @@ describe('UnifiedGateway auth wiring', () => {
     expect(result.ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://auth.lanonasis.com/v1/auth/verify');
+    expect(url).toBe('https://auth.lanonasis.com/v1/auth/verify-token');
     expect(options.headers.Authorization).toBe('Bearer test.jwt.token');
     expect(JSON.parse(options.body)).toMatchObject({ token: 'test.jwt.token' });
   });
@@ -105,9 +105,41 @@ describe('UnifiedGateway auth wiring', () => {
     });
 
     expect(result.ok).toBe(true);
-    const [, options] = fetchMock.mock.calls[0];
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://auth.lanonasis.com/v1/auth/verify-api-key');
     expect(options.headers['X-API-Key']).toBe('lano_test_api_key');
     expect(options.headers['x-api-key']).toBe('lano_test_api_key');
     expect(JSON.parse(options.body)).toMatchObject({ api_key: 'lano_test_api_key' });
+  });
+
+  it('treats lano_ bearer tokens as api keys when x-api-key header is absent', async () => {
+    process.env.AUTH_GATEWAY_URL = 'https://auth.lanonasis.com';
+    process.env.GATEWAY_ENFORCE_IDENTITY_VERIFICATION = 'true';
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ user: { id: 'service_user' } })
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const UnifiedGateway = loadGatewayClass();
+    stubGatewayForTests(UnifiedGateway);
+    const gateway = new UnifiedGateway();
+
+    const result = await gateway.verifyRequestIdentity({
+      id: 'req-auth-3',
+      headers: {
+        authorization: 'Bearer lano_sample_key',
+        'x-project-scope': 'lanonasis-maas'
+      }
+    });
+
+    expect(result.ok).toBe(true);
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://auth.lanonasis.com/v1/auth/verify-api-key');
+    expect(options.headers.Authorization).toBe('Bearer lano_sample_key');
+    expect(options.headers['X-API-Key']).toBe('lano_sample_key');
+    expect(JSON.parse(options.body)).toMatchObject({ api_key: 'lano_sample_key' });
   });
 });
