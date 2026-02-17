@@ -507,10 +507,14 @@ class AbstractedAPIEndpoints {
 
       // Map operation to the appropriate AI router tool
       const operationMap = {
-        'chat': 'ai-chat',
+        // Canonical abstraction operation keys live in vendor-abstraction.js
+        'chat': 'chat',
+        'ai-chat': 'chat',
         'ollama': 'ollama',
-        'list-services': 'list-ai-services',
-        'health': 'ai-health'
+        'list-services': 'listServices',
+        'services': 'listServices',
+        'health': 'health',
+        'ai-health': 'health'
       };
 
       const toolName = operationMap[operation] || operation;
