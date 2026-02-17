@@ -1143,7 +1143,10 @@ class UnifiedGateway {
             }
         };
 
-        // Canonical + legacy compatibility route
+        // Canonical + legacy compatibility route.
+        // IMPORTANT: This route is intentionally registered BEFORE abstractedAPI.getRouter().
+        // Express evaluates handlers in registration order, so this direct handler takes
+        // precedence over the abstracted fallback route for /api/v1/ai/chat.
         this.app.post('/api/v1/ai/chat', handleAIChat);
         this.app.post('/api/v1/ai-chat', handleAIChat);
 
@@ -1373,7 +1376,9 @@ class UnifiedGateway {
             });
         });
 
-        // Add abstracted API routes (from existing MCP server)
+        // Add abstracted API routes (from existing MCP server).
+        // /api/v1/ai/chat also exists in this router, but acts as fallback only
+        // because the direct route above was mounted earlier in this file.
         this.app.use('/', this.abstractedAPI.getRouter());
 
         // MCP health check
