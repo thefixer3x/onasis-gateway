@@ -24,6 +24,7 @@ describe('AIRouterAdapter multi-provider routing', () => {
       supabaseClient,
       defaultProvider: 'auto',
       fallbackProvider: 'claude',
+      allowProviderOverride: true,
       ollamaModel: 'qwen2.5-coder:3b'
     });
     await adapter.initialize();
@@ -142,17 +143,13 @@ describe('AIRouterAdapter multi-provider routing', () => {
     ).rejects.toThrow('timeout');
   });
 
-  it('treats unknown provider as edge function slug', async () => {
-    await adapter.callTool('ai-chat', {
-      messages: [{ role: 'user', content: 'hello' }],
-      provider: 'nixie-ai'
-    });
-
-    expect(supabaseClient.call).toHaveBeenCalledWith(
-      'nixie-ai',
-      expect.any(Object),
-      expect.any(Object)
-    );
+  it('rejects unknown provider when override is enabled', async () => {
+    await expect(
+      adapter.callTool('ai-chat', {
+        messages: [{ role: 'user', content: 'hello' }],
+        provider: 'nixie-ai'
+      })
+    ).rejects.toThrow('not allowed');
   });
 });
 
@@ -302,5 +299,77 @@ describe('AIRouterAdapter context header forwarding', () => {
 
     const callOptions = supabaseClient.call.mock.calls[0][2];
     expect(callOptions.headers.Authorization).toBe('Bearer user-jwt');
+  });
+});
+
+describe('AIRouterAdapter provider hardening', () => {
+  it('ignores request provider when override is disabled', async () => {
+    const supabaseClient = mockSupabaseClient();
+    const adapter = new AIRouterAdapter({
+      client: mockClient(),
+      ollamaClient: mockClient(),
+      supabaseClient,
+      defaultProvider: 'claude',
+      allowProviderOverride: false
+    });
+    await adapter.initialize();
+
+    await adapter.callTool('ai-chat', {
+      messages: [{ role: 'user', content: 'hello' }],
+      provider: 'openai'
+    });
+
+    expect(supabaseClient.call).toHaveBeenCalledWith(
+      'claude-ai',
+      expect.objectContaining({
+        provider: 'claude'
+      }),
+      expect.any(Object)
+    );
+  });
+
+  it('preserves fallback provider in legacy request payload when supabase client is unavailable', async () => {
+    const legacyClient = mockClient();
+    const ollamaClient = mockClient();
+    ollamaClient.request.mockRejectedValueOnce(new Error('ollama down'));
+
+    const adapter = new AIRouterAdapter({
+      client: legacyClient,
+      ollamaClient,
+      supabaseClient: null,
+      defaultProvider: 'auto',
+      fallbackProvider: 'openai',
+      allowProviderOverride: false
+    });
+    await adapter.initialize();
+
+    await adapter.callTool('ai-chat', {
+      messages: [{ role: 'user', content: 'hello' }]
+    });
+
+    const [, options] = legacyClient.request.mock.calls[0];
+    expect(options.data.provider).toBe('openai');
+  });
+
+  it('reports the actual fallback provider in onasis metadata', async () => {
+    const ollamaClient = mockClient();
+    ollamaClient.request.mockRejectedValueOnce(new Error('ollama timeout'));
+    const supabaseClient = mockSupabaseClient();
+
+    const adapter = new AIRouterAdapter({
+      client: mockClient(),
+      ollamaClient,
+      supabaseClient,
+      defaultProvider: 'auto',
+      fallbackProvider: 'openai',
+      allowProviderOverride: false
+    });
+    await adapter.initialize();
+
+    const result = await adapter.callTool('ai-chat', {
+      messages: [{ role: 'user', content: 'hello' }]
+    });
+
+    expect(result.onasis_metadata.actual_provider).toBe('openai');
   });
 });
