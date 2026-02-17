@@ -4,10 +4,15 @@ import AIRouterAdapterImport from '../../services/ai-router/ai-router-adapter.js
 
 const AIRouterAdapter = AIRouterAdapterImport?.default || AIRouterAdapterImport;
 
+const mockClient = () => ({ request: vi.fn().mockResolvedValue({ ok: true }) });
+const mockSupabaseClient = () => ({ call: vi.fn().mockResolvedValue({ ok: true }) });
+
 describe('AIRouterAdapter', () => {
   it('exposes only public AI router tools (no internal memory tools)', async () => {
     const adapter = new AIRouterAdapter({
-      client: { request: vi.fn() }
+      client: mockClient(),
+      ollamaClient: mockClient(),
+      supabaseClient: mockSupabaseClient()
     });
 
     await adapter.initialize();
@@ -15,16 +20,23 @@ describe('AIRouterAdapter', () => {
 
     expect(toolNames).toContain('ai-chat');
     expect(toolNames).toContain('ollama');
+    expect(toolNames).toContain('embedding');
     expect(toolNames).toContain('list-ai-services');
+    expect(toolNames).toContain('list-models');
     expect(toolNames).toContain('ai-health');
     expect(toolNames).not.toContain('memory-search');
     expect(toolNames).not.toContain('memory-get');
     expect(toolNames).not.toContain('memory-write');
   });
 
-  it('uses canonical /api/v1/ai/chat path for ai-chat', async () => {
-    const client = { request: vi.fn().mockResolvedValue({ ok: true }) };
-    const adapter = new AIRouterAdapter({ client });
+  it('uses canonical /api/v1/ai/chat path for ai-chat via Ollama', async () => {
+    const ollamaClient = mockClient();
+    const adapter = new AIRouterAdapter({
+      client: mockClient(),
+      ollamaClient,
+      supabaseClient: mockSupabaseClient(),
+      defaultProvider: 'ollama'
+    });
     await adapter.initialize();
 
     await adapter.callTool(
@@ -33,22 +45,23 @@ describe('AIRouterAdapter', () => {
       { headers: { Authorization: 'Bearer user-jwt' } }
     );
 
-    const [endpoint, options] = client.request.mock.calls[0];
-    expect(endpoint).toEqual({ path: '/api/v1/ai/chat', method: 'POST' });
+    const [endpoint, options] = ollamaClient.request.mock.calls[0];
+    expect(endpoint).toEqual({ path: '/api/chat', method: 'POST' });
     expect(options.headers.Authorization).toBe('Bearer user-jwt');
   });
 
-  it('falls back to legacy path only on 404/405', async () => {
-    const notFoundError = new Error('not found');
-    notFoundError.response = { status: 404 };
+  it('falls back to edge function when Ollama returns error in auto mode', async () => {
+    const ollamaClient = mockClient();
+    ollamaClient.request.mockRejectedValueOnce(new Error('connection refused'));
 
-    const client = {
-      request: vi
-        .fn()
-        .mockRejectedValueOnce(notFoundError)
-        .mockResolvedValueOnce({ ok: true, route: 'legacy' })
-    };
-    const adapter = new AIRouterAdapter({ client });
+    const supabaseClient = mockSupabaseClient();
+    const adapter = new AIRouterAdapter({
+      client: mockClient(),
+      ollamaClient,
+      supabaseClient,
+      defaultProvider: 'auto',
+      fallbackProvider: 'claude'
+    });
     await adapter.initialize();
 
     const result = await adapter.callTool('ai-chat', {
@@ -56,14 +69,10 @@ describe('AIRouterAdapter', () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(client.request).toHaveBeenNthCalledWith(
-      1,
-      { path: '/api/v1/ai/chat', method: 'POST' },
-      expect.any(Object)
-    );
-    expect(client.request).toHaveBeenNthCalledWith(
-      2,
-      { path: '/api/v1/ai-chat', method: 'POST' },
+    expect(ollamaClient.request).toHaveBeenCalled();
+    expect(supabaseClient.call).toHaveBeenCalledWith(
+      'claude-ai',
+      expect.any(Object),
       expect.any(Object)
     );
   });
