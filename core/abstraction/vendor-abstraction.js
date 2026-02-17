@@ -380,8 +380,8 @@ class VendorAbstractionLayer {
       client: {
         chat: {
           schema: {
-            messages: { 
-              type: 'array', 
+            messages: {
+              type: 'array',
               required: true,
               items: {
                 type: 'object',
@@ -392,16 +392,18 @@ class VendorAbstractionLayer {
                 required: ['role', 'content']
               }
             },
+            provider: { type: 'string', required: false },
             model: { type: 'string', default: 'qwen2:1.5b' },
             temperature: { type: 'number', default: 0.7 },
-            max_tokens: { type: 'integer', required: false }
+            max_tokens: { type: 'integer', required: false },
+            system_prompt: { type: 'string', required: false }
           }
         },
         ollama: {
           schema: {
             model: { type: 'string', required: true },
-            messages: { 
-              type: 'array', 
+            messages: {
+              type: 'array',
               required: true,
               items: {
                 type: 'object',
@@ -415,7 +417,16 @@ class VendorAbstractionLayer {
             stream: { type: 'boolean', default: false }
           }
         },
+        embedding: {
+          schema: {
+            input: { type: 'string', required: true },
+            model: { type: 'string', required: false }
+          }
+        },
         listServices: {
+          schema: {}
+        },
+        listModels: {
           schema: {}
         },
         health: {
@@ -434,8 +445,16 @@ class VendorAbstractionLayer {
               tool: 'ollama',
               transform: (input) => input
             },
+            embedding: {
+              tool: 'embedding',
+              transform: (input) => input
+            },
             listServices: {
               tool: 'list-ai-services',
+              transform: (input) => input
+            },
+            listModels: {
+              tool: 'list-models',
               transform: (input) => input
             },
             health: {
