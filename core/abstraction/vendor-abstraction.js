@@ -380,8 +380,8 @@ class VendorAbstractionLayer {
       client: {
         chat: {
           schema: {
-            messages: { 
-              type: 'array', 
+            messages: {
+              type: 'array',
               required: true,
               items: {
                 type: 'object',
@@ -392,16 +392,18 @@ class VendorAbstractionLayer {
                 required: ['role', 'content']
               }
             },
+            provider: { type: 'string', required: false },
             model: { type: 'string', default: 'qwen2:1.5b' },
             temperature: { type: 'number', default: 0.7 },
-            max_tokens: { type: 'integer', required: false }
+            max_tokens: { type: 'integer', required: false },
+            system_prompt: { type: 'string', required: false }
           }
         },
         ollama: {
           schema: {
             model: { type: 'string', required: true },
-            messages: { 
-              type: 'array', 
+            messages: {
+              type: 'array',
               required: true,
               items: {
                 type: 'object',
@@ -415,7 +417,16 @@ class VendorAbstractionLayer {
             stream: { type: 'boolean', default: false }
           }
         },
+        embedding: {
+          schema: {
+            input: { type: 'string', required: true },
+            model: { type: 'string', required: false }
+          }
+        },
         listServices: {
+          schema: {}
+        },
+        listModels: {
           schema: {}
         },
         health: {
@@ -434,8 +445,16 @@ class VendorAbstractionLayer {
               tool: 'ollama',
               transform: (input) => input
             },
+            embedding: {
+              tool: 'embedding',
+              transform: (input) => input
+            },
             listServices: {
               tool: 'list-ai-services',
+              transform: (input) => input
+            },
+            listModels: {
+              tool: 'list-models',
               transform: (input) => input
             },
             health: {
@@ -1207,8 +1226,37 @@ class VendorAbstractionLayer {
       }
 
       if (input[field] !== undefined && rules.type) {
-        const actualType = Array.isArray(input[field]) ? 'array' : typeof input[field];
-        if (actualType !== rules.type) {
+        const value = input[field];
+        const actualType = Array.isArray(value) ? 'array' : typeof value;
+
+        if (rules.type === 'array') {
+          if (!Array.isArray(value)) {
+            throw new Error(`Invalid type for field ${field}: expected array, got ${actualType}`);
+          }
+
+          if (rules.items && rules.items.type) {
+            value.forEach((item, index) => {
+              const itemType = Array.isArray(item) ? 'array' : typeof item;
+              if (itemType !== rules.items.type) {
+                throw new Error(
+                  `Invalid type for field ${field}[${index}]: expected ${rules.items.type}, got ${itemType}`
+                );
+              }
+
+              if (rules.items.type === 'object' && rules.items.required && Array.isArray(rules.items.required)) {
+                for (const requiredProp of rules.items.required) {
+                  if (item[requiredProp] === undefined || item[requiredProp] === null) {
+                    throw new Error(`Required field missing: ${field}[${index}].${requiredProp}`);
+                  }
+                }
+              }
+            });
+          }
+        } else if (rules.type === 'object') {
+          if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            throw new Error(`Invalid type for field ${field}: expected object, got ${actualType}`);
+          }
+        } else if (actualType !== rules.type) {
           throw new Error(`Invalid type for field ${field}: expected ${rules.type}, got ${actualType}`);
         }
       }
