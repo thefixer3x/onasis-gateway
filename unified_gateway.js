@@ -92,6 +92,16 @@ const getHeaderValue = (headers, key) => {
     return found ? headers[found] : '';
 };
 
+const extractBearerToken = (authHeader) => {
+    if (!authHeader || typeof authHeader !== 'string') return '';
+    const trimmed = authHeader.trim();
+    if (!trimmed) return '';
+    if (/^Bearer\s+/i.test(trimmed)) {
+        return trimmed.replace(/^Bearer\s+/i, '').trim();
+    }
+    return trimmed;
+};
+
 const allowedOrigins = [
     ...parseCsv(process.env.ALLOWED_ORIGINS),
     ...parseCsv(process.env.CORS_ORIGIN)
@@ -218,6 +228,7 @@ class UnifiedGateway {
 
         this.authGatewayUrl = process.env.AUTH_GATEWAY_URL
             || process.env.ONASIS_AUTH_GATEWAY_URL
+            || process.env.ONASIS_AUTH_API_URL
             || 'http://127.0.0.1:4000';
         this.projectScope = process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas';
         this.vpsMonitorToken = process.env.VPS_MONITOR_TOKEN || null;
@@ -635,15 +646,29 @@ class UnifiedGateway {
     }
 
     buildAuthVerifyUrl() {
-        const raw = (this.authGatewayUrl || '').replace(/\/+$/, '');
+        const raw = (this.authGatewayUrl || '').trim();
         if (!raw) {
             return null;
         }
 
+        const hasProtocol = /^https?:\/\//i.test(raw);
+        const isLocalHost = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?(\/|$)/i.test(raw);
+        const baseUrl = hasProtocol
+            ? raw
+            : `${isLocalHost ? 'http' : 'https'}://${raw}`;
+
+        let normalized = baseUrl.replace(/\/+$/, '');
+        try {
+            const parsed = new URL(baseUrl);
+            normalized = `${parsed.origin}${parsed.pathname}`.replace(/\/+$/, '');
+        } catch {
+            normalized = baseUrl.replace(/\/+$/, '');
+        }
+
         // Strip any existing /v1/auth or /v1 suffix to get the bare host:port
-        const base = raw
-            .replace(/\/v1\/auth$/, '')
-            .replace(/\/v1$/, '');
+        const base = normalized
+            .replace(/\/v1\/auth$/i, '')
+            .replace(/\/v1$/i, '');
 
         // Always append the canonical path exactly once
         return `${base}/v1/auth/verify`;
@@ -715,9 +740,18 @@ class UnifiedGateway {
             'X-Project-Scope': context.projectScope || this.projectScope,
             ...(context.requestId && { 'X-Request-ID': context.requestId }),
             ...(context.authorization && { Authorization: context.authorization }),
-            ...(context.apiKey && { 'X-API-Key': context.apiKey }),
+            ...(context.apiKey && { 'X-API-Key': context.apiKey, 'x-api-key': context.apiKey }),
             ...(context.headers?.apikey && { apikey: context.headers.apikey })
         };
+
+        const verifyPayload = {};
+        const token = extractBearerToken(context.authorization);
+        if (token) verifyPayload.token = token;
+        if (context.apiKey) {
+            verifyPayload.api_key = context.apiKey;
+        } else if (context.headers?.apikey) {
+            verifyPayload.api_key = context.headers.apikey;
+        }
 
         try {
             const response = await fetchWithTimeout(
@@ -725,7 +759,7 @@ class UnifiedGateway {
                 {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify({})
+                    body: JSON.stringify(verifyPayload)
                 },
                 this.authGatewayTimeoutMs
             );
@@ -877,13 +911,17 @@ class UnifiedGateway {
         }
 
         try {
+            const verifyPayload = {
+                token
+            };
             const response = await fetchWithTimeout(verifyUrl, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'X-Project-Scope': this.projectScope
-                }
+                },
+                body: JSON.stringify(verifyPayload)
             }, this.authGatewayTimeoutMs);
 
             const data = await response.json().catch(() => ({}));
