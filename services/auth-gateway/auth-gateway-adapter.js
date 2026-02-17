@@ -9,9 +9,13 @@ const BaseClient = require('../../core/base-client');
 
 class AuthGatewayAdapter extends BaseMCPAdapter {
   constructor(config = {}) {
-    const authGatewayUrl = process.env.AUTH_GATEWAY_URL 
+    const authGatewayUrlRaw = process.env.AUTH_GATEWAY_URL 
       || process.env.ONASIS_AUTH_API_URL 
       || 'https://auth.lanonasis.com';
+    const authGatewayUrl = authGatewayUrlRaw
+      .replace(/\/+$/, '')
+      .replace(/\/v1\/auth$/i, '')
+      .replace(/\/v1$/i, '');
     
     super({
       id: 'auth-gateway',
