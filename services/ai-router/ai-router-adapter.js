@@ -3,12 +3,12 @@
  *
  * Multi-provider AI routing with Onasis branding. Routes chat requests to
  * Ollama (local) or Supabase Edge Functions (Claude, OpenAI, Gemini, etc.)
- * based on env-configurable provider selection with automatic fallback.
+ * using backend-managed provider controls.
  *
  * Provider precedence:
- *   1. Per-request `provider` field (explicit override)
- *   2. AI_DEFAULT_PROVIDER env var (default: 'auto')
- *   3. 'auto' mode: Ollama first, then AI_FALLBACK_PROVIDER edge function
+ *   1. AI_MANAGED_PROVIDER env/config (hard override)
+ *   2. Per-request `provider` only when AI_ALLOW_PROVIDER_OVERRIDE=true
+ *   3. AI_DEFAULT_PROVIDER (default: 'auto')
  */
 
 'use strict';
@@ -29,6 +29,22 @@ const PROVIDER_EDGE_FUNCTION_MAP = {
   gemini: 'gemini-ai',
   'ai-chat': 'ai-chat',
   chat: 'ai-chat'
+};
+
+const DEFAULT_ALLOWED_PROVIDERS = ['auto', 'ollama', 'claude', 'openai', 'gemini'];
+
+const normalizeProvider = (value) => (value || '').toString().trim().toLowerCase();
+
+const parseAllowedProviders = (value) => {
+  if (!value) return new Set(DEFAULT_ALLOWED_PROVIDERS);
+  if (Array.isArray(value)) return new Set(value.map(normalizeProvider).filter(Boolean));
+  return new Set(
+    value
+      .toString()
+      .split(',')
+      .map((item) => normalizeProvider(item))
+      .filter(Boolean)
+  );
 };
 
 const CHAT_SCHEMA = {
@@ -133,8 +149,19 @@ class AIRouterAdapter extends BaseMCPAdapter {
     });
 
     // Provider configuration
-    this.defaultProvider = config.defaultProvider || process.env.AI_DEFAULT_PROVIDER || 'auto';
-    this.fallbackProvider = config.fallbackProvider || process.env.AI_FALLBACK_PROVIDER || '';
+    this.defaultProvider = normalizeProvider(config.defaultProvider || process.env.AI_DEFAULT_PROVIDER || 'auto') || 'auto';
+    this.fallbackProvider = normalizeProvider(config.fallbackProvider || process.env.AI_FALLBACK_PROVIDER || '');
+    this.managedProvider = normalizeProvider(config.managedProvider || process.env.AI_MANAGED_PROVIDER || '');
+    this.allowProviderOverride =
+      config.allowProviderOverride === true ||
+      process.env.AI_ALLOW_PROVIDER_OVERRIDE === 'true';
+    this.allowedProviders = parseAllowedProviders(config.allowedProviders || process.env.AI_ALLOWED_PROVIDERS);
+    // Keep known defaults always available unless explicitly disallowed by policy in code.
+    for (const provider of DEFAULT_ALLOWED_PROVIDERS) {
+      if (!this.allowedProviders.has(provider)) {
+        this.allowedProviders.add(provider);
+      }
+    }
     this.systemPrompt = config.systemPrompt || process.env.OLLAMA_SYSTEM_PROMPT || '';
 
     // Ollama client (local AI)
@@ -234,34 +261,45 @@ class AIRouterAdapter extends BaseMCPAdapter {
 
     try {
       let result;
+      let actualProvider = 'router';
 
       switch (toolName) {
         case 'ai-chat':
         case 'chat': {
-          const provider = args.provider || this.defaultProvider;
-          result = await this.routeChat(provider, args, context);
+          const selectedProvider = this.resolveChatProvider(args, context);
+          const payload = this.prepareChatPayload(args, selectedProvider);
+          const routed = await this.routeChat(selectedProvider, payload, context);
+          result = routed.result;
+          actualProvider = routed.providerUsed;
           break;
         }
         case 'ollama':
           result = await this.callOllama(args, context);
+          actualProvider = 'ollama';
           break;
-        case 'embedding':
-          result = await this.callEmbedding(args, context);
+        case 'embedding': {
+          const embedding = await this.callEmbedding(args, context);
+          result = embedding.result;
+          actualProvider = embedding.providerUsed;
           break;
+        }
         case 'list-ai-services':
           result = this.listServices();
+          actualProvider = 'router';
           break;
         case 'list-models':
           result = await this.listModels(context);
+          actualProvider = 'router';
           break;
         case 'ai-health':
           result = await this.checkHealth(context);
+          actualProvider = 'router';
           break;
         default:
           throw new Error(`Unknown tool: ${toolName}`);
       }
 
-      return this.brandResponse(result, args.provider || this.defaultProvider, Date.now() - start);
+      return this.brandResponse(result, actualProvider, Date.now() - start);
     } catch (error) {
       this._stats.errors++;
       throw error;
@@ -271,6 +309,53 @@ class AIRouterAdapter extends BaseMCPAdapter {
   // ---------------------------------------------------------------------------
   // Provider routing
   // ---------------------------------------------------------------------------
+
+  resolveChatProvider(args = {}, context = {}) {
+    if (this.managedProvider) {
+      this.assertAllowedProvider(this.managedProvider);
+      return this.managedProvider;
+    }
+
+    const requestProvider = normalizeProvider(
+      args.provider ||
+      context.provider ||
+      (context.headers && (context.headers['X-AI-Provider'] || context.headers['x-ai-provider']))
+    );
+
+    if (requestProvider && this.allowProviderOverride) {
+      this.assertAllowedProvider(requestProvider);
+      return requestProvider;
+    }
+
+    this.assertAllowedProvider(this.defaultProvider);
+    return this.defaultProvider;
+  }
+
+  assertAllowedProvider(provider) {
+    const normalized = normalizeProvider(provider);
+    if (!normalized) {
+      throw new Error('Provider is required for AI routing');
+    }
+    if (!this.allowedProviders.has(normalized)) {
+      throw new Error(`Provider '${normalized}' is not allowed by gateway policy`);
+    }
+  }
+
+  prepareChatPayload(args = {}, selectedProvider) {
+    const payload = { ...(args || {}) };
+    delete payload.provider;
+    payload.provider = selectedProvider;
+    return payload;
+  }
+
+  prepareEdgePayload(args = {}, providerUsed) {
+    const payload = { ...(args || {}) };
+    delete payload.provider;
+    if (providerUsed && providerUsed !== 'auto') {
+      payload.provider = providerUsed;
+    }
+    return payload;
+  }
 
   async routeChat(provider, args, context) {
     try {
@@ -284,32 +369,46 @@ class AIRouterAdapter extends BaseMCPAdapter {
   }
 
   async callProvider(provider, args, context) {
-    switch (provider) {
+    const normalizedProvider = normalizeProvider(provider);
+    this.assertAllowedProvider(normalizedProvider);
+
+    switch (normalizedProvider) {
       case 'ollama':
-        return this.callOllama(args, context);
+        return {
+          result: await this.callOllama(args, context),
+          providerUsed: 'ollama'
+        };
       case 'claude':
       case 'openai':
       case 'gemini':
         return this.callEdgeFunction(
-          PROVIDER_EDGE_FUNCTION_MAP[provider],
+          PROVIDER_EDGE_FUNCTION_MAP[normalizedProvider],
           args,
-          context
+          context,
+          normalizedProvider
         );
       case 'auto':
         return this.callAutoRoute(args, context);
       default:
-        // Treat unknown provider name as an edge function slug
-        return this.callEdgeFunction(provider, args, context);
+        throw new Error(`Unsupported provider '${normalizedProvider}'`);
     }
   }
 
   async callAutoRoute(args, context) {
     try {
-      return await this.callOllama(args, context);
+      return {
+        result: await this.callOllama(args, context),
+        providerUsed: 'ollama'
+      };
     } catch (ollamaError) {
-      const fallback = this.fallbackProvider || 'claude';
-      const edgeFn = PROVIDER_EDGE_FUNCTION_MAP[fallback] || fallback;
-      return this.callEdgeFunction(edgeFn, args, context);
+      const fallback = normalizeProvider(this.fallbackProvider || 'claude');
+      const fallbackProvider = fallback === 'auto' ? 'claude' : fallback;
+      this.assertAllowedProvider(fallbackProvider);
+      const edgeFn = PROVIDER_EDGE_FUNCTION_MAP[fallbackProvider];
+      if (!edgeFn) {
+        throw new Error(`Unsupported fallback provider '${fallbackProvider}'`);
+      }
+      return this.callEdgeFunction(edgeFn, args, context, fallbackProvider);
     }
   }
 
@@ -344,19 +443,27 @@ class AIRouterAdapter extends BaseMCPAdapter {
   // Supabase Edge Function (remote providers)
   // ---------------------------------------------------------------------------
 
-  async callEdgeFunction(functionName, args, context) {
+  async callEdgeFunction(functionName, args, context, providerUsed = 'edge-functions') {
     this._initSupabaseClient();
 
     const headers = context.headers && typeof context.headers === 'object'
       ? { ...context.headers }
       : {};
 
+    const payload = this.prepareEdgePayload(args, providerUsed);
+
     if (this.supabaseClient) {
-      return this.supabaseClient.call(functionName, args, { headers });
+      return {
+        result: await this.supabaseClient.call(functionName, payload, { headers }),
+        providerUsed
+      };
     }
 
     // Fallback: proxy through the legacy BaseClient endpoint path
-    return this._legacyRequest('POST', '/api/v1/ai/chat', args, headers);
+    return {
+      result: await this._legacyRequest('POST', '/api/v1/ai/chat', payload, headers),
+      providerUsed
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -371,10 +478,16 @@ class AIRouterAdapter extends BaseMCPAdapter {
       : {};
 
     if (this.supabaseClient) {
-      return this.supabaseClient.call('generate-embedding', args, { headers });
+      return {
+        result: await this.supabaseClient.call('generate-embedding', args, { headers }),
+        providerUsed: 'edge-functions'
+      };
     }
 
-    return this._legacyRequest('POST', '/api/v1/ai/embedding', args, headers);
+    return {
+      result: await this._legacyRequest('POST', '/api/v1/ai/embedding', args, headers),
+      providerUsed: 'ai-router'
+    };
   }
 
   // ---------------------------------------------------------------------------
