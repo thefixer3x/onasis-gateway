@@ -56,6 +56,9 @@ Recommended production setting:
 - `POST /api/v1/ai/chat` (canonical)
 - `POST /api/v1/ai-chat` (legacy compatibility)
 
+Route precedence note:
+`/api/v1/ai/chat` is intentionally registered in two places. The direct handler in `unified_gateway.js` (identity enforcement + primary/fallback logic) is mounted first and therefore takes precedence. The abstracted router registration is a fallback path and should not be treated as the primary execution flow.
+
 Example:
 
 ```bash
