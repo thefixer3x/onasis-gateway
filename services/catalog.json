@@ -349,8 +349,9 @@
       "adapterPath": "./services/ai-router/ai-router-adapter.js",
       "executable": true,
       "enabled": true,
-      "toolCount": 8,
+      "toolCount": 5,
       "authType": "bearer",
+      "serviceAuth": true,
       "category": "ai",
       "supportedCountries": ["global"]
     },

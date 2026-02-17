@@ -507,10 +507,14 @@ class AbstractedAPIEndpoints {
 
       // Map kebab-case URL params to camelCase operation names (vendor-abstraction.js client keys)
       const operationMap = {
+        // Canonical abstraction operation keys live in vendor-abstraction.js
         'chat': 'chat',
+        'ai-chat': 'chat',
         'ollama': 'ollama',
         'list-services': 'listServices',
-        'health': 'health'
+        'services': 'listServices',
+        'health': 'health',
+        'ai-health': 'health'
       };
 
       const toolName = operationMap[operation] || operation;
