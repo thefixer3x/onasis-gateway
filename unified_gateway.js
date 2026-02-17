@@ -1002,46 +1002,28 @@ class UnifiedGateway {
 
         // ==================== API GATEWAY ROUTES ====================
 
-        // AI chat (primary: AIServiceRouter, fallback: Supabase edge function)
-        this.app.post('/api/v1/ai-chat', async (req, res) => {
+        // AI chat (canonical external route).
+        // Primary: AI Router service
+        // Fallback: Supabase edge function (disabled for identity-required requests by default)
+        const handleAIChat = async (req, res) => {
             const requestId = req.id || crypto.randomUUID();
             const body = req.body || {};
+            const requireIdentity = (process.env.AI_CHAT_REQUIRE_IDENTITY || 'true') === 'true';
+            const allowIdentityFallback = (process.env.AI_CHAT_ALLOW_IDENTITY_FALLBACK || 'false') === 'true';
+
+            if (requireIdentity) {
+                const allowed = await this.enforceIdentity(req, res);
+                if (!allowed) {
+                    return;
+                }
+            }
 
             const forwardHeaders = {
                 'Content-Type': 'application/json',
-                ...(req.headers.authorization && { 'Authorization': req.headers.authorization }),
+                ...(req.headers.authorization && { Authorization: req.headers.authorization }),
                 ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
+                ...(req.headers['x-project-scope'] && { 'X-Project-Scope': req.headers['x-project-scope'] }),
                 'X-Request-ID': requestId
-            };
-
-            const tryPrimary = async () => {
-                if (!this.aiRouterUrl) return null;
-                const base = this.aiRouterUrl.replace(/\/+$/, '');
-                const url = `${base}/api/v1/ai-chat`;
-                const response = await fetchWithTimeout(url, {
-                    method: 'POST',
-                    headers: forwardHeaders,
-                    body: JSON.stringify(body)
-                }, this.aiRouterTimeoutMs);
-                return response;
-            };
-
-            const tryFallback = async () => {
-                if (!this.supabaseAiChatUrl) return null;
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'X-Request-ID': requestId,
-                    ...(this.supabaseAnonKey && {
-                        Authorization: `Bearer ${this.supabaseAnonKey}`,
-                        apikey: this.supabaseAnonKey
-                    })
-                };
-                const response = await fetchWithTimeout(this.supabaseAiChatUrl, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(body)
-                }, this.aiRouterTimeoutMs);
-                return response;
             };
 
             const sendResponse = async (response, source) => {
@@ -1059,13 +1041,77 @@ class UnifiedGateway {
                 return res.status(response.status).send(payload);
             };
 
+            const tryPrimary = async () => {
+                if (!this.aiRouterUrl) return null;
+                const base = this.aiRouterUrl.replace(/\/+$/, '');
+                const candidates = ['/api/v1/ai/chat', '/api/v1/ai-chat'];
+
+                for (let i = 0; i < candidates.length; i++) {
+                    const url = `${base}${candidates[i]}`;
+                    const response = await fetchWithTimeout(url, {
+                        method: 'POST',
+                        headers: forwardHeaders,
+                        body: JSON.stringify(body)
+                    }, this.aiRouterTimeoutMs);
+
+                    // Try legacy path only when canonical path is not implemented upstream.
+                    const shouldTryLegacy = i < candidates.length - 1 && (response.status === 404 || response.status === 405);
+                    if (shouldTryLegacy) {
+                        continue;
+                    }
+                    return response;
+                }
+
+                return null;
+            };
+
+            const tryFallback = async () => {
+                if (!this.supabaseAiChatUrl) return null;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-Request-ID': requestId,
+                    ...(req.headers.authorization && { Authorization: req.headers.authorization }),
+                    ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
+                    ...(req.headers['x-project-scope'] && { 'X-Project-Scope': req.headers['x-project-scope'] })
+                };
+
+                // For non-identity routes we allow anon fallback credentials.
+                if (!headers.Authorization && this.supabaseAnonKey) {
+                    headers.Authorization = `Bearer ${this.supabaseAnonKey}`;
+                }
+                if (this.supabaseAnonKey) {
+                    headers.apikey = this.supabaseAnonKey;
+                }
+
+                return fetchWithTimeout(this.supabaseAiChatUrl, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body)
+                }, this.aiRouterTimeoutMs);
+            };
+
             try {
                 const primaryResponse = await tryPrimary();
-                if (primaryResponse && primaryResponse.ok) {
-                    return await sendResponse(primaryResponse, 'ai-router');
+                if (primaryResponse) {
+                    if (primaryResponse.ok) {
+                        return await sendResponse(primaryResponse, 'ai-router');
+                    }
+
+                    // Preserve upstream 4xx/validation errors from primary backend.
+                    if (primaryResponse.status >= 400 && primaryResponse.status < 500) {
+                        return await sendResponse(primaryResponse, 'ai-router');
+                    }
                 }
             } catch (error) {
-                console.warn('AI router unavailable, falling back', error.message);
+                console.warn('AI router unavailable, considering fallback', error.message);
+            }
+
+            // Identity routes should not silently fallback to anon-backed execution.
+            if (requireIdentity && !allowIdentityFallback) {
+                return res.status(502).json({
+                    error: 'AI router unavailable; identity-safe fallback disabled',
+                    requestId
+                });
             }
 
             try {
@@ -1084,7 +1130,11 @@ class UnifiedGateway {
                     requestId
                 });
             }
-        });
+        };
+
+        // Canonical + legacy compatibility route
+        this.app.post('/api/v1/ai/chat', handleAIChat);
+        this.app.post('/api/v1/ai-chat', handleAIChat);
 
         // List all API services
         this.app.get('/api/services', (req, res) => {

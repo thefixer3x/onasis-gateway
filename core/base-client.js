@@ -90,10 +90,21 @@ class BaseClient extends EventEmitter {
 
     addAuthentication(config) {
         const auth = this.config.authentication;
+        config.headers = config.headers || {};
         
         switch (auth.type) {
             case 'bearer':
-                config.headers.Authorization = `Bearer ${auth.config.token}`;
+                // Respect forwarded caller identity first; only inject service bearer when
+                // there is no existing Authorization header and token is explicitly configured.
+                if (
+                    !config.headers.Authorization &&
+                    !config.headers.authorization &&
+                    auth &&
+                    auth.config &&
+                    auth.config.token
+                ) {
+                    config.headers.Authorization = `Bearer ${auth.config.token}`;
+                }
                 break;
                 
             case 'apikey':
