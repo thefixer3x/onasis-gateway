@@ -1007,9 +1007,20 @@ class UnifiedGateway {
         // Fallback: Supabase edge function (disabled for identity-required requests by default)
         const handleAIChat = async (req, res) => {
             const requestId = req.id || crypto.randomUUID();
-            const body = req.body || {};
+            const allowProviderOverride = (process.env.AI_ALLOW_PROVIDER_OVERRIDE || 'false') === 'true';
+            const managedProvider = (process.env.AI_MANAGED_PROVIDER || '').trim().toLowerCase();
+            const rawBody = (req.body && typeof req.body === 'object') ? req.body : {};
+            const body = { ...rawBody };
             const requireIdentity = (process.env.AI_CHAT_REQUIRE_IDENTITY || 'true') === 'true';
             const allowIdentityFallback = (process.env.AI_CHAT_ALLOW_IDENTITY_FALLBACK || 'false') === 'true';
+
+            // Enforce backend-managed provider policy by default.
+            if (!allowProviderOverride && 'provider' in body) {
+                delete body.provider;
+            }
+            if (managedProvider) {
+                body.provider = managedProvider;
+            }
 
             if (requireIdentity) {
                 const allowed = await this.enforceIdentity(req, res);
