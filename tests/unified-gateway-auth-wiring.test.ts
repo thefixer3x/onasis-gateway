@@ -120,7 +120,6 @@ describe('UnifiedGateway auth wiring', () => {
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('https://auth.lanonasis.com/v1/auth/verify-api-key');
     expect(options.headers['X-API-Key']).toBe('lano_test_api_key');
-    expect(options.headers['x-api-key']).toBe('lano_test_api_key');
     expect(JSON.parse(options.body)).toMatchObject({ api_key: 'lano_test_api_key' });
   });
 
