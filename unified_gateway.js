@@ -786,7 +786,7 @@ class UnifiedGateway {
             addCandidate(
                 process.env.AUTH_GATEWAY_VERIFY_APIKEY_PATH || '/v1/auth/verify-api-key',
                 { api_key: apiKeyValue },
-                { 'X-API-Key': apiKeyValue, 'x-api-key': apiKeyValue },
+                { 'X-API-Key': apiKeyValue },
                 'auth_gateway_api_key'
             );
         }
