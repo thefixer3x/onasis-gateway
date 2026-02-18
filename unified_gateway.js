@@ -750,7 +750,7 @@ class UnifiedGateway {
             'X-Project-Scope': context.projectScope || this.projectScope,
             ...(context.requestId && { 'X-Request-ID': context.requestId }),
             ...(context.authorization && { Authorization: context.authorization }),
-            ...(context.apiKey && { 'X-API-Key': context.apiKey, 'x-api-key': context.apiKey }),
+            ...(context.apiKey && { 'X-API-Key': context.apiKey }),
             ...(context.headers?.apikey && { apikey: context.headers.apikey })
         };
 
