@@ -1118,6 +1118,15 @@ class UnifiedGateway {
             const body = { ...rawBody };
             const requireIdentity = (process.env.AI_CHAT_REQUIRE_IDENTITY || 'true') === 'true';
             const allowIdentityFallback = (process.env.AI_CHAT_ALLOW_IDENTITY_FALLBACK || 'false') === 'true';
+            const authorizationHeader = req.headers.authorization || req.headers.Authorization || '';
+            const bearerToken = authorizationHeader.startsWith('Bearer ')
+                ? authorizationHeader.slice(7).trim()
+                : '';
+
+            // Compatibility bridge: some clients send API keys via Bearer token.
+            if (!req.headers['x-api-key'] && bearerToken.startsWith('lano_')) {
+                req.headers['x-api-key'] = bearerToken;
+            }
 
             // Enforce backend-managed provider policy by default.
             if (!allowProviderOverride && 'provider' in body) {
@@ -1136,7 +1145,7 @@ class UnifiedGateway {
 
             const forwardHeaders = {
                 'Content-Type': 'application/json',
-                ...(req.headers.authorization && { Authorization: req.headers.authorization }),
+                ...(authorizationHeader && { Authorization: authorizationHeader }),
                 ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
                 ...(req.headers['x-project-scope'] && { 'X-Project-Scope': req.headers['x-project-scope'] }),
                 'X-Request-ID': requestId
@@ -1186,7 +1195,7 @@ class UnifiedGateway {
                 const headers = {
                     'Content-Type': 'application/json',
                     'X-Request-ID': requestId,
-                    ...(req.headers.authorization && { Authorization: req.headers.authorization }),
+                    ...(authorizationHeader && { Authorization: authorizationHeader }),
                     ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
                     ...(req.headers['x-project-scope'] && { 'X-Project-Scope': req.headers['x-project-scope'] })
                 };
