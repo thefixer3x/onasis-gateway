@@ -10,6 +10,10 @@ AI Router is the central orchestration point for multi-provider AI execution.
 
 Legacy compatibility remains for `/api/v1/ai-chat`.
 
+## Reference Diagrams
+
+- End-to-end routing and auth flow: `services/ai-router/ROUTING_FLOW.md`
+
 ## MCP Tools
 
 - `ai-chat` - Routed chat completion (provider-agnostic)
