@@ -32,6 +32,18 @@ describe('UnifiedGateway auth wiring', () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
+  it('defaults authGatewayUrl to https://auth.lanonasis.com when no env var is set', () => {
+    delete process.env.AUTH_GATEWAY_URL;
+    delete process.env.ONASIS_AUTH_GATEWAY_URL;
+    delete process.env.ONASIS_AUTH_API_URL;
+
+    const UnifiedGateway = loadGatewayClass();
+    stubGatewayForTests(UnifiedGateway);
+    const gateway = new UnifiedGateway();
+
+    expect(gateway.buildAuthVerifyUrl()).toBe('https://auth.lanonasis.com/v1/auth/verify');
+  });
+
   it('uses ONASIS_AUTH_API_URL as fallback when AUTH_GATEWAY_URL is not set', () => {
     delete process.env.AUTH_GATEWAY_URL;
     delete process.env.ONASIS_AUTH_GATEWAY_URL;
@@ -141,5 +153,110 @@ describe('UnifiedGateway auth wiring', () => {
     expect(options.headers.Authorization).toBe('Bearer lano_sample_key');
     expect(options.headers['X-API-Key']).toBe('lano_sample_key');
     expect(JSON.parse(options.body)).toMatchObject({ api_key: 'lano_sample_key' });
+  });
+
+  it('falls back to Supabase JWT verification when auth-gateway rejects unknown JWT', async () => {
+    process.env.AUTH_GATEWAY_URL = 'https://auth.lanonasis.com';
+    process.env.GATEWAY_ENFORCE_IDENTITY_VERIFICATION = 'true';
+    process.env.SUPABASE_URL = 'https://mxtsdgkwzjzlttpotole.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'supabase-anon-key';
+
+    // Supabase JWT (eyJ header) — auth-gateway doesn't know it
+    const supabaseJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEifQ.sig';
+
+    const fetchMock = vi.fn()
+      // auth-gateway verify-token returns 401 (non-retryable → early exit, Supabase fallback fires immediately)
+      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ error: 'token not found' }) })
+      // Supabase /auth/v1/user returns 200
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 'supabase-user-1', email: 'user@example.com' }) });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const UnifiedGateway = loadGatewayClass();
+    stubGatewayForTests(UnifiedGateway);
+    const gateway = new UnifiedGateway();
+
+    const result = await gateway.verifyRequestIdentity({
+      id: 'req-supabase-jwt',
+      headers: {
+        authorization: `Bearer ${supabaseJwt}`,
+        'x-project-scope': 'v-secure'
+      }
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.method).toBe('supabase_jwt');
+
+    // Last call must be to Supabase /auth/v1/user
+    const lastCall = fetchMock.mock.calls[fetchMock.mock.calls.length - 1];
+    expect(lastCall[0]).toBe('https://mxtsdgkwzjzlttpotole.supabase.co/auth/v1/user');
+    expect(lastCall[1].headers.Authorization).toBe(`Bearer ${supabaseJwt}`);
+    expect(lastCall[1].headers.apikey).toBe('supabase-anon-key');
+  });
+
+  it('does NOT fall back to Supabase for lano_ API key failures', async () => {
+    process.env.AUTH_GATEWAY_URL = 'https://auth.lanonasis.com';
+    process.env.GATEWAY_ENFORCE_IDENTITY_VERIFICATION = 'true';
+    process.env.SUPABASE_URL = 'https://mxtsdgkwzjzlttpotole.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'supabase-anon-key';
+
+    const fetchMock = vi.fn()
+      // auth-gateway returns 401 for unknown lano_ key (non-retryable)
+      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ error: 'api key not found' }) });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const UnifiedGateway = loadGatewayClass();
+    stubGatewayForTests(UnifiedGateway);
+    const gateway = new UnifiedGateway();
+
+    const result = await gateway.verifyRequestIdentity({
+      id: 'req-bad-lano-key',
+      headers: {
+        'x-api-key': 'lano_unknown_key',
+        'x-project-scope': 'v-secure'
+      }
+    });
+
+    // Should fail — Supabase fallback not triggered for lano_ keys
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(401);
+    // Supabase /auth/v1/user should NOT have been called
+    const supabaseCalls = fetchMock.mock.calls.filter(([url]: [string]) =>
+      url.includes('supabase') && url.includes('/auth/v1/user')
+    );
+    expect(supabaseCalls).toHaveLength(0);
+  });
+
+  it('does NOT try Supabase fallback when GATEWAY_ALLOW_SUPABASE_JWT_FALLBACK=false', async () => {
+    process.env.AUTH_GATEWAY_URL = 'https://auth.lanonasis.com';
+    process.env.GATEWAY_ENFORCE_IDENTITY_VERIFICATION = 'true';
+    process.env.GATEWAY_ALLOW_SUPABASE_JWT_FALLBACK = 'false';
+    process.env.SUPABASE_URL = 'https://mxtsdgkwzjzlttpotole.supabase.co';
+    process.env.SUPABASE_ANON_KEY = 'supabase-anon-key';
+
+    const supabaseJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEifQ.sig';
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ error: 'token not found' }) })
+      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ error: 'token not found' }) });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const UnifiedGateway = loadGatewayClass();
+    stubGatewayForTests(UnifiedGateway);
+    const gateway = new UnifiedGateway();
+
+    const result = await gateway.verifyRequestIdentity({
+      id: 'req-no-supabase',
+      headers: { authorization: `Bearer ${supabaseJwt}` }
+    });
+
+    expect(result.ok).toBe(false);
+    // Supabase /auth/v1/user must not be called
+    const supabaseCalls = fetchMock.mock.calls.filter(([url]: [string]) =>
+      url.includes('/auth/v1/user')
+    );
+    expect(supabaseCalls).toHaveLength(0);
   });
 });
