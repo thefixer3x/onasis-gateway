@@ -111,7 +111,7 @@
     "jest-runtime": {
       "glob": "10.5.0"
     },
-    "fast-xml-parser": "^5.4.0"
+    "fast-xml-parser": "^5.3.6"
   },
   "engines": {
     "node": ">=18.0.0",
