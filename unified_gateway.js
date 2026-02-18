@@ -106,7 +106,7 @@ const allowedOrigins = [
     ...parseCsv(process.env.ALLOWED_ORIGINS),
     ...parseCsv(process.env.CORS_ORIGIN)
 ];
-const allowedOriginSuffixes = parseCsv(process.env.ALLOWED_ORIGIN_SUFFIXES || 'lanonasis.com');
+const allowedOriginSuffixes = parseCsv(process.env.ALLOWED_ORIGIN_SUFFIXES || 'lanonasis.com,connectionpoint.tech');
 const allowLocalhost = (process.env.CORS_ALLOW_LOCALHOST || 'true') === 'true';
 
 const isAllowedOrigin = (origin) => {
@@ -222,14 +222,14 @@ class UnifiedGateway {
         this.authBridge = new OnasisAuthBridge({
             authApiUrl: process.env.AUTH_GATEWAY_URL
                 || process.env.ONASIS_AUTH_API_URL
-                || 'http://127.0.0.1:4000/v1/auth',
+                || 'https://auth.lanonasis.com/v1/auth',
             projectScope: process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas'
         });
 
         this.authGatewayUrl = process.env.AUTH_GATEWAY_URL
             || process.env.ONASIS_AUTH_GATEWAY_URL
             || process.env.ONASIS_AUTH_API_URL
-            || 'http://127.0.0.1:4000';
+            || 'https://auth.lanonasis.com';
         this.projectScope = process.env.ONASIS_PROJECT_SCOPE || 'lanonasis-maas';
         this.vpsMonitorToken = process.env.VPS_MONITOR_TOKEN || null;
         this.aiRouterUrl = process.env.AI_ROUTER_URL || '';
@@ -274,7 +274,9 @@ class UnifiedGateway {
         }
         this.app.use(cors({
             origin: corsOriginCallback,
-            credentials: true
+            credentials: true,
+            preflightContinue: false,
+            optionsSuccessStatus: 204
         }));
 
         // Performance
@@ -748,7 +750,7 @@ class UnifiedGateway {
             'X-Project-Scope': context.projectScope || this.projectScope,
             ...(context.requestId && { 'X-Request-ID': context.requestId }),
             ...(context.authorization && { Authorization: context.authorization }),
-            ...(context.apiKey && { 'X-API-Key': context.apiKey, 'x-api-key': context.apiKey }),
+            ...(context.apiKey && { 'X-API-Key': context.apiKey }),
             ...(context.headers?.apikey && { apikey: context.headers.apikey })
         };
 
@@ -840,6 +842,9 @@ class UnifiedGateway {
                     || errorText.includes('not implemented');
 
                 if (!retryable) {
+                    // Before giving up, try Supabase JWT verification as backward-compat fallback.
+                    const supabaseFallback = await this.trySupabaseJwtVerification(token);
+                    if (supabaseFallback) return supabaseFallback;
                     return lastFailure;
                 }
             } catch (error) {
@@ -850,7 +855,48 @@ class UnifiedGateway {
         if (this.allowInsecureAuthBypass) {
             return { ok: true, method: 'insecure_bypass' };
         }
+
+        // Final fallback: try Supabase JWT verification if all auth-gateway candidates failed.
+        const supabaseFallback = await this.trySupabaseJwtVerification(token);
+        if (supabaseFallback) return supabaseFallback;
+
         return lastFailure;
+    }
+
+    /**
+     * Verify a Supabase-issued JWT directly when the auth-gateway does not recognise it.
+     * Controlled by GATEWAY_ALLOW_SUPABASE_JWT_FALLBACK (default true).
+     * Only attempts verification for JWT-shaped tokens that are NOT lano_ API keys.
+     */
+    async trySupabaseJwtVerification(token) {
+        const allowed = (process.env.GATEWAY_ALLOW_SUPABASE_JWT_FALLBACK || 'true') === 'true';
+        if (!allowed) return null;
+
+        const supabaseUrl = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+        const anonKey = this.supabaseAnonKey;
+        if (!token || !supabaseUrl || !anonKey) return null;
+
+        // Only intercept Supabase JWTs — skip lano_ API-key tokens
+        if (token.startsWith('lano_') || !/^eyJ/i.test(token)) return null;
+
+        try {
+            const url = `${supabaseUrl}/auth/v1/user`;
+            const response = await fetchWithTimeout(url, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    apikey: anonKey
+                }
+            }, this.authGatewayTimeoutMs);
+
+            if (response.ok) {
+                const user = await response.json().catch(() => ({}));
+                return { ok: true, method: 'supabase_jwt', user };
+            }
+        } catch {
+            // Supabase verification failed — fall through
+        }
+        return null;
     }
 
     async enforceIdentity(req, res, options = {}) {
@@ -1118,6 +1164,15 @@ class UnifiedGateway {
             const body = { ...rawBody };
             const requireIdentity = (process.env.AI_CHAT_REQUIRE_IDENTITY || 'true') === 'true';
             const allowIdentityFallback = (process.env.AI_CHAT_ALLOW_IDENTITY_FALLBACK || 'false') === 'true';
+            const authorizationHeader = req.headers.authorization || req.headers.Authorization || '';
+            const bearerToken = authorizationHeader.startsWith('Bearer ')
+                ? authorizationHeader.slice(7).trim()
+                : '';
+
+            // Compatibility bridge: some clients send API keys via Bearer token.
+            if (!req.headers['x-api-key'] && bearerToken.startsWith('lano_')) {
+                req.headers['x-api-key'] = bearerToken;
+            }
 
             // Enforce backend-managed provider policy by default.
             if (!allowProviderOverride && 'provider' in body) {
@@ -1136,7 +1191,7 @@ class UnifiedGateway {
 
             const forwardHeaders = {
                 'Content-Type': 'application/json',
-                ...(req.headers.authorization && { Authorization: req.headers.authorization }),
+                ...(authorizationHeader && { Authorization: authorizationHeader }),
                 ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
                 ...(req.headers['x-project-scope'] && { 'X-Project-Scope': req.headers['x-project-scope'] }),
                 'X-Request-ID': requestId
@@ -1186,7 +1241,7 @@ class UnifiedGateway {
                 const headers = {
                     'Content-Type': 'application/json',
                     'X-Request-ID': requestId,
-                    ...(req.headers.authorization && { Authorization: req.headers.authorization }),
+                    ...(authorizationHeader && { Authorization: authorizationHeader }),
                     ...(req.headers['x-api-key'] && { 'X-API-Key': req.headers['x-api-key'] }),
                     ...(req.headers['x-project-scope'] && { 'X-Project-Scope': req.headers['x-project-scope'] })
                 };
