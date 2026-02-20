@@ -136,4 +136,32 @@ describe('UnifiedGateway security middleware', () => {
     expect(legacy.status).toBe(401);
     expect(legacy.body.error).toBe('Authentication required');
   });
+
+  it('uses temporary API-key fallback for AI chat when primary identity check returns invalid API key', async () => {
+    process.env.AI_CHAT_REQUIRE_IDENTITY = 'true';
+    process.env.AI_CHAT_TEMP_APIKEY_FALLBACK = 'true';
+    const gateway = buildGateway();
+
+    (gateway as any).verifyRequestIdentity = async () => ({
+      ok: false,
+      status: 401,
+      error: 'Invalid API key'
+    });
+
+    (gateway as any).authBridge.validateAPIKey = async () => ({
+      authenticated: true,
+      user: { id: 'svc-user-1' },
+      method: 'api_key'
+    });
+
+    const response = await request(gateway.app)
+      .post('/api/v1/ai/chat')
+      .set('X-API-Key', 'lano_test_api_key')
+      .send({ messages: [{ role: 'user', content: 'hello' }] });
+
+    // In this test harness AI router isn't configured, so auth succeeds then route returns 502.
+    expect(response.status).toBe(502);
+    expect(response.headers['x-gateway-auth-fallback']).toBe('ai-chat-api-key');
+    expect(response.body.error).toBe('AI router unavailable; identity-safe fallback disabled');
+  });
 });
