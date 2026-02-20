@@ -1163,8 +1163,10 @@ class UnifiedGateway {
             const rawBody = (req.body && typeof req.body === 'object') ? req.body : {};
             const body = { ...rawBody };
             const requireIdentity = (process.env.AI_CHAT_REQUIRE_IDENTITY || 'true') === 'true';
+            const allowTempApiKeyFallback = (process.env.AI_CHAT_TEMP_APIKEY_FALLBACK || 'true') === 'true';
             const allowIdentityFallback = (process.env.AI_CHAT_ALLOW_IDENTITY_FALLBACK || 'false') === 'true';
             const authorizationHeader = req.headers.authorization || req.headers.Authorization || '';
+            const apiKeyHeader = req.headers['x-api-key'] || req.headers['X-API-Key'] || '';
             const bearerToken = authorizationHeader.startsWith('Bearer ')
                 ? authorizationHeader.slice(7).trim()
                 : '';
@@ -1183,9 +1185,51 @@ class UnifiedGateway {
             }
 
             if (requireIdentity) {
-                const allowed = await this.enforceIdentity(req, res);
-                if (!allowed) {
-                    return;
+                const auth = await this.verifyRequestIdentity(req);
+                if (auth.ok) {
+                    req.authContext = auth;
+                    if (auth.method === 'insecure_bypass') {
+                        res.setHeader('X-Gateway-Warning', 'identity-verification-bypassed');
+                    }
+                } else {
+                    const authError = `${auth.error || ''}`.toLowerCase();
+                    const shouldTryApiKeyFallback =
+                        allowTempApiKeyFallback
+                        && !!apiKeyHeader
+                        && (
+                            authError.includes('invalid api key')
+                            || authError.includes('authentication required')
+                        );
+
+                    if (!shouldTryApiKeyFallback) {
+                        return res.status(auth.status || 401).json({
+                            error: auth.error || 'Unauthorized',
+                            requestId
+                        });
+                    }
+
+                    try {
+                        const fallbackAuth = await this.authBridge.validateAPIKey(apiKeyHeader);
+                        if (!fallbackAuth || !fallbackAuth.authenticated) {
+                            return res.status(auth.status || 401).json({
+                                error: auth.error || fallbackAuth?.error || 'Unauthorized',
+                                requestId
+                            });
+                        }
+
+                        req.authContext = {
+                            ok: true,
+                            method: 'ai_chat_temp_api_key_fallback',
+                            payload: fallbackAuth.user || null
+                        };
+                        res.setHeader('X-Gateway-Auth-Fallback', 'ai-chat-api-key');
+                        console.warn(`[AI Chat] Temporary API key fallback used (requestId=${requestId})`);
+                    } catch (fallbackError) {
+                        return res.status(auth.status || 401).json({
+                            error: auth.error || 'Unauthorized',
+                            requestId
+                        });
+                    }
                 }
             }
 

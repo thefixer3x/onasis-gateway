@@ -192,7 +192,9 @@ class OnasisAuthBridge {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Project-Scope': this.config.projectScope
+          'X-Project-Scope': this.config.projectScope,
+          // auth.lanonasis.com verify-api-key expects key in header, not only body
+          'X-API-Key': apiKey
         },
         body: JSON.stringify({ api_key: apiKey })
       });
