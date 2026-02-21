@@ -92,7 +92,10 @@ flowchart TD
   The `tools` field is intentionally omitted from the Ollama request payload because Ollama's
   function-calling support is model-dependent and not universally stable across versions. Remote
   providers (claude/openai/gemini) receive `tools` via `callEdgeFunction → prepareEdgePayload`.
-  <!-- TODO: add tools passthrough to callOllama once minimum supported Ollama version is locked -->
+
+  > **TODO:** Add `tools` passthrough to `callOllama` once the minimum supported Ollama version
+  > is locked. Related symbols: `CHAT_SCHEMA` (schema definition), `callOllama` (Ollama path),
+  > `callEdgeFunction` and `prepareEdgePayload` (remote-provider path that already forwards tools).
 
 ## 6) Source map (function/method anchors)
 

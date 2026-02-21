@@ -678,7 +678,7 @@ const CATALOG = {
 // ═══════════════════════════════════════════
 // FORMS
 // ═══════════════════════════════════════════
-function genRef(prefix='ref') { return prefix + '_' + Math.random().toString(36).substr(2,8); }
+function genRef(prefix='ref') { return prefix + '_' + Math.random().toString(36).slice(2,10); }
 function genUUID() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c==='x'?r:r&0x3|0x8).toString(16);}); }
 
 const FORMS = {
@@ -1123,7 +1123,9 @@ function renderLanding(){
 
 function renderSvcCard(svc){
   var catData = CATALOG.categories[svc.category]||{icon:'⚙️',label:svc.category};
-  return '<div class="service-card" onclick="go(\'/'+svc.id+'\')" data-id="'+svc.id+'">' +
+  return '<div class="service-card" onclick="go(\'/'+svc.id+'\')" data-id="'+svc.id+'"' +
+    ' tabindex="0" role="button" aria-label="'+svc.name+'"' +
+    ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();go(\'/'+svc.id+'\');}">' +
     '<div class="service-card-glow"></div>' +
     '<div class="service-card-inner">' +
       '<div class="card-top"><div class="card-icon">'+svc.icon+'</div>'+badge(svc.tier)+'</div>' +
@@ -1370,9 +1372,11 @@ function showResult(result, def, mocked){
   var mockNote = (mocked&&!result.ok) ? '<div class="mock-note">⚡ Gateway not reachable — showing mock response</div>' : '';
   var kv = flatObj(result.data).map(function(pair){
     var k=pair[0], v=pair[1];
-    return '<div class="kv-pair"><span class="kv-k">'+k+'</span><span class="kv-v">'+esc(String(v))+'<button class="kv-copy" onclick="cp(\''+esc(String(v))+'\',this)">⎘</button></span></div>';
+    var vEsc=esc(String(v));
+    var vAttr=String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    return '<div class="kv-pair"><span class="kv-k">'+k+'</span><span class="kv-v">'+vEsc+'<button class="kv-copy" data-copy="'+vAttr+'">⎘</button></span></div>';
   }).join('');
-  var jid='j'+Math.random().toString(36).substr(2,5);
+  var jid='j'+Math.random().toString(36).slice(2,7);
   var jhl=hlJSON(JSON.stringify(result.data,null,2));
 
   box.innerHTML=
@@ -1390,7 +1394,17 @@ function showResult(result, def, mocked){
 
 function toggleJSON(id,btn){ var w=document.getElementById(id); if(!w) return; var o=w.classList.toggle('on'); btn.textContent=o?'▲ Hide JSON':'▼ View JSON'; }
 function cpJSON(id,btn){ var w=document.getElementById(id); var pre=w&&w.querySelector('pre'); if(pre){ navigator.clipboard.writeText(pre.textContent); btn.textContent='✓ Copied'; setTimeout(function(){ btn.textContent='⎘ Copy'; },2000); } }
-function cp(text,btn){ navigator.clipboard.writeText(text); var old=btn.textContent; btn.textContent='✓'; setTimeout(function(){ btn.textContent=old; },2000); }
+// Delegated handler for .kv-copy buttons (data-copy attribute, no inline JS)
+document.addEventListener('click', function(e){
+  if(e.target.classList.contains('kv-copy')){
+    var text=e.target.dataset.copy;
+    if(text===undefined) return;
+    navigator.clipboard.writeText(text);
+    var old=e.target.textContent;
+    e.target.textContent='✓';
+    setTimeout(function(){ e.target.textContent=old; },2000);
+  }
+});
 
 // ═══════════════════════════════════════════
 // FLOW MODE
@@ -1516,6 +1530,33 @@ function clearLog(){ reqLog.length=0; renderLog(); }
 // ═══════════════════════════════════════════
 // BRANDING
 // ═══════════════════════════════════════════
+var FALLBACK_LOGO_SVG = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="9" r="2.5" fill="white" opacity="0.9"/></svg>';
+
+function isSafeLogoUrl(url) {
+  return typeof url === 'string' &&
+    /^https:\/\//i.test(url) &&
+    !/^(javascript|data):/i.test(url);
+}
+
+function setNavLogo(logo) {
+  var navLogo = document.getElementById('nav-logo');
+  if (!navLogo) return;
+  while (navLogo.firstChild) navLogo.removeChild(navLogo.firstChild);
+  if (logo && isSafeLogoUrl(logo)) {
+    var img = document.createElement('img');
+    img.setAttribute('src', logo);
+    img.setAttribute('alt', '');
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
+    img.addEventListener('error', function() {
+      while (navLogo.firstChild) navLogo.removeChild(navLogo.firstChild);
+      navLogo.innerHTML = FALLBACK_LOGO_SVG;
+    });
+    navLogo.appendChild(img);
+  } else {
+    navLogo.innerHTML = FALLBACK_LOGO_SVG;
+  }
+}
+
 function openBranding(){
   var s=JSON.parse(localStorage.getItem('onasis-brand')||'{}');
   if(s.name) document.getElementById('b-name').value=s.name;
@@ -1537,8 +1578,7 @@ function applyBranding(){
   if(color) document.documentElement.style.setProperty('--accent',color);
   var navName=document.getElementById('nav-name');
   if(name&&navName) navName.textContent=name+' \u00b7 Gateway';
-  var navLogo=document.getElementById('nav-logo');
-  if(logo&&navLogo) navLogo.innerHTML='<img src="'+logo+'" onerror="this.parentNode.innerHTML=\'<svg width=\\\'18\\\' height=\\\'18\\\' viewBox=\\\'0 0 18 18\\\' fill=\\\'none\\\'><path d=\\\'M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z\\\' stroke=\\\'white\\\' stroke-width=\\\'1.5\\\' stroke-linejoin=\\\'round\\\'/><circle cx=\\\'9\\\' cy=\\\'9\\\' r=\\\'2.5\\\' fill=\\\'white\\\' opacity=\\\'.9\\\'/></svg>\'" />';
+  if(logo) setNavLogo(logo);
   var banner=document.getElementById('demo-banner');
   if(note&&banner){ banner.textContent=note; banner.classList.add('visible'); }
   else if(banner) banner.classList.remove('visible');
@@ -1560,6 +1600,7 @@ function loadBranding(){
   if(s.color) document.documentElement.style.setProperty('--accent',s.color);
   if(s.name){ var el=document.getElementById('nav-name'); if(el) el.textContent=s.name+' \u00b7 Gateway'; }
   if(s.note){ var b=document.getElementById('demo-banner'); if(b){ b.textContent=s.note; b.classList.add('visible'); } }
+  if(s.logo && isSafeLogoUrl(s.logo)) setNavLogo(s.logo);
 }
 
 // ═══════════════════════════════════════════
