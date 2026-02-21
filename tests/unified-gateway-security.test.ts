@@ -38,6 +38,8 @@ describe('UnifiedGateway security middleware', () => {
     process.env.CORS_ORIGIN = '';
     process.env.CORS_ALLOW_LOCALHOST = 'true';
     process.env.EXPOSE_ERROR_MESSAGES = 'false';
+    process.env.AI_CHAT_REQUIRE_IDENTITY = '';
+    process.env.AI_CHAT_TEMP_APIKEY_FALLBACK = '';
     stubGatewayForTests();
   });
 

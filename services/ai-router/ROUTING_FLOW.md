@@ -40,13 +40,8 @@ flowchart TD
 ```mermaid
 flowchart TD
     A[Adapter call: ai-router:ai-chat] --> B[resolveChatProvider]
-    B --> C{Provider Policy}
-    C --> C1[AI_MANAGED_PROVIDER]
-    C --> C2[request provider only if AI_ALLOW_PROVIDER_OVERRIDE=true]
-    C --> C3[AI_DEFAULT_PROVIDER]
-    C1 --> D[assertAllowedProvider]
-    C2 --> D
-    C3 --> D
+    B --> C{"Provider Policy Resolution\n(priority order):\n1. AI_MANAGED_PROVIDER — hard backend override\n2. request.provider if AI_ALLOW_PROVIDER_OVERRIDE=true\n3. AI_DEFAULT_PROVIDER — fallback default"}
+    C --> D[assertAllowedProvider\nvalidates against AI_ALLOWED_PROVIDERS]
 
     D --> E{provider}
     E -->|ollama| F[callOllama]
@@ -54,7 +49,7 @@ flowchart TD
     E -->|auto| H[try Ollama, fallback provider]
 
     F --> I[Inject system prompt if missing\nargs.system_prompt || OLLAMA_SYSTEM_PROMPT]
-    I --> J[POST Ollama /api/chat]
+    I --> J[POST Ollama /api/chat\nmodel/messages/stream/options]
 
     G --> K{Supabase client ready?}
     K -->|Yes| L[supabaseClient.call(function)]
@@ -92,22 +87,32 @@ flowchart TD
 
 - The `services/ai-router` folder does not include a standalone HTTP server process by itself.
 - In this codebase, the external client ingress for AI chat is owned by `unified_gateway.js`.
-- `tools` exists in `CHAT_SCHEMA` for `ai-chat`, but `callOllama` currently sends `model/messages/stream/options` only (no explicit `tools` field in the Ollama request payload).
+- **`tools` field gap (Ollama)**: `CHAT_SCHEMA` accepts a `tools` array for `ai-chat`, but `callOllama`
+  currently only forwards `model`, `messages`, `stream`, and `options` to `POST /api/chat`.
+  The `tools` field is intentionally omitted from the Ollama request payload because Ollama's
+  function-calling support is model-dependent and not universally stable across versions. Remote
+  providers (claude/openai/gemini) receive `tools` via `callEdgeFunction → prepareEdgePayload`.
+  <!-- TODO: add tools passthrough to callOllama once minimum supported Ollama version is locked -->
 
-## 6) Source map (line anchors)
+## 6) Source map (function/method anchors)
 
-- `onasis-gateway/unified_gateway.js:235`
-- `onasis-gateway/unified_gateway.js:1159`
-- `onasis-gateway/unified_gateway.js:1186`
-- `onasis-gateway/unified_gateway.js:1218`
-- `onasis-gateway/unified_gateway.js:1310`
-- `onasis-gateway/services/catalog.json:344`
-- `onasis-gateway/services/ai-router/ai-router-adapter.js:117`
-- `onasis-gateway/services/ai-router/ai-router-adapter.js:202`
-- `onasis-gateway/services/ai-router/ai-router-adapter.js:257`
-- `onasis-gateway/services/ai-router/ai-router-adapter.js:313`
-- `onasis-gateway/services/ai-router/ai-router-adapter.js:419`
-- `onasis-gateway/services/ai-router/ai-router-adapter.js:571`
-- `onasis-gateway/api/abstracted-endpoints.js:502`
-- `onasis-gateway/core/abstraction/vendor-abstraction.js:379`
-- `onasis-gateway/middleware/onasis-auth-bridge.js:10`
+> Line numbers are approximate and may drift as the codebase evolves.
+> Function/method names are the stable reference — use your editor's symbol search if line numbers are stale.
+
+| File | Function / Symbol | ~Line |
+|------|-------------------|-------|
+| `unified_gateway.js` | `class UnifiedGateway` constructor | 235 |
+| `unified_gateway.js` | `handleAIChat` (route handler) | 1159 |
+| `unified_gateway.js` | `verifyRequestIdentity` call inside handleAIChat | 1186 |
+| `unified_gateway.js` | API key fallback block inside handleAIChat | 1218 |
+| `unified_gateway.js` | `tryPrimary` / forward to AI Router URL | 1310 |
+| `services/catalog.json` | `ai-router` service entry | 344 |
+| `ai-router-adapter.js` | `resolveChatProvider` | 117 |
+| `ai-router-adapter.js` | `initialize` (tool definitions) | 202 |
+| `ai-router-adapter.js` | `callTool` dispatcher | 257 |
+| `ai-router-adapter.js` | `assertAllowedProvider` | 313 |
+| `ai-router-adapter.js` | `callOllama` | 419 |
+| `ai-router-adapter.js` | `brandResponse` | 571 |
+| `api/abstracted-endpoints.js` | AI operation route mapping | 502 |
+| `core/abstraction/vendor-abstraction.js` | AI vendor adapter dispatch | 379 |
+| `middleware/onasis-auth-bridge.js` | `class OnasisAuthBridge` | 10 |
