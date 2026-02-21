@@ -255,6 +255,12 @@ class UnifiedGateway {
 
         console.log('🚀 Initializing Unified Gateway (API + MCP)...');
         console.log(`📋 MCP Tool Mode: ${this.mcpToolMode}`);
+
+        // Forge demo platform — served before security middleware (allows inline scripts)
+        const forgePath = path.join(__dirname, 'forge');
+        this.app.get('/forge', (_req, res) => res.sendFile(path.join(forgePath, 'index.html')));
+        this.app.use('/forge', express.static(forgePath));
+
         this.setupMiddleware();
         this.loadAPIServices();
         this.adaptersReady = this.loadMCPAdapters();
