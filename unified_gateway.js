@@ -1225,6 +1225,7 @@ class UnifiedGateway {
                         res.setHeader('X-Gateway-Auth-Fallback', 'ai-chat-api-key');
                         console.warn(`[AI Chat] Temporary API key fallback used (requestId=${requestId})`);
                     } catch (fallbackError) {
+                        console.warn(`[AI Chat] API key fallback failed (requestId=${requestId}):`, fallbackError.message);
                         return res.status(auth.status || 401).json({
                             error: auth.error || 'Unauthorized',
                             requestId
