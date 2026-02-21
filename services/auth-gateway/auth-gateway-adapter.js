@@ -131,6 +131,14 @@ class AuthGatewayAdapter extends BaseMCPAdapter {
         }
       },
       {
+        name: 'get-me',
+        description: 'Get current user profile from auth gateway (works for JWT, API key, and OAuth PKCE sessions)',
+        inputSchema: {
+          type: 'object',
+          properties: {}
+        }
+      },
+      {
         name: 'verify-api-key',
         description: 'Verify an API key',
         inputSchema: {
@@ -225,6 +233,7 @@ class AuthGatewayAdapter extends BaseMCPAdapter {
         'login': '/v1/auth/login',
         'exchange-supabase-token': '/v1/auth/token/exchange',
         'logout': '/v1/auth/logout',
+        'get-me': '/v1/auth/me',
         'get-session': '/v1/auth/session',
         'verify-token': '/v1/auth/verify-token', // CLI-friendly endpoint
         'list-sessions': '/v1/auth/sessions',
@@ -243,6 +252,7 @@ class AuthGatewayAdapter extends BaseMCPAdapter {
         'login': 'POST',
         'exchange-supabase-token': 'POST',
         'logout': 'POST',
+        'get-me': 'GET',
         'get-session': 'GET',
         'verify-token': 'POST',
         'list-sessions': 'GET',
