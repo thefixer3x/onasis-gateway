@@ -161,12 +161,20 @@ class OnasisAuthBridge {
 
       if (response.ok) {
         const sessionData = await response.json();
+        // Normalize expiry: provide both duration (expires_in, seconds) and
+        // absolute timestamp (expires_at, ISO string) so consumers can use either.
+        const expiresIn = sessionData.expires_in ?? null;
+        const expiresAt = sessionData.expires_at
+          || (expiresIn != null
+            ? new Date(Date.now() + expiresIn * 1000).toISOString()
+            : null);
         return {
           authenticated: true,
           user: sessionData.user,
           method: 'jwt_remote',
           token: token,
-          expires_in: sessionData.expires_in
+          expires_in: expiresIn,
+          expires_at: expiresAt
         };
       }
 

@@ -12,7 +12,7 @@ Legacy compatibility remains for `/api/v1/ai-chat`.
 
 ## Reference Diagrams
 
-- End-to-end routing and auth flow: `services/ai-router/ROUTING_FLOW.md`
+- [End-to-end routing and auth flow](ROUTING_FLOW.md)
 
 ## MCP Tools
 
