@@ -141,11 +141,16 @@ class OnasisAuthBridge {
   }
 
   /**
-   * Validate JWT token against onasis-core auth
+   * Validate Bearer token against onasis-core auth.
+   * Handles three token types:
+   *   1. Auth-gateway JWTs  → GET /session (requireAuth validates JWT + session lookup)
+   *   2. Opaque OAuth PKCE tokens → GET /session returns 401; fallback to POST /verify-token
+   *      (public endpoint that uses introspectToken against oauth_tokens table)
+   *   3. Anything else → authenticated: false
    */
   async validateJWTToken(token) {
     try {
-      // Remote session validation via auth-gateway
+      // Primary path: session validation (works for gateway-issued JWTs)
       const response = await this.makeAuthRequest(this.config.sessionPath, {
         method: 'GET',
         headers: {
@@ -159,11 +164,42 @@ class OnasisAuthBridge {
         return {
           authenticated: true,
           user: sessionData.user,
-            method: 'jwt_remote',
-            token: token,
-            expires_in: sessionData.expires_in
-          };
+          method: 'jwt_remote',
+          token: token,
+          expires_in: sessionData.expires_in
+        };
+      }
+
+      // Fallback for opaque OAuth tokens: session endpoint returns 401 because
+      // requireAuth only accepts JWTs and API keys, not opaque PKCE tokens.
+      // POST /verify-token is public and handles all three token types via introspection.
+      if (response.status === 401 || response.status === 403) {
+        try {
+          const verifyResponse = await this.makeAuthRequest('/verify-token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Project-Scope': this.config.projectScope
+            },
+            body: JSON.stringify({ token })
+          });
+
+          if (verifyResponse.ok) {
+            const verifyData = await verifyResponse.json();
+            if (verifyData.valid) {
+              return {
+                authenticated: true,
+                user: verifyData.user || null,
+                method: 'oauth_token',
+                token: token,
+                expires_at: verifyData.expires_at
+              };
+            }
+          }
+        } catch (verifyError) {
+          console.warn('OAuth token fallback verification failed:', verifyError.message);
         }
+      }
 
       return {
         authenticated: false,
