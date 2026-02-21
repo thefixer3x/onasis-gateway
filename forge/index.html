@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onasis Gateway — The Forge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-base: #080a0f;
+      --bg-surface: #0d1018;
+      --bg-card: #111520;
+      --bg-card-hover: #151924;
+      --border: #1a1f2e;
+      --border-glow: #252d47;
+      --border-accent: rgba(79,110,247,0.3);
+      --text-primary: #eef0ff;
+      --text-secondary: #7c82a0;
+      --text-muted: #3d4260;
+      --accent: #4f6ef7;
+      --accent-dim: rgba(79,110,247,0.08);
+      --accent-glow: rgba(79,110,247,0.18);
+      --accent-glow-strong: rgba(79,110,247,0.3);
+      --green: #1dba6b;
+      --green-dim: rgba(29,186,107,0.1);
+      --yellow: #f5a623;
+      --yellow-dim: rgba(245,166,35,0.1);
+      --red: #f04040;
+      --red-dim: rgba(240,64,64,0.1);
+      --purple: #8b5cf6;
+      --teal: #0ea5c9;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    button { cursor: pointer; font-family: inherit; }
+    input, select, textarea { font-family: 'DM Mono', monospace; }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* NAV */
+    #nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 58px; background: rgba(8,10,15,0.85);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 28px; gap: 14px;
+    }
+    .nav-wordmark { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .nav-logo {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: linear-gradient(135deg, #4f6ef7 0%, #7c3aed 100%);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden; position: relative;
+    }
+    .nav-logo::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+    }
+    .nav-logo svg { position: relative; z-index: 1; }
+    .nav-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    .nav-name { font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+    .nav-divider { width: 1px; height: 18px; background: var(--border); }
+    .nav-tag {
+      font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted);
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 8px; letter-spacing: 0.04em;
+    }
+    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .nav-breadcrumb {
+      font-size: 12px; color: var(--text-muted);
+      display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace;
+    }
+    .nav-breadcrumb a { color: var(--text-muted); transition: color 150ms; }
+    .nav-breadcrumb a:hover { color: var(--text-secondary); }
+    .nav-breadcrumb .sep { color: var(--text-muted); opacity: 0.4; }
+    .nav-breadcrumb .current { color: var(--text-secondary); }
+    .nav-token {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 6px; padding: 5px 10px; color: var(--text-secondary);
+      font-family: 'DM Mono', monospace; font-size: 11px; outline: none;
+      width: 190px; transition: border-color 150ms;
+    }
+    .nav-token:focus { border-color: var(--accent); }
+    .nav-token::placeholder { color: var(--text-muted); }
+    .status-indicator {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted);
+      padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px;
+    }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+      box-shadow: 0 0 8px var(--green); animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .btn-ghost {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-secondary); border-radius: 6px;
+      padding: 6px 12px; font-size: 12px; font-weight: 600;
+      transition: all 150ms ease; white-space: nowrap;
+    }
+    .btn-ghost:hover { border-color: var(--border-glow); color: var(--text-primary); }
+    .btn-back {
+      display: none; align-items: center; gap: 5px;
+      background: transparent; border: none; color: var(--text-muted);
+      font-size: 12px; font-family: 'DM Mono', monospace;
+      transition: color 150ms; padding: 0;
+    }
+    .btn-back.visible { display: flex; }
+    .btn-back:hover { color: var(--text-secondary); }
+
+    /* DEMO BANNER */
+    #demo-banner {
+      display: none; position: fixed; top: 58px; left: 0; right: 0; z-index: 99;
+      background: linear-gradient(90deg, rgba(79,110,247,0.08), rgba(124,58,237,0.08));
+      border-bottom: 1px solid rgba(79,110,247,0.15);
+      padding: 7px 28px; font-size: 11px; color: var(--text-secondary);
+      font-family: 'DM Mono', monospace; text-align: center;
+    }
+    #demo-banner.visible { display: block; }
+
+    /* BRANDING DRAWER */
+    #branding-overlay {
+      display: none; position: fixed; inset: 0; z-index: 199;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    }
+    #branding-overlay.on { display: block; }
+    #branding-drawer {
+      position: fixed; top: 0; right: -360px; width: 340px; height: 100vh;
+      background: var(--bg-surface); border-left: 1px solid var(--border);
+      z-index: 200; transition: right 320ms cubic-bezier(0.4,0,0.2,1);
+      padding: 28px 24px; display: flex; flex-direction: column; gap: 20px;
+      overflow-y: auto;
+    }
+    #branding-drawer.open { right: 0; }
+    .drawer-hdr { display: flex; flex-direction: column; gap: 4px; }
+    .drawer-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .drawer-sub { font-size: 12px; color: var(--text-muted); }
+    .field-group { display: flex; flex-direction: column; gap: 7px; }
+    .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
+    .field-input {
+      width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 7px; padding: 9px 13px; color: var(--text-primary);
+      font-family: 'DM Mono', monospace; font-size: 12px; outline: none;
+      transition: border-color 150ms, box-shadow 150ms;
+    }
+    .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .field-input[type="color"] { padding: 3px 6px; height: 38px; cursor: pointer; }
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 7px; padding: 11px 18px; font-size: 13px;
+      font-weight: 700; transition: all 150ms ease; width: 100%;
+    }
+    .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 20px var(--accent-glow); }
+
+    /* APP ROOT */
+    #app {
+      padding-top: 58px; min-height: 100vh;
+      opacity: 1; transition: opacity 180ms ease, transform 180ms ease;
+    }
+    #app.out { opacity: 0; transform: translateY(6px); }
+
+    /* LANDING */
+    .landing { display: flex; flex-direction: column; }
+
+    /* HERO */
+    .hero {
+      position: relative; overflow: hidden;
+      padding: 80px 64px 64px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 55% 70% at 10% 60%, rgba(79,110,247,0.1) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 55% at 85% 20%, rgba(124,58,237,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 35% 50% at 55% 90%, rgba(14,165,201,0.05) 0%, transparent 60%);
+      animation: hshift 14s ease-in-out infinite alternate;
+    }
+    @keyframes hshift {
+      0%   { transform: translate(0,0) scale(1); }
+      50%  { transform: translate(1%,2%) scale(1.01); }
+      100% { transform: translate(-1%,1%) scale(0.99); }
+    }
+    .hero-eyebrow {
+      position: relative; z-index: 1;
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'DM Mono', monospace; font-size: 11px;
+      color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .hero-eyebrow::before {
+      content: ''; width: 20px; height: 1px; background: var(--accent); opacity: 0.6;
+    }
+    .hero h1 {
+      position: relative; z-index: 1;
+      font-size: clamp(38px, 5.5vw, 60px); font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1.05; color: var(--text-primary);
+      max-width: 700px;
+    }
+    .hero h1 em { font-style: normal; color: transparent;
+      background: linear-gradient(135deg, #4f6ef7, #8b5cf6, #0ea5c9);
+      -webkit-background-clip: text; background-clip: text; }
+    .hero-sub {
+      position: relative; z-index: 1;
+      font-size: 16px; color: var(--text-secondary);
+      max-width: 520px; line-height: 1.65; font-weight: 400;
+    }
+    .hero-stats-row {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; gap: 0; margin-top: 8px;
+    }
+    .hero-stat {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 12px 24px; border: 1px solid var(--border); background: var(--bg-card);
+    }
+    .hero-stat:first-child { border-radius: 8px 0 0 8px; }
+    .hero-stat:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+    .hero-stat:not(:first-child):not(:last-child) { border-left: none; }
+    .hero-stat-val { font-size: 20px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; }
+    .hero-stat-key { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 32px 64px 20px;
+    }
+    .section-title { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; }
+    .section-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+
+    /* API SERVICES GRID */
+    .services-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 12px;
+      margin: 0 64px; overflow: hidden;
+    }
+
+    /* SERVICE CARD */
+    .service-card {
+      background: var(--bg-card); padding: 28px;
+      cursor: pointer; transition: background 180ms ease;
+      position: relative; overflow: hidden;
+    }
+    .service-card:hover { background: var(--bg-card-hover); }
+    .service-card-glow {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 100%);
+      transition: background 120ms ease;
+    }
+    .service-card-inner { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+    .card-icon {
+      width: 44px; height: 44px; border-radius: 10px; font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--accent-dim); border: 1px solid var(--border-accent);
+      transition: all 200ms ease; flex-shrink: 0;
+    }
+    .service-card:hover .card-icon { background: rgba(79,110,247,0.14); box-shadow: 0 0 18px rgba(79,110,247,0.15); }
+    .card-name { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.015em; }
+    .card-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.55; flex: 1; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; }
+    .card-meta { display: flex; align-items: center; gap: 8px; }
+    .card-arrow { font-size: 16px; color: var(--accent); opacity: 0; transform: translateX(-4px); transition: all 200ms ease; }
+    .service-card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+
+    /* MCP SECTION */
+    .mcp-section { padding: 48px 64px 64px; }
+    .mcp-section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .mcp-grid { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .mcp-row {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--bg-card); padding: 14px 18px;
+      transition: background 150ms;
+    }
+    .mcp-row:hover { background: var(--bg-card-hover); }
+    .mcp-icon { font-size: 16px; width: 28px; text-align: center; flex-shrink: 0; }
+    .mcp-name { font-size: 13px; font-weight: 600; color: var(--text-primary); flex: 1; }
+    .mcp-desc { font-size: 12px; color: var(--text-muted); flex: 2; }
+    .mcp-tools { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .mcp-auth { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.02em;
+      border-radius: 5px; padding: 3px 8px; font-weight: 500; white-space: nowrap;
+    }
+    .badge.live { background: var(--green-dim); color: var(--green); border: 1px solid rgba(29,186,107,0.2); }
+    .badge.mock { background: rgba(74,79,106,0.12); color: var(--text-muted); border: 1px solid var(--border); }
+    .badge.beta { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(245,166,35,0.2); }
+    .badge.active { background: var(--green-dim); color: var(--green); border: 1px solid rgba(29,186,107,0.2); }
+    .cat-pill {
+      font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted);
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 8px; text-transform: uppercase; letter-spacing: 0.03em;
+    }
+
+    /* SERVICE VIEW */
+    .service-view { display: flex; height: calc(100vh - 58px); overflow: hidden; }
+    .left-panel {
+      width: 400px; min-width: 400px; flex-shrink: 0;
+      border-right: 1px solid var(--border); overflow-y: auto;
+      display: flex; flex-direction: column;
+      background: var(--bg-surface);
+    }
+    .right-panel { flex: 1; overflow-y: auto; background: var(--bg-base); }
+
+    .svc-header { padding: 28px 24px 0; }
+    .svc-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .svc-icon { width: 46px; height: 46px; border-radius: 10px; font-size: 22px; display: flex; align-items: center; justify-content: center; background: var(--accent-dim); border: 1px solid var(--border-accent); flex-shrink: 0; }
+    .svc-name { font-size: 18px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+    .svc-desc { font-size: 12px; color: var(--text-muted); margin-top: 3px; margin-bottom: 20px; line-height: 1.55; }
+
+    /* OP TABS */
+    .op-tabs { display: flex; overflow-x: auto; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 0; }
+    .op-tab {
+      background: none; border: none; padding: 12px 14px;
+      font-size: 12px; font-weight: 700; color: var(--text-muted);
+      white-space: nowrap; position: relative; transition: color 150ms;
+      font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: 0.01em;
+    }
+    .op-tab::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 100%; height: 2px; background: var(--accent); transition: right 200ms ease; border-radius: 2px 2px 0 0; }
+    .op-tab.active { color: var(--text-primary); }
+    .op-tab.active::after { right: 0; }
+    .op-tab:hover:not(.active) { color: var(--text-secondary); }
+    .op-tab.flow-tab { color: var(--teal); }
+    .op-tab.flow-tab.active { color: var(--teal); }
+    .op-tab.flow-tab::after { background: var(--teal); }
+
+    /* FORM */
+    .form-area { padding: 24px; flex: 1; }
+    .form-hdr { margin-bottom: 20px; }
+    .form-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+    .form-sub { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+    .provider-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 20px; }
+    .provider-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); border-radius: 5px;
+      padding: 5px 12px; font-size: 11px; font-weight: 700;
+      font-family: 'DM Mono', monospace; transition: all 150ms;
+    }
+    .provider-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .provider-btn:hover:not(.on) { border-color: var(--border-glow); color: var(--text-secondary); }
+    .frow { margin-bottom: 15px; }
+    .flabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 6px; display: block; }
+    .finput {
+      width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 7px; padding: 9px 12px; color: var(--text-primary);
+      font-family: 'DM Mono', monospace; font-size: 12px; outline: none;
+      transition: border-color 150ms, box-shadow 150ms;
+    }
+    .finput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .finput::placeholder { color: var(--text-muted); }
+    select.finput { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%233d4260' d='M5 7L0.67 2.5h8.66z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; cursor: pointer; }
+    textarea.finput { resize: vertical; min-height: 76px; }
+    .ref-wrap { position: relative; }
+    .ref-wrap .finput { padding-right: 34px; }
+    .ref-regen { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); font-size: 13px; transition: color 150ms; padding: 3px; }
+    .ref-regen:hover { color: var(--accent); }
+    .cb-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cb-item { display: flex; align-items: center; gap: 5px; }
+    .cb-item input[type="checkbox"] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
+    .cb-item label { font-size: 12px; color: var(--text-secondary); font-family: 'DM Mono', monospace; cursor: pointer; }
+    .run-btn {
+      width: 100%; height: 42px; background: var(--accent);
+      border: none; border-radius: 7px; color: #fff; font-size: 13px;
+      font-weight: 700; margin-top: 18px; display: flex; align-items: center;
+      justify-content: center; gap: 7px; transition: all 150ms ease;
+    }
+    .run-btn:hover { filter: brightness(1.1); box-shadow: 0 4px 20px var(--accent-glow); }
+    .run-btn:active { transform: scale(0.99); }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .finput.invalid { border-color: var(--red) !important; animation: shake 280ms ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+    .no-fields { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 32px 0; color: var(--text-muted); font-size: 12px; }
+    .no-fields span { font-size: 28px; opacity: 0.2; }
+
+    /* RIGHT PANEL */
+    .rp-inner { padding: 32px; display: flex; flex-direction: column; gap: 20px; min-height: 100%; }
+    .idle-box {
+      flex: 1; min-height: 280px;
+      border: 1px dashed var(--border); border-radius: 10px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 14px; padding: 40px;
+    }
+    .idle-icon { font-size: 44px; opacity: 0.1; }
+    .idle-txt { font-size: 13px; color: var(--text-muted); text-align: center; max-width: 260px; line-height: 1.65; }
+    .idle-hint { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); opacity: 0.6; }
+
+    /* STEPS */
+    .steps-wrap { display: flex; flex-direction: column; }
+    .steps-label { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 14px; }
+    .step-row {
+      display: flex; align-items: center; gap: 11px; padding: 10px 0;
+      border-bottom: 1px solid rgba(26,31,46,0.6);
+      opacity: 0; transform: translateX(-6px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+    .step-row:last-child { border-bottom: none; }
+    .step-row.vis { opacity: 1; transform: translateX(0); }
+    .step-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; transition: all 200ms; }
+    .step-dot.idle { background: rgba(61,66,96,0.15); border: 1px solid var(--border); }
+    .step-dot.spin { border: 2px solid var(--accent); animation: ring-spin 0.9s linear infinite; }
+    @keyframes ring-spin { to { transform: rotate(360deg); } }
+    .step-dot.ok { background: var(--green-dim); border: 1px solid rgba(29,186,107,0.25); color: var(--green); }
+    .step-dot.fail { background: var(--red-dim); border: 1px solid rgba(240,64,64,0.25); color: var(--red); }
+    .step-label { font-size: 12px; color: var(--text-secondary); flex: 1; }
+    .step-label.live { color: var(--text-primary); }
+    .step-label.done { color: var(--text-muted); }
+
+    /* RESULT */
+    .result-card {
+      background: var(--bg-card); border-radius: 10px;
+      border: 1px solid var(--border-glow);
+      overflow: hidden; animation: rfade 300ms ease forwards;
+    }
+    @keyframes rfade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .result-hdr {
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .result-status { display: flex; align-items: center; gap: 9px; }
+    .result-icon { font-size: 18px; }
+    .result-text { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+    .result-text.ok { color: var(--green); }
+    .result-text.warn { color: var(--yellow); }
+    .result-text.err { color: var(--red); }
+    .result-text.off { color: var(--text-muted); }
+    .result-pills { display: flex; align-items: center; gap: 7px; }
+    .http-chip { font-family: 'DM Mono', monospace; font-size: 10px; border-radius: 4px; padding: 2px 7px; }
+    .http-chip.ok { background: var(--green-dim); color: var(--green); }
+    .http-chip.warn { background: var(--yellow-dim); color: var(--yellow); }
+    .http-chip.err { background: var(--red-dim); color: var(--red); }
+    .http-chip.off { background: rgba(61,66,96,0.15); color: var(--text-muted); }
+    .timing-chip { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); }
+    .mock-note { padding: 8px 18px; background: rgba(245,166,35,0.05); border-bottom: 1px solid rgba(245,166,35,0.1); font-family: 'DM Mono', monospace; font-size: 10px; color: var(--yellow); opacity: 0.7; }
+    .result-kv { padding: 14px 18px; display: flex; flex-direction: column; gap: 9px; }
+    .kv-pair { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .kv-k { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .kv-v { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-primary); text-align: right; word-break: break-all; position: relative; padding-right: 20px; }
+    .kv-copy { position: absolute; right: 0; top: 0; background: none; border: none; color: var(--text-muted); font-size: 11px; cursor: pointer; transition: color 150ms; padding: 0; }
+    .kv-copy:hover { color: var(--accent); }
+    .json-toggle-bar { padding: 10px 18px; border-top: 1px solid var(--border); }
+    .json-toggle-btn { background: none; border: none; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: color 150ms; display: flex; align-items: center; gap: 5px; }
+    .json-toggle-btn:hover { color: var(--text-secondary); }
+    .json-wrap { display: none; }
+    .json-wrap.on { display: block; }
+    .json-body { background: var(--bg-base); border-top: 1px solid var(--border); padding: 14px 18px; position: relative; overflow-x: auto; }
+    .json-body pre { font-family: 'DM Mono', monospace; font-size: 11px; line-height: 1.75; white-space: pre; }
+    .json-cp { position: absolute; top: 10px; right: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 5px; padding: 3px 8px; font-size: 10px; color: var(--text-muted); cursor: pointer; font-family: 'DM Mono', monospace; transition: all 150ms; }
+    .json-cp:hover { border-color: var(--accent); color: var(--text-primary); }
+    .jk { color: var(--accent); } .js { color: var(--green); } .jn { color: var(--yellow); } .jb { color: #f97316; } .jnull { color: var(--text-muted); }
+
+    /* REQUEST LOG */
+    #req-log { position: fixed; bottom: 14px; right: 14px; z-index: 150; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .log-pill { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 150ms; }
+    .log-pill:hover { border-color: var(--border-glow); color: var(--text-secondary); }
+    #log-panel { display: none; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; width: 380px; max-height: 240px; overflow-y: auto; }
+    #log-panel.on { display: block; }
+    .log-panel-hdr { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--text-secondary); display: flex; justify-content: space-between; }
+    .log-panel-hdr button { background: none; border: none; color: var(--text-muted); font-size: 10px; cursor: pointer; font-family: 'DM Mono', monospace; }
+    .log-row { display: flex; align-items: center; gap: 9px; padding: 8px 14px; border-bottom: 1px solid rgba(26,31,46,0.4); font-family: 'DM Mono', monospace; font-size: 10px; }
+    .log-row:last-child { border-bottom: none; }
+    .lm { color: var(--accent); font-weight: 700; }
+    .lu { color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ls-ok { color: var(--green); } .ls-warn { color: var(--yellow); } .ls-err { color: var(--red); }
+    .lt { color: var(--text-muted); }
+
+    /* FLOW MODE */
+    .flow-view { max-width: 660px; margin: 0 auto; padding: 36px 24px 72px; }
+    .flow-title { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 4px; }
+    .flow-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 36px; }
+    .flow-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 22px; position: relative; transition: border-color 300ms; }
+    .flow-card.active-flow { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+    .flow-card.done-flow { border-left: 3px solid var(--green); opacity: 0.75; }
+    .flow-card-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .flow-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .flow-num.done-num { background: var(--green); }
+    .flow-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .flow-check { margin-left: auto; font-size: 16px; }
+    .flow-conn { height: 28px; display: flex; align-items: center; justify-content: center; }
+    .flow-conn svg { overflow: visible; }
+    .fconn-line { stroke: var(--border); stroke-width: 1.5; stroke-dasharray: 3 3; }
+    .fconn-line.drawn { stroke: var(--accent); animation: draw-conn 400ms ease forwards; }
+    @keyframes draw-conn { from{stroke-dashoffset:28} to{stroke-dashoffset:0} }
+    .continue-btn { margin-top: 14px; background: var(--accent); border: none; border-radius: 6px; padding: 9px 18px; color: #fff; font-size: 12px; font-weight: 700; transition: all 150ms; }
+    .continue-btn:hover { filter: brightness(1.1); }
+    .continue-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .prefill-badge { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--yellow); background: var(--yellow-dim); border: 1px solid rgba(245,166,35,0.2); border-radius: 3px; padding: 1px 5px; margin-left: 6px; }
+    .flow-done-card { background: linear-gradient(135deg, rgba(29,186,107,0.1), rgba(29,186,107,0.04)); border: 1px solid rgba(29,186,107,0.25); border-radius: 10px; padding: 36px; text-align: center; animation: rfade 350ms ease forwards; }
+    .flow-done-icon { font-size: 40px; margin-bottom: 14px; }
+    .flow-done-title { font-size: 20px; font-weight: 800; color: var(--green); margin-bottom: 6px; }
+    .flow-done-sub { font-size: 13px; color: var(--text-secondary); }
+
+    /* MOBILE */
+    @media (max-width: 768px) {
+      .hero { padding: 48px 24px 48px; }
+      .hero-stats-row { flex-wrap: wrap; }
+      .services-grid { grid-template-columns: 1fr; margin: 0 16px; }
+      .section-header { padding: 24px 16px 14px; }
+      .mcp-section { padding: 32px 16px 48px; }
+      .service-view { flex-direction: column; height: auto; }
+      .left-panel { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }
+      .rp-inner { padding: 20px; }
+      .nav-token { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-wordmark">
+    <div class="nav-logo" id="nav-logo">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+        <circle cx="9" cy="9" r="2.5" fill="white" opacity="0.9"/>
+      </svg>
+    </div>
+    <span class="nav-name" id="nav-name">Onasis Gateway</span>
+    <div class="nav-divider"></div>
+    <span class="nav-tag">The Forge</span>
+  </div>
+  <div class="nav-right">
+    <div class="nav-breadcrumb" id="nav-bc"></div>
+    <button class="btn-back" id="btn-back" onclick="go('/')">← Services</button>
+    <input type="password" id="nav-token" class="nav-token" placeholder="Bearer token (optional)" autocomplete="off" />
+    <div class="status-indicator"><div class="status-dot"></div>Operational</div>
+    <button class="btn-ghost" onclick="openBranding()">⬡ Brand</button>
+  </div>
+</nav>
+
+<!-- DEMO BANNER -->
+<div id="demo-banner"></div>
+
+<!-- BRANDING DRAWER -->
+<div id="branding-overlay" onclick="closeBranding()"></div>
+<div id="branding-drawer">
+  <div class="drawer-hdr">
+    <div class="drawer-title">Client Branding</div>
+    <div class="drawer-sub">Customize for each demo in seconds.</div>
+  </div>
+  <div class="field-group">
+    <div class="field-label">Client Name</div>
+    <input class="field-input" id="b-name" type="text" placeholder="Acme Financial" />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Logo URL</div>
+    <input class="field-input" id="b-logo" type="text" placeholder="https://..." />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Accent Color</div>
+    <input class="field-input" id="b-color" type="color" value="#4f6ef7" />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Demo Note</div>
+    <input class="field-input" id="b-note" type="text" placeholder="Prepared exclusively for Acme" />
+  </div>
+  <button class="btn-primary" onclick="applyBranding()">Apply Branding</button>
+  <button class="btn-ghost" style="width:100%" onclick="resetBranding()">Reset to Default</button>
+</div>
+
+<!-- APP -->
+<div id="app"></div>
+
+<!-- REQUEST LOG -->
+<div id="req-log">
+  <div id="log-panel">
+    <div class="log-panel-hdr">Request Log <button onclick="clearLog()">Clear</button></div>
+    <div id="log-entries"></div>
+  </div>
+  <div class="log-pill" onclick="toggleLog()"><span id="log-count">0 calls</span></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CATALOG
+// ═══════════════════════════════════════════
+const CATALOG = {
+  apiServices: [
+    {
+      id: 'credit-as-a-service',
+      name: 'Credit as a Service',
+      description: 'Comprehensive credit management and lending platform with multi-provider integration.',
+      icon: '💰',
+      category: 'financial',
+      status: 'active',
+      tier: 'live',
+      operations: ['apply','assess','disburse','repayment']
+    },
+    {
+      id: 'flutterwave-payment-gateway',
+      name: 'Flutterwave Gateway',
+      description: 'Pan-African payment processing with mobile money, bank transfers, and card support.',
+      icon: '🦋',
+      category: 'payment_gateway',
+      status: 'active',
+      tier: 'live',
+      operations: ['initiate','verify','transfer','virtual-account']
+    },
+    {
+      id: 'paystack-payment-gateway',
+      name: 'Paystack Gateway',
+      description: 'Advanced payment processing built for African markets — cards, USSD, bank, and mobile.',
+      icon: '💳',
+      category: 'payment_gateway',
+      status: 'active',
+      tier: 'live',
+      operations: ['initialize','verify','refund','resolve-account']
+    },
+    {
+      id: 'providus-bank',
+      name: 'Providus Bank API',
+      description: 'Nigerian banking services — virtual accounts, NIP transfers, and wallet management.',
+      icon: '🏦',
+      category: 'banking',
+      status: 'active',
+      tier: 'live',
+      operations: ['create-account','name-enquiry','transfer','transaction-status']
+    },
+    {
+      id: 'verification-service',
+      name: 'Verification Service',
+      description: 'Comprehensive KYC, KYB, and AML verification with multi-bureau integration.',
+      icon: '🪪',
+      category: 'identity_verification',
+      status: 'active',
+      tier: 'live',
+      operations: ['kyc-individual','kyc-business','document','aml-check']
+    },
+    {
+      id: 'memory-as-a-service',
+      name: 'Memory as a Service',
+      description: 'Semantic memory with vector embeddings — store and retrieve context for AI applications.',
+      icon: '🧠',
+      category: 'ai_infrastructure',
+      status: 'active',
+      tier: 'live',
+      operations: ['store','retrieve','search','flush']
+    }
+  ],
+  mcpAdapters: [
+    { id:'paystack', name:'Paystack API', description:'African payment processing', type:'live', toolCount:10, authType:'bearer', category:'payments', countries:['NG','GH','ZA','KE'] },
+    { id:'flutterwave-v3', name:'Flutterwave v3', description:'Pan-African payments + mobile money', type:'live', toolCount:10, authType:'bearer', category:'payments', countries:['NG','GH','KE','ZA','TZ','UG','RW'] },
+    { id:'stripe-api', name:'Stripe API', description:'Global payment processing', type:'live', toolCount:10, authType:'bearer', category:'payments', countries:['US','GB','EU','CA'] },
+    { id:'sayswitch-api', name:'Sayswitch API', description:'Payment switching and routing', type:'live', toolCount:10, authType:'bearer', category:'payments', countries:['NG'] },
+    { id:'open-banking-api', name:'Open Banking API', description:'PSD2-compliant banking integration', type:'mock', toolCount:58, authType:'apikey', category:'banking' },
+    { id:'wise-mca', name:'Wise MCA Platform', description:'Multi-currency accounts and transfers', type:'mock', toolCount:47, authType:'apikey', category:'payments' },
+    { id:'bap', name:'BAP API', description:'Nigerian payment services', type:'mock', toolCount:92, authType:'apikey', category:'payments', countries:['NG'] },
+    { id:'xpress-wallet', name:'Xpress Wallet', description:'Digital wallet for merchants', type:'mock', toolCount:40, authType:'bearer', category:'payments' },
+    { id:'ngrok-api', name:'ngrok API', description:'Secure tunnels and ingress', type:'mock', toolCount:217, authType:'bearer', category:'infrastructure' },
+    { id:'hostinger-api', name:'Hostinger API', description:'Web hosting management', type:'mock', toolCount:85, authType:'bearer', category:'infrastructure' },
+    { id:'shutterstock', name:'Shutterstock API', description:'Stock media assets', type:'mock', toolCount:109, authType:'oauth2', category:'media' },
+    { id:'google-analytics', name:'Google Analytics v3', description:'Web analytics', type:'mock', toolCount:88, authType:'apikey', category:'analytics' },
+    { id:'edoc', name:'EDOC Integration', description:'Electronic document integration', type:'mock', toolCount:6, authType:'apikey', category:'documents' },
+  ],
+  categories: {
+    financial: { label:'Financial', icon:'💰' },
+    payment_gateway: { label:'Payments', icon:'💳' },
+    banking: { label:'Banking', icon:'🏦' },
+    identity_verification: { label:'Identity', icon:'🔐' },
+    ai_infrastructure: { label:'AI Infrastructure', icon:'🤖' },
+  }
+};
+
+// ═══════════════════════════════════════════
+// FORMS
+// ═══════════════════════════════════════════
+function genRef(prefix='ref') { return prefix + '_' + Math.random().toString(36).substr(2,8); }
+function genUUID() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c==='x'?r:r&0x3|0x8).toString(16);}); }
+
+const FORMS = {
+  'credit-as-a-service': {
+    apply: {
+      label: 'Apply for Credit', providers: [],
+      fields: [
+        { n:'borrower_name', l:'Borrower Name', t:'text', p:'Jane Doe', req:true },
+        { n:'amount', l:'Requested Amount (NGN)', t:'number', p:'500000', req:true },
+        { n:'tenor', l:'Tenor', t:'select', opts:['30 days','60 days','90 days','6 months','12 months'] },
+        { n:'purpose', l:'Loan Purpose', t:'select', opts:['working_capital','asset_finance','personal','invoice_discounting'] },
+        { n:'bvn', l:'BVN', t:'text', p:'22234567890' },
+        { n:'reference', l:'Application Reference', t:'text', ref:true },
+      ],
+      steps: ['Validating application','Running credit pre-screen','Checking bureau data','Scoring applicant','Submitting application'],
+      mock: function(){ return { application_id: genRef('app'), status:'under_review', borrower_name:'Jane Doe', amount_requested:500000, currency:'NGN', credit_score:720, decision_eta:'2-4 hours', reference: genRef('ref') }; }
+    },
+    assess: {
+      label: 'Assess Creditworthiness', providers: [],
+      fields: [
+        { n:'borrower_id', l:'Borrower ID', t:'text', p:'borr_abc123', req:true },
+        { n:'bvn', l:'BVN', t:'text', p:'22234567890' },
+        { n:'bank_statement_url', l:'Bank Statement URL (optional)', t:'text', p:'https://...' },
+      ],
+      steps: ['Fetching borrower profile','Pulling bureau data','Analysing cashflow','Computing score','Returning assessment'],
+      mock: function(){ return { borrower_id: genRef('borr'), credit_score:684, risk_band:'medium', max_offer_ngn:750000, recommended_tenor:'90 days', flags:[], assessed_at: new Date().toISOString() }; }
+    },
+    disburse: {
+      label: 'Disburse Loan', providers: [],
+      fields: [
+        { n:'application_id', l:'Application ID', t:'text', p:'app_abc123', req:true },
+        { n:'account_number', l:'Destination Account', t:'text', p:'0123456789', req:true },
+        { n:'bank_code', l:'Bank', t:'select', opts:['058 — GTBank','011 — First Bank','044 — Access Bank','063 — Diamond Bank','070 — Fidelity Bank'] },
+        { n:'amount', l:'Disbursement Amount (NGN)', t:'number', p:'500000', req:true },
+      ],
+      steps: ['Verifying approval status','Confirming account details','Initiating NIP transfer','Awaiting bank confirmation','Recording disbursement'],
+      mock: function(){ return { disbursement_id: genRef('dis'), status:'successful', amount:500000, currency:'NGN', destination:'GTBank - 0123456789', session_id: genUUID(), disbursed_at: new Date().toISOString() }; }
+    },
+    repayment: {
+      label: 'Record Repayment', providers: [],
+      fields: [
+        { n:'loan_id', l:'Loan ID', t:'text', p:'loan_abc123', req:true },
+        { n:'amount', l:'Repayment Amount', t:'number', p:'55000', req:true },
+        { n:'channel', l:'Payment Channel', t:'select', opts:['bank_transfer','card','ussd','mobile_money'] },
+        { n:'reference', l:'Payment Reference', t:'text', ref:true },
+      ],
+      steps: ['Validating loan','Recording payment','Updating schedule','Issuing receipt'],
+      mock: function(){ return { repayment_id: genRef('rep'), loan_id: genRef('loan'), amount_paid:55000, outstanding_balance:445000, next_due_date:'2026-03-21', status:'partial', receipt_url:'https://api.onasis.io/receipts/'+genRef()+'.pdf' }; }
+    }
+  },
+
+  'flutterwave-payment-gateway': {
+    initiate: {
+      label: 'Initiate Payment', providers: ['Card','Bank Transfer','USSD','Mobile Money'],
+      fields: [
+        { n:'amount', l:'Amount', t:'number', p:'25000', req:true },
+        { n:'currency', l:'Currency', t:'select', opts:['NGN','GHS','KES','ZAR','USD','EUR','GBP'] },
+        { n:'customer_email', l:'Customer Email', t:'text', p:'customer@example.com', req:true },
+        { n:'customer_name', l:'Customer Name', t:'text', p:'Ade Johnson' },
+        { n:'tx_ref', l:'Transaction Ref', t:'text', ref:true },
+        { n:'redirect_url', l:'Redirect URL', t:'text', p:'https://yourapp.com/callback' },
+      ],
+      steps: ['Validating payload','Authenticating with Flutterwave','Creating payment link','Returning checkout URL'],
+      mock: function(){ return { status:'success', tx_ref: genRef('FLW'), link:'https://checkout.flutterwave.com/pay/'+genRef(), amount:25000, currency:'NGN', expires_at: new Date(Date.now()+3600000).toISOString() }; }
+    },
+    verify: {
+      label: 'Verify Transaction', providers: [],
+      fields: [
+        { n:'tx_ref', l:'Transaction Reference', t:'text', p:'FLW-ref-abc123', req:true },
+      ],
+      steps: ['Querying Flutterwave','Parsing response','Returning status'],
+      mock: function(){ return { tx_ref: genRef('FLW'), status:'successful', amount:25000, currency:'NGN', payment_type:'card', charged_amount:25000, customer:'ade@example.com', flw_ref: genRef('FLW-REF'), created_at: new Date().toISOString() }; }
+    },
+    transfer: {
+      label: 'Initiate Transfer', providers: [],
+      fields: [
+        { n:'account_bank', l:'Bank Code', t:'select', opts:['058 — GTBank','011 — First Bank','044 — Access Bank','033 — UBA','057 — Zenith'] },
+        { n:'account_number', l:'Account Number', t:'text', p:'0123456789', req:true },
+        { n:'amount', l:'Amount (NGN)', t:'number', p:'10000', req:true },
+        { n:'narration', l:'Narration', t:'text', p:'Payment for order #123' },
+        { n:'reference', l:'Reference', t:'text', ref:true },
+      ],
+      steps: ['Validating account','Checking balance','Initiating NIP transfer','Awaiting confirmation','Complete'],
+      mock: function(){ return { id: Math.floor(Math.random()*900000)+100000, reference: genRef('TRF'), status:'SUCCESSFUL', amount:10000, currency:'NGN', fee:26.88, complete_message:'Successful' }; }
+    },
+    'virtual-account': {
+      label: 'Create Virtual Account', providers: [],
+      fields: [
+        { n:'email', l:'Customer Email', t:'text', p:'customer@example.com', req:true },
+        { n:'name', l:'Account Name', t:'text', p:'Ade Johnson', req:true },
+        { n:'is_permanent', l:'Account Type', t:'select', opts:['true — Permanent','false — One-time'] },
+        { n:'bvn', l:'BVN (optional)', t:'text', p:'22234567890' },
+      ],
+      steps: ['Validating request','Creating virtual account','Assigning bank details','Returning account'],
+      mock: function(){ return { response_code:'02', response_message:'Transaction fetched successfully', flw_ref: genRef('FLWVA'), order_ref: genRef('ORD'), account_number:'8' + Math.floor(Math.random()*900000000+100000000), frequency:'static', bank_name:'Wema Bank', created_at: new Date().toISOString() }; }
+    }
+  },
+
+  'paystack-payment-gateway': {
+    initialize: {
+      label: 'Initialize Transaction', providers: ['Card','Bank','USSD','QR'],
+      fields: [
+        { n:'email', l:'Customer Email', t:'text', p:'customer@example.com', req:true },
+        { n:'amount', l:'Amount (kobo)', t:'number', p:'5000000', req:true },
+        { n:'currency', l:'Currency', t:'select', opts:['NGN','GHS','ZAR','KES'] },
+        { n:'reference', l:'Reference', t:'text', ref:true },
+        { n:'callback_url', l:'Callback URL', t:'text', p:'https://yourapp.com/callback' },
+        { n:'channels', l:'Channels (comma-separated)', t:'text', p:'card,bank,ussd' },
+      ],
+      steps: ['Validating payload','Authenticating with Paystack','Generating authorization URL','Returning checkout'],
+      mock: function(){ return { status:true, message:'Authorization URL created', data:{ authorization_url:'https://checkout.paystack.com/'+genRef(), access_code: genRef('ACC'), reference: genRef('PS') }}; }
+    },
+    verify: {
+      label: 'Verify Transaction', providers: [],
+      fields: [
+        { n:'reference', l:'Transaction Reference', t:'text', p:'PS_ref_abc123', req:true },
+      ],
+      steps: ['Calling Paystack verify','Parsing status','Returning result'],
+      mock: function(){ return { status:true, message:'Verification successful', data:{ status:'success', reference: genRef('PS'), amount:5000000, currency:'NGN', channel:'card', fees:75000, authorization:{ last4:'4081', card_type:'visa', bank:'Test Bank' }, customer:{ email:'customer@example.com' }, paid_at: new Date().toISOString() }}; }
+    },
+    refund: {
+      label: 'Issue Refund', providers: [],
+      fields: [
+        { n:'transaction', l:'Transaction ID / Reference', t:'text', p:'1234567890', req:true },
+        { n:'amount', l:'Amount (kobo — blank for full)', t:'number', p:'' },
+        { n:'currency', l:'Currency', t:'select', opts:['NGN','GHS','ZAR','KES'] },
+        { n:'customer_note', l:'Note to Customer', t:'text', p:'Refund for order cancellation' },
+      ],
+      steps: ['Validating transaction','Checking refund eligibility','Processing refund','Notifying customer'],
+      mock: function(){ return { status:true, message:'Refund has been queued for processing', data:{ status:'pending', transaction_reference: genRef('PS'), amount:5000000, currency:'NGN', deducted_amount:0, fully_deducted:false, refunded_at: new Date().toISOString() }}; }
+    },
+    'resolve-account': {
+      label: 'Resolve Account Number', providers: [],
+      fields: [
+        { n:'account_number', l:'Account Number', t:'text', p:'0123456789', req:true },
+        { n:'bank_code', l:'Bank Code', t:'select', opts:['058 — GTBank','011 — First Bank','044 — Access Bank','033 — UBA','057 — Zenith','232 — Sterling','035 — Wema'] },
+      ],
+      steps: ['Querying NIP gateway','Resolving account name','Returning details'],
+      mock: function(){ return { status:true, message:'Account number resolved', data:{ account_number:'0123456789', account_name:'JOHN ADEWALE DOE', bank_id:58 }}; }
+    }
+  },
+
+  'providus-bank': {
+    'create-account': {
+      label: 'Create Virtual Account', providers: [],
+      fields: [
+        { n:'customer_bvn', l:'BVN', t:'text', p:'22234567890', req:true },
+        { n:'first_name', l:'First Name', t:'text', p:'John', req:true },
+        { n:'last_name', l:'Last Name', t:'text', p:'Doe', req:true },
+        { n:'email', l:'Email', t:'text', p:'john.doe@example.com' },
+        { n:'phone', l:'Phone', t:'text', p:'+2348012345678' },
+      ],
+      steps: ['Validating BVN','Creating account record','Assigning account number','Returning details'],
+      mock: function(){ return { status:'00', message:'Account created successfully', account_number:'904' + Math.floor(Math.random()*9000000+1000000), account_name:'JOHN DOE', bank:'Providus Bank', created_at: new Date().toISOString() }; }
+    },
+    'name-enquiry': {
+      label: 'Account Name Enquiry', providers: [],
+      fields: [
+        { n:'account_number', l:'Account Number', t:'text', p:'0123456789', req:true },
+        { n:'bank_code', l:'Bank Code', t:'select', opts:['058 — GTBank','011 — First Bank','044 — Access Bank','033 — UBA','057 — Zenith Bank','000031 — Providus Bank'] },
+      ],
+      steps: ['Querying NIP','Resolving name','Returning'],
+      mock: function(){ return { status:'00', account_name:'JOHN ADEWALE DOE', account_number:'0123456789', bank_code:'058', session_id: genUUID() }; }
+    },
+    transfer: {
+      label: 'NIP Transfer', providers: [],
+      fields: [
+        { n:'beneficiary_account', l:'Beneficiary Account', t:'text', p:'0123456789', req:true },
+        { n:'beneficiary_bank', l:'Beneficiary Bank Code', t:'select', opts:['058 — GTBank','011 — First Bank','044 — Access Bank','033 — UBA','057 — Zenith'] },
+        { n:'amount', l:'Amount (NGN)', t:'number', p:'50000', req:true },
+        { n:'narration', l:'Narration', t:'text', p:'Invoice payment' },
+        { n:'source_account', l:'Source Account', t:'text', p:'9040000000' },
+        { n:'reference', l:'Client Reference', t:'text', ref:true },
+      ],
+      steps: ['Verifying source balance','Name enquiry on destination','Initiating NIP transfer','Awaiting NIBSS response','Recording transfer'],
+      mock: function(){ return { responseCode:'00', responseMessage:'Successful', transactionReference: genRef('PVD'), sessionId: genUUID(), amount:50000, fee:50, beneficiaryAccountName:'JOHN DOE', transactionDate: new Date().toISOString() }; }
+    },
+    'transaction-status': {
+      label: 'Transaction Status', providers: [],
+      fields: [
+        { n:'session_id', l:'Session ID / Reference', t:'text', p:'session_abc123', req:true },
+      ],
+      steps: ['Looking up transaction','Querying NIBSS','Returning status'],
+      mock: function(){ return { responseCode:'00', transactionStatus:'Successful', sessionId: genUUID(), amount:50000, beneficiaryAccountName:'JOHN DOE', transactionDate: new Date().toISOString() }; }
+    }
+  },
+
+  'verification-service': {
+    'kyc-individual': {
+      label: 'KYC — Individual', providers: ['NIN','BVN','Passport'],
+      fields: [
+        { n:'id_number', l:'ID Number', t:'text', p:'12345678901', req:true },
+        { n:'first_name', l:'First Name', t:'text', p:'John', req:true },
+        { n:'last_name', l:'Last Name', t:'text', p:'Doe', req:true },
+        { n:'dob', l:'Date of Birth', t:'text', p:'1990-05-15' },
+        { n:'reference', l:'Check Reference', t:'text', ref:true },
+      ],
+      steps: ['Submitting request','Querying identity bureau','Cross-referencing records','Computing match score','Returning decision'],
+      mock: function(){ return { status:'verified', match_score:97, confidence:'high', id_type:'NIN', full_name:'JOHN DOE', dob:'1990-05-15', gender:'M', phone:'080****5678', flags:[], check_id: genUUID(), checked_at: new Date().toISOString() }; }
+    },
+    'kyc-business': {
+      label: 'KYC — Business', providers: ['CAC'],
+      fields: [
+        { n:'rc_number', l:'RC Number', t:'text', p:'RC1234567', req:true },
+        { n:'company_name', l:'Company Name', t:'text', p:'Acme Nigeria Ltd', req:true },
+        { n:'tin', l:'Tax Identification Number', t:'text', p:'12345678-0001' },
+      ],
+      steps: ['Querying CAC registry','Validating company record','Checking directors','Returning result'],
+      mock: function(){ return { status:'verified', rc_number:'RC1234567', company_name:'ACME NIGERIA LIMITED', registration_date:'2018-03-12', status_on_cac:'Active', company_type:'Private Limited', directors:['JOHN DOE','JANE DOE'], tin:'12345678-0001', check_id: genUUID() }; }
+    },
+    document: {
+      label: 'Document Verification', providers: ['OCR+AI'],
+      fields: [
+        { n:'document_type', l:'Document Type', t:'select', opts:["International Passport","Driver's License","National ID","Voter's Card","Utility Bill"] },
+        { n:'document_url', l:'Document Image URL', t:'text', p:'https://storage.example.com/doc.jpg', req:true },
+      ],
+      steps: ['Downloading document','Running OCR extraction','Checking authenticity','Detecting tampering','Returning result'],
+      mock: function(){ return { status:'authentic', document_type:'International Passport', extracted:{ surname:'DOE', given_names:'JOHN ADEWALE', nationality:'NIGERIA', dob:'15 MAY 1990', expiry:'14 MAY 2029', passport_no:'A12345678' }, authenticity_score:96, tamper_detected:false, mrz_valid:true, check_id: genUUID() }; }
+    },
+    'aml-check': {
+      label: 'AML / Watchlist Check', providers: ['PEP','Sanctions','Adverse Media'],
+      fields: [
+        { n:'full_name', l:'Full Name', t:'text', p:'John Doe', req:true },
+        { n:'country', l:'Country Code', t:'text', p:'NG' },
+        { n:'dob', l:'Date of Birth (optional)', t:'text', p:'1990-05-15' },
+        { n:'id_number', l:'ID Number (optional)', t:'text', p:'12345678901' },
+      ],
+      steps: ['Normalising name','Searching PEP databases','Checking UN/OFAC sanctions','Scanning adverse media','Returning results'],
+      mock: function(){ return { status:'clear', match_found:false, pep:false, sanctions:false, adverse_media:false, sources_checked:['UN Consolidated','OFAC SDN','EU Sanctions','INTERPOL','Dow Jones Risk'], checked_at: new Date().toISOString(), check_id: genUUID() }; }
+    }
+  },
+
+  'memory-as-a-service': {
+    store: {
+      label: 'Store Memory', providers: [],
+      fields: [
+        { n:'key', l:'Memory Key', t:'text', p:'session:user_abc123:context', req:true, ref:true },
+        { n:'value', l:'Value (JSON or text)', t:'textarea', p:'{"step":3,"context":"User is in checkout flow"}', req:true },
+        { n:'ttl', l:'TTL in seconds (0 = permanent)', t:'number', p:'86400' },
+        { n:'embed', l:'Generate Embedding?', t:'select', opts:['true — Yes, enable semantic search','false — No, key-only storage'] },
+      ],
+      steps: ['Validating payload','Serialising value','Generating embedding','Writing to store','Confirming write'],
+      mock: function(){ return { stored:true, key: genRef('session:user'), bytes_written:312, embedding_dims:1536, ttl:86400, expires_at: new Date(Date.now()+86400000).toISOString(), store_id: genUUID() }; }
+    },
+    retrieve: {
+      label: 'Retrieve Memory', providers: [],
+      fields: [
+        { n:'key', l:'Memory Key', t:'text', p:'session:user_abc123:context', req:true },
+      ],
+      steps: ['Looking up key','Deserialising value','Returning memory'],
+      mock: function(){ return { found:true, key:'session:user_abc123:context', value:{ step:3, context:'User is in checkout flow', cart_total:45000, last_active:'2026-02-21T10:00:00Z' }, age_seconds:3420, ttl_remaining:82980 }; }
+    },
+    search: {
+      label: 'Semantic Search', providers: [],
+      fields: [
+        { n:'query', l:'Search Query', t:'text', p:'checkout flow user context', req:true },
+        { n:'namespace', l:'Namespace (optional)', t:'text', p:'sessions' },
+        { n:'limit', l:'Result Limit', t:'number', p:'5' },
+        { n:'min_score', l:'Min Similarity Score (0-1)', t:'number', p:'0.75' },
+      ],
+      steps: ['Embedding query vector','Searching vector index','Ranking results','Returning matches'],
+      mock: function(){ return { results:[{ key:'session:user_abc123:context', score:0.94, preview:'User is in checkout flow, cart total 45,000' },{ key:'session:user_def456:context', score:0.81, preview:'User browsing electronics category' },{ key:'session:user_ghi789:pref', score:0.76, preview:'User prefers card payment' }], total_searched:2841, latency_ms:38, query_embedding_ms:12 }; }
+    },
+    flush: {
+      label: 'Flush Keys', providers: [],
+      fields: [
+        { n:'pattern', l:'Key Pattern', t:'text', p:'session:*', req:true },
+        { n:'namespace', l:'Namespace (optional)', t:'text', p:'sessions' },
+        { n:'confirm', l:'Confirm (type pattern again)', t:'text', p:'session:*', req:true },
+      ],
+      steps: ['Matching pattern','Counting affected keys','Flushing','Confirming'],
+      mock: function(){ return { flushed:true, keys_deleted:47, pattern:'session:*', namespace:'sessions', duration_ms:9 }; }
+    }
+  }
+};
+
+// ═══════════════════════════════════════════
+// FLOWS
+// ═══════════════════════════════════════════
+const FLOWS = {
+  'credit-as-a-service': ['apply','assess','disburse'],
+  'flutterwave-payment-gateway': ['initiate','verify','transfer'],
+  'paystack-payment-gateway': ['initialize','verify','refund'],
+  'providus-bank': ['create-account','name-enquiry','transfer'],
+  'verification-service': ['kyc-individual','document','aml-check'],
+};
+
+// ═══════════════════════════════════════════
+// ENDPOINT MAP — real gateway paths
+// ═══════════════════════════════════════════
+const ENDPOINT_MAP = {
+  'credit-as-a-service': {
+    apply:     '/api/v1/credit/apply',
+    assess:    '/api/v1/credit/assess',
+    disburse:  '/api/v1/credit/disburse',
+    repayment: '/api/v1/credit/repayment',
+  },
+  'flutterwave-payment-gateway': {
+    initiate:          '/api/v1/payments/flutterwave/initiate',
+    verify:            '/api/v1/payments/flutterwave/verify',
+    transfer:          '/api/v1/payments/flutterwave/transfer',
+    'virtual-account': '/api/v1/payments/flutterwave/virtual-account',
+  },
+  'paystack-payment-gateway': {
+    initialize:        '/api/v1/payments/paystack/initialize',
+    verify:            '/api/v1/payments/paystack/verify',
+    refund:            '/api/v1/payments/paystack/refund',
+    'resolve-account': '/api/v1/payments/paystack/resolve-account',
+  },
+  'providus-bank': {
+    'create-account':     '/api/v1/banking/providus/create-account',
+    'name-enquiry':       '/api/v1/banking/providus/name-enquiry',
+    transfer:             '/api/v1/banking/providus/transfer',
+    'transaction-status': '/api/v1/banking/providus/transaction-status',
+  },
+  'verification-service': {
+    'kyc-individual': '/api/v1/verify/kyc/individual',
+    'kyc-business':   '/api/v1/verify/kyc/business',
+    document:         '/api/v1/verify/document',
+    'aml-check':      '/api/v1/verify/aml',
+  },
+  'memory-as-a-service': {
+    store:    '/api/v1/memories',
+    retrieve: '/api/v1/memories/get',
+    search:   '/api/v1/memories/search',
+    flush:    '/api/v1/memories/flush',
+  },
+};
+
+// ═══════════════════════════════════════════
+// API CALL
+// ═══════════════════════════════════════════
+const GATEWAY_BASE = window.location.origin;
+const reqLog = [];
+let logOpen = false;
+
+async function callAPI(serviceId, operation, payload, provider) {
+  var path = ENDPOINT_MAP[serviceId] && ENDPOINT_MAP[serviceId][operation];
+  var url = GATEWAY_BASE + (path || ('/api/v1/' + serviceId + '/' + operation));
+  var headers = { 'Content-Type':'application/json', 'X-Onasis-Demo':'true' };
+  var token = document.getElementById('nav-token') ? document.getElementById('nav-token').value.trim() : '';
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (provider) headers['X-Provider'] = provider;
+  var t0 = performance.now();
+  try {
+    var res = await fetch(url, { method:'POST', headers:headers, body:JSON.stringify(payload) });
+    var ms = Math.round(performance.now()-t0);
+    var data = await res.json().catch(function(){ return {}; });
+    addLog('POST', url, res.status, ms);
+    return { status:res.status, ok:res.ok, data:data, ms:ms };
+  } catch(e) {
+    var ms2 = Math.round(performance.now()-t0);
+    addLog('POST', url, 0, ms2);
+    return { status:0, ok:false, data:{}, ms:ms2, net:true };
+  }
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+var delay = function(ms){ return new Promise(function(r){ setTimeout(r,ms); }); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hlJSON(str){
+  return esc(str)
+    .replace(/"([^"]+)":/g,'<span class="jk">"$1"</span>:')
+    .replace(/: "([^"]*)"/g,': <span class="js">"$1"</span>')
+    .replace(/: (\d+\.?\d*)/g,': <span class="jn">$1</span>')
+    .replace(/: (true|false)/g,': <span class="jb">$1</span>')
+    .replace(/: null/g,': <span class="jnull">null</span>');
+}
+function flatObj(obj, max, pfx, d){
+  max = max||8; pfx = pfx||''; d = d||0;
+  var out=[];
+  if(!obj||typeof obj!=='object') return [[pfx||'value',obj]];
+  var entries = Object.entries(obj);
+  for(var i=0;i<entries.length;i++){
+    if(out.length>=max) break;
+    var k=entries[i][0], v=entries[i][1];
+    var key = pfx ? pfx+'.'+k : k;
+    if(d<3&&v&&typeof v==='object'&&!Array.isArray(v)){
+      var sub=flatObj(v,max,key,d+1);
+      out = out.concat(sub);
+    } else if(Array.isArray(v)){
+      out.push([key,'['+v.length+' items]']);
+    } else {
+      out.push([key,v]);
+    }
+  }
+  return out.slice(0,max);
+}
+function badge(tier){
+  var map={live:'🟢 Live',mock:'⚪ Mocked',active:'🟢 Active',beta:'🟡 Beta'};
+  return '<span class="badge '+tier+'">'+(map[tier]||tier)+'</span>';
+}
+function catPill(cat){
+  var c=CATALOG.categories[cat];
+  return '<span class="cat-pill">'+(c?c.icon+' '+c.label:cat)+'</span>';
+}
+
+// ═══════════════════════════════════════════
+// LANDING
+// ═══════════════════════════════════════════
+function renderLanding(){
+  var totalOps = CATALOG.apiServices.reduce(function(a,s){ return a+s.operations.length; },0);
+  var liveAdapters = CATALOG.mcpAdapters.filter(function(m){ return m.type==='live'; }).length;
+  var totalTools = CATALOG.mcpAdapters.reduce(function(a,m){ return a+m.toolCount; },0);
+
+  document.getElementById('app').innerHTML =
+    '<div class="landing">' +
+      '<div class="hero">' +
+        '<div class="hero-bg"></div>' +
+        '<div class="hero-eyebrow">Onasis Gateway</div>' +
+        '<h1>The API layer<br>for <em>African fintech.</em></h1>' +
+        '<p class="hero-sub">One gateway. Credit, payments, banking, identity, and AI memory — all production-ready, all deeply integrated for African markets.</p>' +
+        '<div class="hero-stats-row">' +
+          '<div class="hero-stat"><div class="hero-stat-val">'+CATALOG.apiServices.length+'</div><div class="hero-stat-key">API Services</div></div>' +
+          '<div class="hero-stat"><div class="hero-stat-val">'+totalOps+'</div><div class="hero-stat-key">Operations</div></div>' +
+          '<div class="hero-stat"><div class="hero-stat-val">'+liveAdapters+'</div><div class="hero-stat-key">Live Adapters</div></div>' +
+          '<div class="hero-stat"><div class="hero-stat-val">'+totalTools.toLocaleString()+'</div><div class="hero-stat-key">MCP Tools</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="section-header">' +
+        '<div class="section-title">API Services</div>' +
+        '<div class="section-count">'+CATALOG.apiServices.length+' services &middot; click to explore</div>' +
+      '</div>' +
+      '<div class="services-grid" id="svc-grid">' +
+        CATALOG.apiServices.map(renderSvcCard).join('') +
+      '</div>' +
+      '<div class="mcp-section">' +
+        '<div class="mcp-section-hdr">' +
+          '<div class="section-title">MCP Adapters</div>' +
+          '<div class="section-count">'+CATALOG.mcpAdapters.length+' adapters &middot; '+totalTools.toLocaleString()+' tools total</div>' +
+        '</div>' +
+        '<div class="mcp-grid">' +
+          CATALOG.mcpAdapters.map(renderMCPRow).join('') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  initGlare();
+}
+
+function renderSvcCard(svc){
+  var catData = CATALOG.categories[svc.category]||{icon:'⚙️',label:svc.category};
+  return '<div class="service-card" onclick="go(\'/'+svc.id+'\')" data-id="'+svc.id+'">' +
+    '<div class="service-card-glow"></div>' +
+    '<div class="service-card-inner">' +
+      '<div class="card-top"><div class="card-icon">'+svc.icon+'</div>'+badge(svc.tier)+'</div>' +
+      '<div class="card-name">'+svc.name+'</div>' +
+      '<div class="card-desc">'+svc.description+'</div>' +
+      '<div class="card-footer">' +
+        '<div class="card-meta">'+catPill(svc.category)+'<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text-muted)">'+svc.operations.length+' ops</span></div>' +
+        '<div class="card-arrow">→</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderMCPRow(m){
+  var catData = {payments:'💳',banking:'🏦',infrastructure:'🔧',analytics:'📊',media:'🖼️',documents:'📄',general:'⚙️'};
+  var ico = catData[m.category]||'🔌';
+  var countries = m.countries ? '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text-muted)">'+m.countries.join('·')+'</span>' : '';
+  return '<div class="mcp-row">' +
+    '<div class="mcp-icon">'+ico+'</div>' +
+    '<div class="mcp-name">'+m.name+'</div>' +
+    '<div class="mcp-desc">'+m.description+'</div>' +
+    countries +
+    '<span class="mcp-tools">'+m.toolCount+' tools</span>' +
+    '<span class="mcp-auth">'+m.authType+'</span>' +
+    badge(m.type) +
+  '</div>';
+}
+
+// ═══════════════════════════════════════════
+// GLARE
+// ═══════════════════════════════════════════
+function initGlare(){
+  document.querySelectorAll('.service-card').forEach(function(card){
+    var glow = card.querySelector('.service-card-glow');
+    card.addEventListener('mousemove',function(e){
+      var r=card.getBoundingClientRect();
+      var px=((e.clientX-r.left)/r.width)*100;
+      var py=((e.clientY-r.top)/r.height)*100;
+      if(glow) glow.style.background='radial-gradient(circle at '+px+'% '+py+'%, rgba(79,110,247,0.07) 0%, transparent 55%)';
+    });
+    card.addEventListener('mouseleave',function(){
+      if(glow) glow.style.background='none';
+    });
+  });
+}
+
+// ═══════════════════════════════════════════
+// SERVICE VIEW
+// ═══════════════════════════════════════════
+var activeProvider = null;
+var running = false;
+
+function renderServiceView(svcId, activeOp){
+  var svc = CATALOG.apiServices.find(function(s){ return s.id===svcId; });
+  if(!svc){ go('/'); return; }
+  var op = activeOp || svc.operations[0];
+  var hasFlow = !!FLOWS[svcId];
+
+  document.getElementById('app').innerHTML =
+    '<div class="service-view">' +
+      '<div class="left-panel" id="lp">' +
+        '<div class="svc-header">' +
+          '<div class="svc-title-row">' +
+            '<div class="svc-icon">'+svc.icon+'</div>' +
+            '<div><div class="svc-name">'+svc.name+'</div>'+badge(svc.tier)+'</div>' +
+          '</div>' +
+          '<div class="svc-desc">'+svc.description+'</div>' +
+        '</div>' +
+        '<div class="op-tabs" id="op-tabs">' +
+          svc.operations.map(function(o){
+            return '<button class="op-tab'+(o===op?' active':'')+'" data-op="'+o+'" onclick="switchOp(\''+svcId+'\',\''+o+'\')">'+o+'</button>';
+          }).join('') +
+          (hasFlow ? '<button class="op-tab flow-tab" onclick="go(\'/'+svcId+'/flow\')">&#10230; Flow</button>' : '') +
+        '</div>' +
+        '<div class="form-area" id="form-area"></div>' +
+      '</div>' +
+      '<div class="right-panel" id="rp">' +
+        '<div class="rp-inner" id="rpi">' +
+          '<div class="idle-box">' +
+            '<div class="idle-icon">'+svc.icon+'</div>' +
+            '<div class="idle-txt">Configure the form and run an operation to see the live response.</div>' +
+            '<div class="idle-hint">Ctrl+Enter to submit</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  buildForm(svcId, op);
+}
+
+function buildForm(svcId, op){
+  var def = FORMS[svcId] && FORMS[svcId][op];
+  var fa = document.getElementById('form-area');
+  if(!fa||!def) return;
+
+  activeProvider = (def.providers && def.providers[0]) || null;
+
+  var provHTML = (def.providers && def.providers.length > 0) ?
+    '<div style="margin-bottom:16px"><div class="flabel">Provider</div><div class="provider-row">' +
+    def.providers.map(function(p,i){ return '<button class="provider-btn'+(i===0?' on':'')+'" onclick="selProvider(\''+p+'\',this)">'+p+'</button>'; }).join('') +
+    '</div></div>' : '';
+
+  var svcIcon = (CATALOG.apiServices.find(function(s){ return s.id===svcId; }) || {}).icon || '⚙️';
+  var fieldsHTML = def.fields.length===0
+    ? '<div class="no-fields"><span>'+svcIcon+'</span>No input required — click Run to execute.</div>'
+    : def.fields.map(buildField).join('');
+
+  fa.innerHTML =
+    '<div class="form-hdr">' +
+      '<div class="form-title">'+def.label+'</div>' +
+      '<div class="form-sub">POST /'+svcId+'/'+op+'</div>' +
+    '</div>' +
+    provHTML +
+    '<div id="fields">'+fieldsHTML+'</div>' +
+    '<button class="run-btn" id="run-btn" onclick="runOp(\''+svcId+'\',\''+op+'\')">Run <span>&#8594;</span></button>';
+
+  fa.querySelectorAll('.auto-ref').forEach(function(el){ el.value = genRef(); });
+}
+
+function buildField(f){
+  if(f.t==='select'){
+    return '<div class="frow"><label class="flabel">'+f.l+(f.req?'<span style="color:var(--red)"> *</span>':'')+
+      '</label><select class="finput" id="f-'+f.n+'" name="'+f.n+'">' +
+      (f.opts||[]).map(function(o){ return '<option value="'+o+'">'+o+'</option>'; }).join('') +
+      '</select></div>';
+  }
+  if(f.t==='textarea'){
+    return '<div class="frow"><label class="flabel">'+f.l+'</label>' +
+      '<textarea class="finput" id="f-'+f.n+'" name="'+f.n+'" placeholder="'+(f.p||'')+'">'+(f.val||'')+'</textarea></div>';
+  }
+  if(f.t==='checkboxes'){
+    return '<div class="frow"><label class="flabel">'+f.l+'</label>' +
+      '<div class="cb-row">' +
+      (f.opts||[]).map(function(o){ return '<div class="cb-item"><input type="checkbox" id="cb-'+f.n+'-'+o+'" name="'+f.n+'[]" value="'+o+'" checked><label for="cb-'+f.n+'-'+o+'">'+o+'</label></div>'; }).join('') +
+      '</div></div>';
+  }
+  return '<div class="frow"><label class="flabel">'+f.l+(f.req?'<span style="color:var(--red)"> *</span>':'')+
+    '</label><div class="'+(f.ref?'ref-wrap':'')+'">'+
+    '<input class="finput'+(f.ref?' auto-ref':'')+'" type="'+(f.t||'text')+'" id="f-'+f.n+'" name="'+f.n+'" placeholder="'+(f.p||'')+'" />' +
+    (f.ref?'<button class="ref-regen" onclick="regenField(\'f-'+f.n+'\')" title="Regenerate">&#8634;</button>':'') +
+    '</div></div>';
+}
+
+function regenField(id){ var el=document.getElementById(id); if(el) el.value=genRef(); }
+function selProvider(name, btn){
+  document.querySelectorAll('.provider-btn').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on'); activeProvider=name;
+}
+function switchOp(svcId, op){
+  document.querySelectorAll('.op-tab').forEach(function(t){ t.classList.toggle('active',t.dataset.op===op); });
+  buildForm(svcId, op);
+  resetRightPanel(svcId);
+  var lp=document.getElementById('lp');
+  if(lp) lp.scrollTo({top:0,behavior:'smooth'});
+}
+function resetRightPanel(svcId){
+  var svc = CATALOG.apiServices.find(function(s){ return s.id===svcId; });
+  var rpi = document.getElementById('rpi');
+  if(rpi&&svc) rpi.innerHTML='<div class="idle-box"><div class="idle-icon">'+svc.icon+'</div><div class="idle-txt">Configure the form and run an operation to see the live response.</div><div class="idle-hint">Ctrl+Enter to submit</div></div>';
+}
+
+// ═══════════════════════════════════════════
+// RUN OPERATION
+// ═══════════════════════════════════════════
+async function runOp(svcId, op){
+  if(running) return;
+  var def = FORMS[svcId] && FORMS[svcId][op];
+  if(!def) return;
+  var svc = CATALOG.apiServices.find(function(s){ return s.id===svcId; });
+
+  var payload={};
+  var valid=true;
+  def.fields.forEach(function(f){
+    if(f.t==='checkboxes'){
+      payload[f.n]=Array.from(document.querySelectorAll('input[name="'+f.n+'[]"]:checked')).map(function(c){ return c.value; });
+    } else {
+      var el=document.getElementById('f-'+f.n);
+      if(!el) return;
+      var v=el.value.trim();
+      if(f.req&&!v){ el.classList.add('invalid'); setTimeout(function(){ el.classList.remove('invalid'); },500); valid=false; }
+      else { el.classList.remove('invalid'); payload[f.n]=v; }
+    }
+  });
+  if(!valid) return;
+
+  running=true;
+  var btn=document.getElementById('run-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='Running\u2026'; }
+
+  var rpi=document.getElementById('rpi');
+  if(rpi){
+    rpi.innerHTML='<div class="steps-wrap"><div class="steps-label">Processing</div>' +
+      def.steps.map(function(s,i){
+        return '<div class="step-row" id="st-'+i+'"><div class="step-dot idle" id="sd-'+i+'"></div><span class="step-label" id="sl-'+i+'">'+s+'</span></div>';
+      }).join('') +
+      '</div><div id="result-box"></div>';
+  }
+
+  var t0=performance.now();
+  for(var i=0;i<def.steps.length-1;i++){
+    var row=document.getElementById('st-'+i);
+    var dot=document.getElementById('sd-'+i);
+    var lbl=document.getElementById('sl-'+i);
+    if(row) row.classList.add('vis');
+    if(dot) dot.className='step-dot spin';
+    if(lbl) lbl.className='step-label live';
+    await delay(200+Math.random()*200);
+    if(dot){ dot.className='step-dot ok'; dot.textContent='✓'; }
+    if(lbl) lbl.className='step-label done';
+  }
+  var last=def.steps.length-1;
+  var lr=document.getElementById('st-'+last);
+  var ld=document.getElementById('sd-'+last);
+  var ll=document.getElementById('sl-'+last);
+  if(lr) lr.classList.add('vis');
+  if(ld) ld.className='step-dot spin';
+  if(ll) ll.className='step-label live';
+  await delay(320);
+
+  var result = await callAPI(svcId, op, payload, activeProvider);
+  if(result.net||result.status===0){ result.data=def.mock(); result.mocked=true; result.ms=Math.round(performance.now()-t0); }
+
+  var success = result.ok||result.mocked;
+  if(ld){ ld.className='step-dot '+(success?'ok':'fail'); ld.textContent=success?'✓':'✗'; }
+  if(ll) ll.className='step-label done';
+  await delay(160);
+
+  showResult(result, def, result.mocked);
+  running=false;
+  if(btn){ btn.disabled=false; btn.innerHTML='Run <span>&#8594;</span>'; }
+}
+
+function showResult(result, def, mocked){
+  var box=document.getElementById('result-box');
+  if(!box) return;
+
+  var cls,icon,txt,hcls;
+  if(mocked||result.ok){ cls='ok'; icon='✓'; txt='Success'; hcls=result.status?'ok':'off'; }
+  else if(result.status>=500){ cls='err'; icon='✗'; txt='Server Error'; hcls='err'; }
+  else if(result.status>=400){ cls='warn'; icon='⚠'; txt='Client Error'; hcls='warn'; }
+  else { cls='off'; icon='⚡'; txt='Gateway Offline'; hcls='off'; }
+
+  var statusTxt = result.status ? 'HTTP '+result.status : 'Network';
+  var mockNote = (mocked&&!result.ok) ? '<div class="mock-note">⚡ Gateway not reachable — showing mock response</div>' : '';
+  var kv = flatObj(result.data).map(function(pair){
+    var k=pair[0], v=pair[1];
+    return '<div class="kv-pair"><span class="kv-k">'+k+'</span><span class="kv-v">'+esc(String(v))+'<button class="kv-copy" onclick="cp(\''+esc(String(v))+'\',this)">⎘</button></span></div>';
+  }).join('');
+  var jid='j'+Math.random().toString(36).substr(2,5);
+  var jhl=hlJSON(JSON.stringify(result.data,null,2));
+
+  box.innerHTML=
+    '<div class="result-card">' +
+      '<div class="result-hdr">' +
+        '<div class="result-status"><span class="result-icon">'+icon+'</span><span class="result-text '+cls+'">'+txt+'</span></div>' +
+        '<div class="result-pills"><span class="http-chip '+hcls+'">'+statusTxt+'</span><span class="timing-chip">'+(result.ms||0)+'ms</span></div>' +
+      '</div>' +
+      mockNote +
+      '<div class="result-kv">'+kv+'</div>' +
+      '<div class="json-toggle-bar"><button class="json-toggle-btn" onclick="toggleJSON(\''+jid+'\',this)">&#9660; View JSON</button></div>' +
+      '<div class="json-wrap" id="'+jid+'"><div class="json-body"><button class="json-cp" onclick="cpJSON(\''+jid+'\',this)">⎘ Copy</button><pre>'+jhl+'</pre></div></div>' +
+    '</div>';
+}
+
+function toggleJSON(id,btn){ var w=document.getElementById(id); if(!w) return; var o=w.classList.toggle('on'); btn.textContent=o?'▲ Hide JSON':'▼ View JSON'; }
+function cpJSON(id,btn){ var w=document.getElementById(id); var pre=w&&w.querySelector('pre'); if(pre){ navigator.clipboard.writeText(pre.textContent); btn.textContent='✓ Copied'; setTimeout(function(){ btn.textContent='⎘ Copy'; },2000); } }
+function cp(text,btn){ navigator.clipboard.writeText(text); var old=btn.textContent; btn.textContent='✓'; setTimeout(function(){ btn.textContent=old; },2000); }
+
+// ═══════════════════════════════════════════
+// FLOW MODE
+// ═══════════════════════════════════════════
+var flowData={};
+async function renderFlow(svcId){
+  var svc=CATALOG.apiServices.find(function(s){ return s.id===svcId; });
+  var steps=FLOWS[svcId];
+  if(!svc||!steps){ go('/'+svcId); return; }
+  flowData={};
+
+  document.getElementById('app').innerHTML=
+    '<div class="rp-inner"><div class="flow-view">' +
+      '<div class="flow-title">'+svc.icon+' '+svc.name+'</div>' +
+      '<div class="flow-sub">End-to-end flow — outputs from each step pre-fill the next.</div>' +
+      '<div id="flow-body">' +
+        steps.map(function(op,i){ return buildFlowCard(svcId,op,i,steps.length); }).join('') +
+      '</div>' +
+      '<div id="flow-done"></div>' +
+    '</div></div>';
+
+  activateFlowCard(0);
+}
+
+function buildFlowCard(svcId, op, idx, total){
+  var def=FORMS[svcId]&&FORMS[svcId][op];
+  if(!def) return '';
+  var fields=def.fields.slice(0,3);
+  var conn=idx<total-1?
+    '<div class="flow-conn"><svg width="2" height="28"><line class="fconn-line" id="fc-'+idx+'" x1="1" y1="0" x2="1" y2="28" stroke-dasharray="28" stroke-dashoffset="28"/></svg></div>' : '';
+  return '<div class="flow-card" id="fcard-'+idx+'" style="opacity:0.35;pointer-events:none">' +
+    '<div class="flow-card-hdr">' +
+      '<div class="flow-num" id="fnum-'+idx+'">'+(idx+1)+'</div>' +
+      '<div class="flow-card-name">'+def.label+'</div>' +
+      '<span class="flow-check" id="fchk-'+idx+'" style="display:none">&#9989;</span>' +
+    '</div>' +
+    fields.map(function(f){
+      return '<div class="frow"><label class="flabel">'+f.l+' <span class="prefill-badge" id="fpb-'+idx+'-'+f.n+'" style="display:none">pre-filled</span></label>' +
+        '<input class="finput" type="'+(f.t==='textarea'?'text':f.t||'text')+'" id="ff-'+idx+'-'+f.n+'" placeholder="'+(f.p||'')+'" /></div>';
+    }).join('') +
+    '<button class="continue-btn" id="fcbtn-'+idx+'" disabled onclick="runFlowStep('+idx+',\''+svcId+'\',\''+op+'\')">'+(idx===0?'Start →':'Continue →')+'</button>' +
+    '</div>' + conn;
+}
+
+function activateFlowCard(idx){
+  var card=document.getElementById('fcard-'+idx);
+  if(!card) return;
+  card.style.opacity='1'; card.style.pointerEvents='auto'; card.classList.add('active-flow');
+  var btn=document.getElementById('fcbtn-'+idx);
+  if(btn) btn.disabled=false;
+}
+
+async function runFlowStep(idx, svcId, op){
+  var def=FORMS[svcId]&&FORMS[svcId][op];
+  var steps=FLOWS[svcId];
+  var btn=document.getElementById('fcbtn-'+idx);
+  if(btn){ btn.disabled=true; btn.textContent='Running\u2026'; }
+  await delay(1000+Math.random()*700);
+  var mock=def.mock();
+  flowData[op]=mock;
+  var card=document.getElementById('fcard-'+idx);
+  if(card){ card.classList.remove('active-flow'); card.classList.add('done-flow'); }
+  var num=document.getElementById('fnum-'+idx);
+  if(num) num.classList.add('done-num');
+  var chk=document.getElementById('fchk-'+idx);
+  if(chk) chk.style.display='inline';
+  // Animate connector
+  var conn=document.getElementById('fc-'+idx);
+  if(conn){ conn.style.strokeDashoffset='0'; conn.style.stroke='var(--accent)'; conn.style.transition='stroke-dashoffset 400ms ease'; }
+  var nextIdx=idx+1;
+  if(nextIdx<steps.length){
+    await delay(350);
+    var nextOp=steps[nextIdx];
+    var nextDef=FORMS[svcId]&&FORMS[svcId][nextOp];
+    if(nextDef){
+      var prefillVals=[mock.application_id,mock.tx_ref,mock.account_number,mock.reference,mock.key,mock.check_id,mock.store_id].filter(Boolean);
+      nextDef.fields.slice(0,3).forEach(function(f,fi){
+        var el=document.getElementById('ff-'+nextIdx+'-'+f.n);
+        var pb=document.getElementById('fpb-'+nextIdx+'-'+f.n);
+        var val=mock[f.n]||prefillVals[0]||'';
+        if(el&&val){ el.value=val; if(pb) pb.style.display='inline'; }
+      });
+    }
+    activateFlowCard(nextIdx);
+  } else {
+    await delay(400);
+    var done=document.getElementById('flow-done');
+    if(done) done.innerHTML=
+      '<div class="flow-done-card">' +
+        '<div class="flow-done-icon">🎉</div>' +
+        '<div class="flow-done-title">Flow Complete</div>' +
+        '<div class="flow-done-sub">'+steps.length+' steps executed &middot; all outputs captured</div>' +
+        '<button class="continue-btn" style="margin-top:16px" onclick="go(\'/'+svcId+'\')">Back to Service</button>' +
+      '</div>';
+  }
+}
+
+// ═══════════════════════════════════════════
+// REQUEST LOG
+// ═══════════════════════════════════════════
+function addLog(m,url,status,ms){
+  reqLog.unshift({m:m,url:url,status:status,ms:ms});
+  if(reqLog.length>20) reqLog.pop();
+  renderLog();
+}
+function renderLog(){
+  var cnt=document.getElementById('log-count');
+  if(cnt) cnt.textContent=reqLog.length+' call'+(reqLog.length!==1?'s':'');
+  var ent=document.getElementById('log-entries');
+  if(!ent) return;
+  ent.innerHTML=reqLog.slice(0,5).map(function(e){
+    var sc='',txt='';
+    if(!e.status){ sc='ls-warn'; txt='NET'; }
+    else if(e.status<300){ sc='ls-ok'; txt=e.status; }
+    else if(e.status<500){ sc='ls-warn'; txt=e.status; }
+    else{ sc='ls-err'; txt=e.status; }
+    return '<div class="log-row"><span class="lm">'+e.m+'</span><span class="lu">'+e.url.replace(GATEWAY_BASE,'')+'</span><span class="'+sc+'">'+txt+'</span><span class="lt">'+e.ms+'ms</span></div>';
+  }).join('');
+}
+function toggleLog(){ logOpen=!logOpen; document.getElementById('log-panel').classList.toggle('on',logOpen); renderLog(); }
+function clearLog(){ reqLog.length=0; renderLog(); }
+
+// ═══════════════════════════════════════════
+// BRANDING
+// ═══════════════════════════════════════════
+function openBranding(){
+  var s=JSON.parse(localStorage.getItem('onasis-brand')||'{}');
+  if(s.name) document.getElementById('b-name').value=s.name;
+  if(s.logo) document.getElementById('b-logo').value=s.logo;
+  if(s.color) document.getElementById('b-color').value=s.color;
+  if(s.note) document.getElementById('b-note').value=s.note;
+  document.getElementById('branding-drawer').classList.add('open');
+  document.getElementById('branding-overlay').classList.add('on');
+}
+function closeBranding(){
+  document.getElementById('branding-drawer').classList.remove('open');
+  document.getElementById('branding-overlay').classList.remove('on');
+}
+function applyBranding(){
+  var name=document.getElementById('b-name').value.trim();
+  var logo=document.getElementById('b-logo').value.trim();
+  var color=document.getElementById('b-color').value;
+  var note=document.getElementById('b-note').value.trim();
+  if(color) document.documentElement.style.setProperty('--accent',color);
+  var navName=document.getElementById('nav-name');
+  if(name&&navName) navName.textContent=name+' \u00b7 Gateway';
+  var navLogo=document.getElementById('nav-logo');
+  if(logo&&navLogo) navLogo.innerHTML='<img src="'+logo+'" onerror="this.parentNode.innerHTML=\'<svg width=\\\'18\\\' height=\\\'18\\\' viewBox=\\\'0 0 18 18\\\' fill=\\\'none\\\'><path d=\\\'M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z\\\' stroke=\\\'white\\\' stroke-width=\\\'1.5\\\' stroke-linejoin=\\\'round\\\'/><circle cx=\\\'9\\\' cy=\\\'9\\\' r=\\\'2.5\\\' fill=\\\'white\\\' opacity=\\\'.9\\\'/></svg>\'" />';
+  var banner=document.getElementById('demo-banner');
+  if(note&&banner){ banner.textContent=note; banner.classList.add('visible'); }
+  else if(banner) banner.classList.remove('visible');
+  localStorage.setItem('onasis-brand',JSON.stringify({name:name,logo:logo,color:color,note:note}));
+  closeBranding();
+}
+function resetBranding(){
+  localStorage.removeItem('onasis-brand');
+  document.documentElement.style.setProperty('--accent','#4f6ef7');
+  var navName=document.getElementById('nav-name');
+  if(navName) navName.textContent='Onasis Gateway';
+  var banner=document.getElementById('demo-banner');
+  if(banner) banner.classList.remove('visible');
+  ['b-name','b-logo','b-note'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('b-color').value='#4f6ef7';
+}
+function loadBranding(){
+  var s=JSON.parse(localStorage.getItem('onasis-brand')||'{}');
+  if(s.color) document.documentElement.style.setProperty('--accent',s.color);
+  if(s.name){ var el=document.getElementById('nav-name'); if(el) el.textContent=s.name+' \u00b7 Gateway'; }
+  if(s.note){ var b=document.getElementById('demo-banner'); if(b){ b.textContent=s.note; b.classList.add('visible'); } }
+}
+
+// ═══════════════════════════════════════════
+// ROUTER
+// ═══════════════════════════════════════════
+function go(path){ window.location.hash='#'+path; }
+
+function router(){
+  var hash=window.location.hash.replace('#','').replace(/^\//,'');
+  var parts=hash.split('/').filter(Boolean);
+  var svcId=parts[0];
+  var sub=parts[1];
+  var app=document.getElementById('app');
+  var backBtn=document.getElementById('btn-back');
+  var bc=document.getElementById('nav-bc');
+
+  app.classList.add('out');
+  setTimeout(function(){
+    app.classList.remove('out'); app.style.opacity='0';
+
+    if(!svcId||svcId==='home'){
+      renderLanding();
+      if(backBtn) backBtn.classList.remove('visible');
+      if(bc) bc.innerHTML='';
+    } else if(sub==='flow'){
+      renderFlow(svcId);
+      if(backBtn) backBtn.classList.add('visible');
+      var svc=CATALOG.apiServices.find(function(s){ return s.id===svcId; });
+      if(bc) bc.innerHTML='<a href="#/'+svcId+'">'+(svc?svc.name:svcId)+'</a><span class="sep">/</span><span class="current">Flow</span>';
+    } else {
+      renderServiceView(svcId, sub||null);
+      if(backBtn) backBtn.classList.add('visible');
+      var svc2=CATALOG.apiServices.find(function(s){ return s.id===svcId; });
+      if(bc) bc.innerHTML='<span class="current">'+(svc2?svc2.name:svcId)+'</span>';
+    }
+
+    requestAnimationFrame(function(){
+      app.style.transition='opacity 180ms ease';
+      app.style.opacity='1';
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  }, 140);
+}
+
+// ═══════════════════════════════════════════
+// KEYBOARD
+// ═══════════════════════════════════════════
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){
+    var btn=document.getElementById('run-btn');
+    if(btn&&!btn.disabled) btn.click();
+  }
+  if(e.key==='Escape') closeBranding();
+});
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',function(){
+  loadBranding();
+  window.addEventListener('hashchange', router);
+  if(!window.location.hash||window.location.hash==='#') window.location.hash='#/';
+  router();
+});
+</script>
+
+</body>
+</html>
