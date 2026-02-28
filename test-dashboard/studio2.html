@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forge — Live Service Demo Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       DESIGN SYSTEM & CSS VARIABLES
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    :root {
+      --bg-base: #0a0b0f;
+      --bg-surface: #111318;
+      --bg-card: #161820;
+      --border: #1e2130;
+      --border-glow: #2e3250;
+      --text-primary: #f0f2ff;
+      --text-secondary: #8b90a8;
+      --text-muted: #4a4f6a;
+      --accent: #4f6ef7;
+      --accent-glow: rgba(79, 110, 247, 0.15);
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --white: #ffffff;
+      
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --radius-pill: 20px;
+      --radius-input: 8px;
+      
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
+      --shadow-glow: 0 0 24px var(--accent-glow);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       NAVIGATION HEADER
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 1000;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: white;
+    }
+
+    .brand-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .nav-separator {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    .demo-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      padding: 4px 8px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-branding {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: var(--radius-btn);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .btn-branding:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .breadcrumb {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: none;
+    }
+
+    .breadcrumb.visible {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .breadcrumb a {
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+      color: var(--accent);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       BRANDING DRAWER
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #branding-drawer {
+      position: fixed;
+      top: 56px;
+      right: -320px;
+      width: 320px;
+      height: calc(100vh - 56px);
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border);
+      padding: 24px;
+      transition: right 300ms ease;
+      z-index: 999;
+      overflow-y: auto;
+    }
+
+    #branding-drawer.open {
+      right: 0;
+    }
+
+    .drawer-header {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: var(--white);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-input);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      transition: all 200ms ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .form-group input[type="color"] {
+      height: 44px;
+      padding: 4px;
+      cursor: pointer;
+    }
+
+    .btn-apply {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: var(--radius-btn);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 200ms ease;
+      margin-top: 16px;
+    }
+
+    .btn-apply:hover {
+      background: #405ddb;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .btn-close-drawer {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .demo-banner {
+      background: var(--accent-glow);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: none;
+      margin-top: 56px;
+    }
+
+    .demo-banner.visible {
+      display: block;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       APP CONTAINER
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #app {
+      margin-top: 56px;
+      min-height: calc(100vh - 56px);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       LANDING PAGE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .landing {
+      animation: fadeIn 300ms ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      text-align: center;
+      padding: 80px 24px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 20% 50%, rgba(79, 110, 247, 0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+      animation: gradientShift 8s ease-in-out infinite;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: 52px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .stats-row span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stats-row span:not(:last-child)::after {
+      content: '•';
+      color: var(--border);
+    }
+
+    /* Category Filter Tabs */
+    .category-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 24px 32px;
+      flex-wrap: wrap;
+    }
+
+    .category-tab {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .category-tab:hover {
+      border-color: var(--border-glow);
+      color: var(--text-primary);
+    }
+
+    .category-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* Services Grid */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      padding: 0 48px 64px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* GLARE CARD */
+    .glare-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      cursor: pointer;
+      transition: border-color 200ms ease, transform 200ms ease;
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+    }
+
+    .glare-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                    rgba(255,255,255,0.12) 0%, transparent 50%);
+      opacity: var(--glare-opacity, 0);
+      transition: opacity 200ms ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .glare-card:hover {
+      border-color: var(--border-glow);
+    }
+
+    .glare-card:hover .service-icon-bg {
+      box-shadow: var(--shadow-glow);
+    }
+
+    .card-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .service-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .service-icon-bg {
+      transition: box-shadow 200ms ease;
+    }
+
+    .tier-badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-weight: 500;
+    }
+
+    .tier-badge.live {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .tier-badge.beta {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--yellow);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .tier-badge.scaffolded {
+      background: rgba(74, 79, 106, 0.3);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .tier-badge.admin {
+      background: rgba(79, 110, 247, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(79, 110, 247, 0.3);
+    }
+
+    .service-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+
+    .service-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .category-pill {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+    }
+
+    .explore-link {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .explore-link:hover {
+      text-decoration: underline;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SERVICE VIEW
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .service-view {
+      display: flex;
+      min-height: calc(100vh - 56px);
+      animation: fadeIn 300ms ease;
+    }
+
+    .left-panel {
+      width: 420px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .right-panel {
+      flex-grow: 1;
+      padding: 32px;
+      overflow-y: auto;
+      background: var(--bg-base);
+    }
+
+    .service-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .service-header-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .service-header-icon {
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .service-header h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .service-header p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Operation Tabs */
+    .operation-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      overflow-x: auto;
+      gap: 8px;
+    }
+
+    .op-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 14px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: color 200ms ease;
+    }
+
+    .op-tab:hover {
+      color: var(--text-secondary);
+    }
+
+    .op-tab.active {
+      color: var(--white);
+    }
+
+    .op-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px 2px 0 0;
+    }
+
+    .flow-tab {
+      color: var(--accent) !important;
+    }
+
+    /* Form Area */
+    .form-area {
+      padding: 24px;
+    }
+
+    .provider-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .provider-pill {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .provider-pill:hover {
+      border-color: var(--border-glow);
+    }
+
+    .provider-pill.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .form-field {
+      margin-bottom: 16px;
+    }
+
+    .form-field label {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .form-field input,
+    .form-field textarea,
+    .form-field select {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-input);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      transition: all 200ms ease;
+    }
+
+    .form-field input:focus,
+    .form-field textarea:focus,
+    .form-field select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .form-field input.invalid,
+    .form-field textarea.invalid {
+      border-color: var(--red);
+      animation: shake 300ms ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-4px); }
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .field-row .form-field {
+      flex: 1;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: var(--radius-btn);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 200ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 44px;
+    }
+
+    .btn-primary:hover {
+      background: #405ddb;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* Right Panel - Processing Steps */
+    .processing-timeline {
+      margin-bottom: 24px;
+    }
+
+    .timeline-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      opacity: 0;
+      transform: translateX(-16px);
+      animation: slideIn 300ms ease forwards;
+    }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .step-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .step-icon.pending {
+      background: var(--bg-card);
+      color: var(--text-muted);
+    }
+
+    .step-icon.active {
+      border: 2px solid var(--accent);
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .step-icon.done {
+      background: var(--green);
+      color: white;
+    }
+
+    .step-icon.error {
+      background: var(--red);
+      color: white;
+    }
+
+    .step-name {
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    /* Result Card */
+    .result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      animation: fadeIn 300ms ease;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .result-status.success { color: var(--green); }
+    .result-status.error { color: var(--red); }
+    .result-status.warning { color: var(--yellow); }
+
+    .status-code-pill {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+    }
+
+    .result-timing {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .result-fields {
+      margin-bottom: 20px;
+    }
+
+    .result-field {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .result-field:last-child {
+      border-bottom: none;
+    }
+
+    .result-field-label {
+      color: var(--text-secondary);
+    }
+
+    .result-field-value {
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    .json-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-btn);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 200ms ease;
+    }
+
+    .json-toggle:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .json-block {
+      margin-top: 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-input);
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      overflow-x: auto;
+      position: relative;
+      display: none;
+    }
+
+    .json-block.visible {
+      display: block;
+    }
+
+    .json-copy {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .json-copy:hover {
+      color: var(--text-primary);
+    }
+
+    /* JSON Syntax Highlighting */
+    .json-key { color: var(--accent); }
+    .json-string { color: var(--green); }
+    .json-number { color: var(--yellow); }
+    .json-boolean { color: var(--yellow); }
+    .json-null { color: var(--text-muted); }
+
+    /* Idle State */
+    .idle-placeholder {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-card);
+      padding: 64px 32px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .idle-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       FLOW MODE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .flow-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 24px 0;
+    }
+
+    .flow-step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      margin-bottom: 16px;
+      position: relative;
+      transition: all 300ms ease;
+    }
+
+    .flow-step-card.completed {
+      border-left: 4px solid var(--green);
+    }
+
+    .flow-step-card.completed .step-checkmark {
+      display: block;
+    }
+
+    .step-checkmark {
+      display: none;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      color: var(--green);
+      font-size: 20px;
+    }
+
+    .flow-step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .flow-connector {
+      width: 2px;
+      height: 32px;
+      background: var(--border);
+      margin: 0 auto 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flow-connector.animate::after {
+      content: '';
+      position: absolute;
+      top: -100%;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: var(--accent);
+      animation: flowDown 500ms ease forwards;
+    }
+
+    @keyframes flowDown {
+      to { top: 0; }
+    }
+
+    .flow-complete-card {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(79, 110, 247, 0.1));
+      border: 1px solid var(--green);
+      border-radius: var(--radius-card);
+      padding: 32px;
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .flow-complete-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .flow-complete-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+
+    .flow-complete-summary {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       REQUEST LOG
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #request-log {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+    }
+
+    .log-pill {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 200ms ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .log-pill:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .log-pill .status {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .log-pill .status.success { background: var(--green); }
+    .log-pill .status.error { background: var(--red); }
+    .log-pill .status.pending { background: var(--yellow); }
+
+    .log-panel {
+      position: absolute;
+      bottom: 48px;
+      right: 0;
+      width: 400px;
+      max-height: 300px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      overflow-y: auto;
+      display: none;
+      box-shadow: var(--shadow-card);
+    }
+
+    .log-panel.visible {
+      display: block;
+    }
+
+    .log-entry {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       RESPONSIVE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    @media (max-width: 768px) {
+      .service-view {
+        flex-direction: column;
+      }
+
+      .left-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .services-grid {
+        padding: 0 16px 48px;
+      }
+
+      .hero h1 {
+        font-size: 32px;
+      }
+
+      .hero p {
+        font-size: 16px;
+      }
+
+      .right-panel {
+        padding: 16px;
+      }
+    }
+
+    /* Utility */
+    .hidden { display: none !important; }
+    .copy-icon { cursor: pointer; margin-left: 8px; opacity: 0.6; }
+    .copy-icon:hover { opacity: 1; }
+    .copy-icon.copied { color: var(--green); }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="nav">
+    <div class="nav-left">
+      <div class="logo">F</div>
+      <span class="brand-name">Forge</span>
+      <div class="nav-separator"></div>
+      <span class="demo-tag">Demo Environment</span>
+      <span class="breadcrumb" id="breadcrumb"></span>
+    </div>
+    <div class="nav-right">
+      <button class="btn-branding" id="btn-branding">Branding</button>
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span>⬡ Status</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Demo Banner -->
+  <div class="demo-banner" id="demo-banner"></div>
+
+  <!-- Branding Drawer -->
+  <div id="branding-drawer">
+    <button class="btn-close-drawer" id="btn-close-drawer">×</button>
+    <div class="drawer-header">Client Branding</div>
+    <div class="form-group">
+      <label>Client Name</label>
+      <input type="text" id="brand-client-name" placeholder="Acme Corp">
+    </div>
+    <div class="form-group">
+      <label>Client Logo URL</label>
+      <input type="text" id="brand-logo-url" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>Accent Color</label>
+      <input type="color" id="brand-accent-color" value="#4f6ef7" style="height: 44px;">
+    </div>
+    <div class="form-group">
+      <label>Demo Note</label>
+      <input type="text" id="brand-demo-note" placeholder="Pre-production environment">
+    </div>
+    <button class="btn-apply" id="btn-apply-branding">Apply Branding</button>
+  </div>
+
+  <!-- App Root -->
+  <div id="app"></div>
+
+  <!-- Request Log -->
+  <div id="request-log">
+    <div class="log-pill" id="log-pill">
+      <span class="status pending"></span>
+      <span>Request Log</span>
+    </div>
+    <div class="log-panel" id="log-panel"></div>
+  </div>
+
+  <script>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CONSTANTS & CONFIG
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const GATEWAY_BASE = window.FORGE_GATEWAY || 'https://api.forge-demo.com';
+    const requestLog = [];
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SERVICES REGISTRY
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const SERVICES = [
+      { id: 'payments', name: 'Payment Processing', description: 'Initialize, verify, and manage payment transactions across multiple providers.', icon: '💳', tier: 'live', category: 'Financial', operations: ['initialize', 'verify', 'refund', 'status'] },
+      { id: 'banking', name: 'Banking & Accounts', description: 'Account verification, balance inquiry, and fund transfers via open banking.', icon: '🏦', tier: 'live', category: 'Financial', operations: ['verify-account', 'balance', 'transfer', 'statement'] },
+      { id: 'verification', name: 'KYC & Verification', description: 'Identity checks, document OCR, and liveness detection for onboarding.', icon: '🪪', tier: 'scaffolded', category: 'Compliance', operations: ['identity', 'document', 'liveness', 'watchlist'] },
+      { id: 'security', name: 'Security Services', description: 'Token issuance, fraud scoring, and threat detection for API protection.', icon: '🔐', tier: 'beta', category: 'Security', operations: ['auth', 'token', 'fraud-score', 'scan'] },
+      { id: 'ai', name: 'AI Services', description: 'Intelligent chat, document summarization, and classification at the edge.', icon: '🤖', tier: 'beta', category: 'Intelligence', operations: ['chat', 'summarize', 'classify', 'extract'] },
+      { id: 'memory', name: 'Memory & Context', description: 'Store, retrieve, and search persistent context for AI-driven workflows.', icon: '🧠', tier: 'beta', category: 'Intelligence', operations: ['store', 'retrieve', 'search', 'flush'] },
+      { id: 'infrastructure', name: 'Infrastructure', description: 'System health, uptime metrics, rate limits, and gateway diagnostics.', icon: '⚙️', tier: 'live', category: 'Platform', operations: ['health', 'metrics', 'logs', 'rate-limits'] },
+      { id: 'mcp', name: 'MCP Tool Explorer', description: 'Browse and invoke registered Model Context Protocol tools on the gateway.', icon: '🔌', tier: 'beta', category: 'Platform', operations: ['list-tools', 'invoke', 'schema', 'history'] }
+    ];
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       FLOWS DEFINITIONS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const FLOWS = {
+      payments: ['initialize', 'verify', 'status'],
+      verification: ['identity', 'document', 'liveness'],
+      banking: ['verify-account', 'balance', 'transfer'],
+      security: ['auth', 'token', 'fraud-score']
+    };
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       FORM DEFINITIONS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const FORMS = {
+      payments: {
+        initialize: {
+          providers: ['Paystack', 'Flutterwave', 'Stripe'],
+          fields: [
+            { name: 'amount', type: 'number', label: 'Amount', required: true, placeholder: '1000.00' },
+            { name: 'currency', type: 'select', label: 'Currency', options: ['NGN', 'USD', 'GBP'], required: true },
+            { name: 'email', type: 'email', label: 'Customer Email', required: true, placeholder: 'customer@example.com' },
+            { name: 'reference', type: 'text', label: 'Reference', required: true, autoGenerate: true },
+            { name: 'metadata', type: 'textarea', label: 'Metadata (Optional)', placeholder: '{"order_id": "12345"}' }
+          ],
+          steps: ['Validating payload', 'Authenticating with provider', 'Creating transaction record', 'Awaiting gateway response', 'Processing complete'],
+          mockResponse: { transaction_id: 'txn_' + Math.random().toString(36).substr(2, 9), reference: 'ref_' + Date.now(), amount: 1000, currency: 'NGN', status: 'pending', checkout_url: 'https://checkout.paystack.com/xxx' }
+        },
+        verify: {
+          fields: [
+            { name: 'reference', type: 'text', label: 'Reference', required: true, placeholder: 'ref_xxxxx' },
+            { name: 'provider', type: 'select', label: 'Provider', options: ['Paystack', 'Flutterwave', 'Stripe'], required: true }
+          ],
+          steps: ['Looking up transaction', 'Calling provider API', 'Parsing response', 'Returning status'],
+          mockResponse: { reference: 'ref_xxxxx', status: 'success', amount: 1000, settled_at: '2026-02-21T19:30:00Z' }
+        },
+        refund: {
+          fields: [
+            { name: 'transaction_id', type: 'text', label: 'Transaction ID', required: true },
+            { name: 'amount', type: 'number', label: 'Refund Amount', required: true },
+            { name: 'reason', type: 'select', label: 'Reason', options: ['Customer request', 'Duplicate', 'Fraud', 'Other'] },
+            { name: 'notes', type: 'textarea', label: 'Notes' }
+          ],
+          steps: ['Validating request', 'Checking eligibility', 'Processing refund', 'Sending notification'],
+          mockResponse: { refund_id: 'ref_' + Math.random().toString(36).substr(2, 9), status: 'processing', eta: '2-3 business days' }
+        },
+        status: {
+          fields: [{ name: 'transaction_id', type: 'text', label: 'Transaction ID', required: true }],
+          steps: ['Querying database', 'Fetching provider status', 'Returning result'],
+          mockResponse: { transaction_id: 'txn_xxx', status: 'completed', amount: 1000, created_at: '2026-02-21T18:00:00Z' }
+        }
+      },
+      banking: {
+        'verify-account': {
+          providers: ['Mono', 'Okra', 'Stitch'],
+          fields: [
+            { name: 'account_number', type: 'text', label: 'Account Number', required: true, placeholder: '0123456789' },
+            { name: 'bank_code', type: 'select', label: 'Bank', options: ['058-GTBank', '011-UBA', '033-Zenith', '044-Access', '057-FCMB'], required: true },
+            { name: 'bvn', type: 'text', label: 'BVN (Optional)', placeholder: '12345678901' }
+          ],
+          steps: ['Resolving bank', 'Verifying account', 'Returning account name'],
+          mockResponse: { account_name: 'John Doe', account_number: '0123456789', bank: 'GTBank', verified: true }
+        },
+        balance: {
+          fields: [
+            { name: 'account_id', type: 'text', label: 'Account ID', required: true },
+            { name: 'currency', type: 'select', label: 'Currency', options: ['NGN', 'USD'], default: 'NGN' }
+          ],
+          steps: ['Authenticating', 'Fetching balance', 'Returning result'],
+          mockResponse: { balance: 125000.50, currency: 'NGN', last_updated: '2026-02-21T19:30:00Z' }
+        },
+        transfer: {
+          fields: [
+            { name: 'from_account', type: 'text', label: 'From Account', required: true },
+            { name: 'to_account', type: 'text', label: 'To Account', required: true },
+            { name: 'amount', type: 'number', label: 'Amount', required: true },
+            { name: 'narration', type: 'text', label: 'Narration' }
+          ],
+          steps: ['Validating accounts', 'Checking balance', 'Initiating transfer', 'Confirming'],
+          mockResponse: { transfer_id: 'trf_' + Math.random().toString(36).substr(2, 9), status: 'completed', amount: 5000 }
+        },
+        statement: {
+          fields: [
+            { name: 'account_id', type: 'text', label: 'Account ID', required: true },
+            { name: 'from_date', type: 'date', label: 'From Date', required: true },
+            { name: 'to_date', type: 'date', label: 'To Date', required: true }
+          ],
+          steps: ['Validating date range', 'Fetching transactions', 'Generating statement'],
+          mockResponse: { transactions: 24, period: '30 days', total_in: 500000, total_out: 375000 }
+        }
+      },
+      verification: {
+        identity: {
+          fields: [
+            { name: 'full_name', type: 'text', label: 'Full Name', required: true },
+            { name: 'dob', type: 'date', label: 'Date of Birth', required: true },
+            { name: 'id_type', type: 'select', label: 'ID Type', options: ['NIN', 'BVN', 'Passport', "Driver's License"], required: true },
+            { name: 'id_number', type: 'text', label: 'ID Number', required: true }
+          ],
+          steps: ['Submitting data', 'OCR parsing', 'Cross-referencing', 'Scoring', 'Decision'],
+          mockResponse: { match_score: 97, verified: true, confidence: 'high', flags: [] },
+          scaffolded: true
+        },
+        document: {
+          fields: [
+            { name: 'document_type', type: 'select', label: 'Document Type', options: ['Passport', "Driver's License", 'National ID', 'Utility Bill'], required: true },
+            { name: 'document_url', type: 'text', label: 'Document URL', required: true, placeholder: 'https://...' }
+          ],
+          steps: ['Downloading document', 'OCR extraction', 'Authenticity check', 'Returning result'],
+          mockResponse: { extracted: { name: 'John Doe', dob: '1990-01-15', expiry: '2030-01-15' }, authenticity_score: 94 },
+          scaffolded: true
+        },
+        liveness: {
+          fields: [{ name: 'session_id', type: 'text', label: 'Session ID', required: true }],
+          steps: ['Loading session', 'Analyzing frames', 'Detecting spoofing', 'Returning result'],
+          mockResponse: { liveness_score: 98, passed: true, confidence: 'high' },
+          scaffolded: true
+        },
+        watchlist: {
+          fields: [{ name: 'entity_name', type: 'text', label: 'Entity Name', required: true }],
+          steps: ['Searching databases', 'PEP check', 'Sanctions check', 'Returning matches'],
+          mockResponse: { matches: 0, status: 'clear', lists_checked: ['PEP', 'Sanctions', 'Adverse Media'] },
+          scaffolded: true
+        }
+      },
+      security: {
+        auth: {
+          fields: [
+            { name: 'client_id', type: 'text', label: 'Client ID', required: true },
+            { name: 'scope', type: 'checkbox', label: 'Scopes', options: ['read', 'write', 'admin'] },
+            { name: 'ttl', type: 'number', label: 'TTL (seconds)', default: 3600 }
+          ],
+          steps: ['Validating client', 'Checking scope', 'Issuing token', 'Logging'],
+          mockResponse: { access_token: 'eyJhbGciOiJIUzI1NiIs...', token_type: 'Bearer', expires_in: 3600, scope: 'read write' }
+        },
+        token: {
+          fields: [{ name: 'token', type: 'text', label: 'Token', required: true }],
+          steps: ['Validating token', 'Checking expiry', 'Returning claims'],
+          mockResponse: { valid: true, subject: 'user_123', expires_at: '2026-02-21T20:30:00Z' }
+        },
+        'fraud-score': {
+          fields: [
+            { name: 'user_id', type: 'text', label: 'User ID', required: true },
+            { name: 'transaction_amount', type: 'number', label: 'Amount', required: true },
+            { name: 'ip_address', type: 'text', label: 'IP Address', placeholder: '192.168.1.1' },
+            { name: 'device_fingerprint', type: 'text', label: 'Device Fingerprint' }
+          ],
+          steps: ['Loading profile', 'Running score engine', 'Rule check', 'Decision'],
+          mockResponse: { score: 23, risk_level: 'low', flags: [], recommendation: 'allow' }
+        },
+        scan: {
+          fields: [{ name: 'payload', type: 'textarea', label: 'Payload to Scan', required: true }],
+          steps: ['Parsing payload', 'Pattern matching', 'Threat detection', 'Returning result'],
+          mockResponse: { threats: 0, status: 'clean', scanned_at: new Date().toISOString() }
+        }
+      },
+      ai: {
+        chat: {
+          fields: [
+            { name: 'message', type: 'textarea', label: 'Message', required: true, placeholder: 'Ask something...' },
+            { name: 'system_prompt', type: 'textarea', label: 'System Prompt (Optional)', placeholder: 'You are a helpful assistant...' },
+            { name: 'model', type: 'select', label: 'Model', options: ['gpt-4', 'claude-3', 'llama-3'], default: 'gpt-4' }
+          ],
+          steps: ['Tokenizing', 'Routing', 'Inference', 'Streaming response'],
+          mockResponse: { reply: 'This is a demo AI response. In production, this would connect to a real LLM.', tokens_used: 145, model: 'gpt-4', latency_ms: 1250 }
+        },
+        summarize: {
+          fields: [{ name: 'text', type: 'textarea', label: 'Text to Summarize', required: true }],
+          steps: ['Analyzing text', 'Extracting key points', 'Generating summary'],
+          mockResponse: { summary: 'Key points extracted...', word_count: 50, original_length: 1500 }
+        },
+        classify: {
+          fields: [{ name: 'text', type: 'textarea', label: 'Text to Classify', required: true }],
+          steps: ['Tokenizing', 'Running classifier', 'Returning categories'],
+          mockResponse: { categories: [{ label: 'Support', confidence: 0.92 }, { label: 'Billing', confidence: 0.78 }] }
+        },
+        extract: {
+          fields: [{ name: 'text', type: 'textarea', label: 'Text', required: true }, { name: 'schema', type: 'textarea', label: 'Extraction Schema (JSON)' }],
+          steps: ['Parsing schema', 'Extracting entities', 'Validating output'],
+          mockResponse: { entities: { name: 'John', email: 'john@example.com', phone: '+234...' } }
+        }
+      },
+      memory: {
+        store: {
+          fields: [
+            { name: 'key', type: 'text', label: 'Key', required: true },
+            { name: 'value', type: 'textarea', label: 'Value', required: true },
+            { name: 'ttl', type: 'number', label: 'TTL (seconds, optional)' }
+          ],
+          steps: ['Validating key', 'Serializing value', 'Storing', 'Confirming'],
+          mockResponse: { stored: true, key: 'mykey', size_bytes: 256 }
+        },
+        retrieve: {
+          fields: [{ name: 'key', type: 'text', label: 'Key', required: true }],
+          steps: ['Looking up key', 'Deserializing', 'Returning value'],
+          mockResponse: { found: true, value: { data: 'example' }, created_at: '2026-02-21T18:00:00Z' }
+        },
+        search: {
+          fields: [{ name: 'query', type: 'text', label: 'Search Query', required: true }],
+          steps: ['Tokenizing query', 'Semantic search', 'Ranking results'],
+          mockResponse: { results: [{ key: 'doc1', score: 0.95 }, { key: 'doc2', score: 0.82 }], total: 2 }
+        },
+        flush: {
+          fields: [{ name: 'pattern', type: 'text', label: 'Key Pattern (optional)', placeholder: 'user:*' }],
+          steps: ['Matching keys', 'Deleting', 'Confirming'],
+          mockResponse: { deleted: 15, pattern: '*' }
+        }
+      },
+      infrastructure: {
+        health: {
+          fields: [],
+          steps: ['Pinging gateway', 'Checking services', 'Aggregating status', 'Returning health'],
+          mockResponse: { status: 'healthy', services: [{ name: 'payments', status: 'ok', latency_ms: 45 }, { name: 'banking', status: 'ok', latency_ms: 62 }], uptime: '99.97%' }
+        },
+        metrics: {
+          fields: [{ name: 'period', type: 'select', label: 'Period', options: ['1h', '24h', '7d', '30d'], default: '24h' }],
+          steps: ['Aggregating metrics', 'Calculating percentiles', 'Returning stats'],
+          mockResponse: { requests: 125000, avg_latency_ms: 85, p99_latency_ms: 245, error_rate: 0.02 }
+        },
+        logs: {
+          fields: [
+            { name: 'level', type: 'select', label: 'Level', options: ['INFO', 'WARN', 'ERROR', 'DEBUG'] },
+            { name: 'service', type: 'text', label: 'Service (optional)' }
+          ],
+          steps: ['Querying logs', 'Filtering', 'Returning entries'],
+          mockResponse: { entries: 50, level: 'INFO', oldest: '2026-02-21T18:00:00Z' }
+        },
+        'rate-limits': {
+          fields: [{ name: 'client_id', type: 'text', label: 'Client ID' }],
+          steps: ['Looking up limits', 'Checking usage', 'Returning quotas'],
+          mockResponse: { limit: 1000, used: 342, remaining: 658, resets_at: '2026-02-21T20:00:00Z' }
+        }
+      },
+      mcp: {
+        'list-tools': {
+          fields: [],
+          steps: ['Querying MCP registry', 'Fetching tool schemas', 'Returning list'],
+          mockResponse: { tools: [{ name: 'web_search', description: 'Search the web' }, { name: 'file_read', description: 'Read files' }, { name: 'database_query', description: 'Query databases' }, { name: 'email_send', description: 'Send emails' }, { name: 'calendar_create', description: 'Create calendar events' }] }
+        },
+        invoke: {
+          fields: [
+            { name: 'tool_name', type: 'select', label: 'Tool', options: ['web_search', 'file_read', 'database_query', 'email_send', 'calendar_create'], required: true },
+            { name: 'arguments', type: 'textarea', label: 'Arguments (JSON)', placeholder: '{"query": "..."}' }
+          ],
+          steps: ['Validating arguments', 'Invoking tool', 'Parsing output', 'Returning result'],
+          mockResponse: { tool: 'web_search', result: { results: 10 }, execution_ms: 340 }
+        },
+        schema: {
+          fields: [{ name: 'tool_name', type: 'select', label: 'Tool', options: ['web_search', 'file_read', 'database_query', 'email_send', 'calendar_create'], required: true }],
+          steps: ['Looking up schema', 'Returning definition'],
+          mockResponse: { name: 'web_search', input_schema: { type: 'object', properties: { query: { type: 'string' } } } }
+        },
+        history: {
+          fields: [{ name: 'limit', type: 'number', label: 'Limit', default: 10 }],
+          steps: ['Querying history', 'Formatting', 'Returning'],
+          mockResponse: { invocations: 5, tools_used: ['web_search', 'file_read'], last_at: '2026-02-21T19:00:00Z' }
+        }
+      }
+    };
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       STATE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    let currentService = null;
+    let currentOperation = null;
+    let selectedProvider = null;
+    let flowState = { step: 0, data: {} };
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       API CALL FUNCTION
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    async function callService(serviceId, operation, payload, provider = null) {
+      const startTime = Date.now();
+      const service = SERVICES.find(s => s.id === serviceId);
+      const formDef = FORMS[serviceId]?.[operation];
+      
+      // Scaffolded services always mock
+      if (service?.tier === 'scaffolded' || formDef?.scaffolded) {
+        await new Promise(r => setTimeout(r, 800));
+        return {
+          status: 200,
+          ok: true,
+          data: formDef?.mockResponse || { success: true },
+          mocked: true,
+          timing: Date.now() - startTime
+        };
+      }
+
+      try {
+        const url = `${GATEWAY_BASE}/${serviceId}/${operation}`;
+        const headers = { 'Content-Type': 'application/json', 'X-Forge-Demo': 'true' };
+        if (provider) headers['X-Provider'] = provider;
+
+        const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+        const data = await res.json().catch(() => ({}));
+        const timing = Date.now() - startTime;
+
+        addToLog('POST', url, res.status, timing);
+
+        return { status: res.status, ok: res.ok, data, timing };
+      } catch (err) {
+        const timing = Date.now() - startTime;
+        addToLog('POST', `${GATEWAY_BASE}/${serviceId}/${operation}`, 0, timing, true);
+        return {
+          status: 0,
+          ok: false,
+          data: { error: 'Could not reach gateway — endpoint may not be configured yet.', details: err.message },
+          timing,
+          networkError: true
+        };
+      }
+    }
+
+    function addToLog(method, url, status, timing, error = false) {
+      requestLog.unshift({ method, url, status, timing, error, id: Date.now() });
+      if (requestLog.length > 5) requestLog.pop();
+      renderLog();
+    }
+
+    function renderLog() {
+      const panel = document.getElementById('log-panel');
+      panel.innerHTML = requestLog.map(log => `
+        <div class="log-entry">
+          <span>${log.method} ${log.url.split('/').slice(-2).join('/')}</span>
+          <span style="color: ${log.error ? 'var(--red)' : log.status >= 400 ? 'var(--yellow)' : 'var(--green)'}">${log.status || 'ERR'} • ${log.timing}ms</span>
+        </div>
+      `).join('');
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       RENDER FUNCTIONS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function renderLanding() {
+      const app = document.getElementById('app');
+      const categories = ['All', ...new Set(SERVICES.map(s => s.category))];
+      
+      app.innerHTML = `
+        <div class="landing">
+          <div class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-content">
+              <h1>API Services, Live.</h1>
+              <p>Select a service below to explore its capabilities end-to-end.</p>
+              <div class="stats-row">
+                <span>${SERVICES.length} Services</span>
+                <span>${SERVICES.reduce((a, s) => a + s.operations.length, 0)} Operations</span>
+                <span>Live Backend</span>
+              </div>
+            </div>
+          </div>
+          <div class="category-tabs" id="category-tabs">
+            ${categories.map((c, i) => `<button class="category-tab ${i === 0 ? 'active' : ''}" data-category="${c}">${c}</button>`).join('')}
+          </div>
+          <div class="services-grid" id="services-grid">
+            ${SERVICES.map(service => renderServiceCard(service)).join('')}
+          </div>
+        </div>
+      `;
+
+      // Category filter
+      document.querySelectorAll('.category-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const category = tab.dataset.category;
+          document.querySelectorAll('.glare-card').forEach(card => {
+            const cardCat = card.dataset.category;
+            card.style.display = category === 'All' || cardCat === category ? 'block' : 'none';
+          });
+        });
+      });
+
+      initGlareCards();
+      updateBreadcrumb();
+    }
+
+    function renderServiceCard(service) {
+      const tierLabels = { live: '🟢 Live', beta: '🟡 Beta', scaffolded: '⚪ Coming Soon', admin: '🔒 Admin' };
+      return `
+        <div class="glare-card" data-category="${service.category}" data-service="${service.id}">
+          <div class="card-content">
+            <div class="card-top">
+              <div class="service-icon service-icon-bg">${service.icon}</div>
+              <span class="tier-badge ${service.tier}">${tierLabels[service.tier]}</span>
+            </div>
+            <div class="service-name">${service.name}</div>
+            <div class="service-desc">${service.description}</div>
+            <div class="card-bottom">
+              <span class="category-pill">${service.category}</span>
+              <span class="explore-link">Explore →</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderServiceView(serviceId, operation = null) {
+      const service = SERVICES.find(s => s.id === serviceId);
+      if (!service) return renderLanding();
+
+      currentService = serviceId;
+      const ops = service.operations;
+      const defaultOp = operation || ops[0];
+      currentOperation = defaultOp;
+
+      const app = document.getElementById('app');
+      const formDef = FORMS[serviceId]?.[defaultOp];
+      const hasFlow = FLOWS[serviceId];
+
+      app.innerHTML = `
+        <div class="service-view">
+          <div class="left-panel">
+            <div class="service-header">
+              <div class="service-header-top">
+                <div class="service-header-icon">${service.icon}</div>
+                <div>
+                  <h2>${service.name}</h2>
+                  <span class="tier-badge ${service.tier}">${service.tier === 'live' ? '🟢 Live' : service.tier === 'beta' ? '🟡 Beta' : '⚪ Coming Soon'}</span>
+                </div>
+              </div>
+              <p>${service.description}</p>
+            </div>
+            <div class="operation-tabs">
+              ${ops.map(op => `<button class="op-tab ${op === defaultOp ? 'active' : ''}" data-op="${op}">${op.replace(/-/g, ' ')}</button>`).join('')}
+              ${hasFlow ? `<button class="op-tab flow-tab" data-op="flow">⚡ Flow</button>` : ''}
+            </div>
+            <div class="form-area" id="form-area">
+              ${renderForm(serviceId, defaultOp)}
+            </div>
+          </div>
+          <div class="right-panel" id="right-panel">
+            <div class="idle-placeholder">
+              <div class="idle-icon">${service.icon}</div>
+              <p>Run an operation to see the live response here.</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Operation tabs
+      document.querySelectorAll('.op-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const op = tab.dataset.op;
+          if (op === 'flow') {
+            renderFlowMode(serviceId);
+          } else {
+            document.querySelectorAll('.op-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentOperation = op;
+            document.getElementById('form-area').innerHTML = renderForm(serviceId, op);
+            scrollLeftPanel();
+          }
+        });
+      });
+
+      updateBreadcrumb();
+    }
+
+    function renderForm(serviceId, operation) {
+      const formDef = FORMS[serviceId]?.[operation];
+      if (!formDef) return '<div class="empty-state">Form not found</div>';
+
+      const { providers, fields } = formDef;
+
+      let html = '';
+      if (providers?.length) {
+        selectedProvider = providers[0];
+        html += `<div class="provider-selector">${providers.map((p, i) => `<button class="provider-pill ${i === 0 ? 'selected' : ''}" data-provider="${p}">${p}</button>`).join('')}</div>`;
+      }
+
+      if (!fields?.length) {
+        html += `
+          <div class="empty-state">
+            <p>No input required — click Run to execute.</p>
+          </div>
+          <button class="btn-primary" id="btn-run">Run →</button>
+        `;
+      } else {
+        html += fields.map(field => {
+          if (field.type === 'checkbox') {
+            return `<div class="form-field"><label>${field.label}</label><div style="display:flex;gap:12px;flex-wrap:wrap;">${field.options.map(opt => `<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);"><input type="checkbox" value="${opt}" ${field.default?.includes(opt) ? 'checked' : ''}> ${opt}</label>`).join('')}</div></div>`;
+          }
+          const autoGen = field.autoGenerate ? `value="${generateReference()}"` : field.default ? `value="${field.default}"` : '';
+          const regenBtn = field.autoGenerate ? `<span style="float:right;font-size:12px;color:var(--accent);cursor:pointer;" onclick="regenerateField(this)">↺ Regenerate</span>` : '';
+          return `
+            <div class="form-field">
+              <label>${field.label} ${field.required ? '<span style="color:var(--red)">*</span>' : ''} ${regenBtn}</label>
+              ${field.type === 'textarea' 
+                ? `<textarea name="${field.name}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} rows="4"></textarea>`
+                : field.type === 'select'
+                ? `<select name="${field.name}" ${field.required ? 'required' : ''}>${field.options.map(opt => `<option value="${opt}" ${field.default === opt ? 'selected' : ''}>${opt}</option>`).join('')}</select>`
+                : `<input type="${field.type}" name="${field.name}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} ${autoGen}>`
+              }
+            </div>
+          `;
+        }).join('');
+        html += `<button class="btn-primary" id="btn-run">Run →</button>`;
+      }
+
+      // Provider selection
+      setTimeout(() => {
+        document.querySelectorAll('.provider-pill').forEach(pill => {
+          pill.addEventListener('click', () => {
+            document.querySelectorAll('.provider-pill').forEach(p => p.classList.remove('selected'));
+            pill.classList.add('selected');
+            selectedProvider = pill.dataset.provider;
+          });
+        });
+
+        // Run button
+        const runBtn = document.getElementById('btn-run');
+        if (runBtn) {
+          runBtn.addEventListener('click', handleSubmit);
+          // Ctrl+Enter
+          document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSubmit();
+          });
+        }
+      }, 0);
+
+      return html;
+    }
+
+    function generateReference() {
+      return 'ref_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    function regenerateField(btn) {
+      const input = btn.parentElement.querySelector('input');
+      if (input) input.value = generateReference();
+    }
+
+    async function handleSubmit() {
+      const formArea = document.getElementById('form-area');
+      const formDef = FORMS[currentService]?.[currentOperation];
+      if (!formDef) return;
+
+      // Validate
+      const inputs = formArea.querySelectorAll('input[required], textarea[required], select[required]');
+      let valid = true;
+      inputs.forEach(input => {
+        if (!input.value.trim()) {
+          input.classList.add('invalid');
+          valid = false;
+          setTimeout(() => input.classList.remove('invalid'), 500);
+        }
+      });
+      if (!valid) return;
+
+      // Gather payload
+      const payload = {};
+      formArea.querySelectorAll('input, textarea, select').forEach(el => {
+        if (el.type === 'checkbox') {
+          const checked = formArea.querySelectorAll(`input[name="${el.name}"]:checked`);
+          if (checked.length) payload[el.name] = Array.from(checked).map(c => c.value);
+        } else if (el.name && el.value) {
+          payload[el.name] = el.type === 'number' ? parseFloat(el.value) : el.value;
+        }
+      });
+
+      // Show processing
+      renderProcessingSteps(formDef.steps);
+
+      // Call service
+      const result = await callService(currentService, currentOperation, payload, selectedProvider);
+      renderResultCard(result, formDef);
+    }
+
+    function renderProcessingSteps(steps) {
+      const rightPanel = document.getElementById('right-panel');
+      rightPanel.innerHTML = `<div class="processing-timeline" id="timeline"></div>`;
+      const timeline = document.getElementById('timeline');
+
+      steps.forEach((step, i) => {
+        timeline.innerHTML += `
+          <div class="timeline-step" id="step-${i}" style="animation-delay: ${i * 200}ms">
+            <div class="step-icon pending" id="step-icon-${i}">●</div>
+            <span class="step-name">${step}</span>
+          </div>
+        `;
+      });
+
+      animateSteps(steps.length);
+    }
+
+    async function animateSteps(totalSteps) {
+      for (let i = 0; i < totalSteps; i++) {
+        await new Promise(r => setTimeout(r, 400));
+        const icon = document.getElementById(`step-icon-${i}`);
+        if (icon) {
+          icon.classList.remove('pending');
+          icon.classList.add('active');
+          icon.innerHTML = '';
+        }
+        await new Promise(r => setTimeout(r, 300));
+        if (icon) {
+          icon.classList.remove('active');
+          icon.classList.add('done');
+          icon.innerHTML = '✓';
+        }
+      }
+    }
+
+    function renderResultCard(result, formDef) {
+      const rightPanel = document.getElementById('right-panel');
+      const isSuccess = result.ok && !result.networkError;
+      const statusClass = result.networkError ? 'warning' : isSuccess ? 'success' : 'error';
+      const statusText = result.networkError ? '⚠ Network Error' : isSuccess ? '✓ Success' : '✗ Failed';
+      const statusCode = result.networkError ? 'N/A' : result.status;
+
+      const data = result.data || {};
+      const fields = Object.entries(data).filter(([_, v]) => typeof v !== 'object').slice(0, 6);
+
+      rightPanel.innerHTML = `
+        <div class="result-card">
+          <div class="result-header">
+            <div class="result-status ${statusClass}">${statusText}</div>
+            <div>
+              <span class="status-code-pill">${statusCode}</span>
+              <span class="result-timing" style="margin-left:8px">${result.timing}ms</span>
+            </div>
+          </div>
+          <div class="result-fields">
+            ${fields.map(([k, v]) => `
+              <div class="result-field">
+                <span class="result-field-label">${k.replace(/_/g, ' ')}</span>
+                <span class="result-field-value">${typeof v === 'boolean' ? (v ? 'true' : 'false') : v} <span class="copy-icon" onclick="copyToClipboard('${v}', this)">📋</span></span>
+              </div>
+            `).join('')}
+          </div>
+          <button class="json-toggle" onclick="toggleJson()">▼ View JSON Response</button>
+          <div class="json-block" id="json-block">
+            <button class="json-copy" onclick="copyJson()">Copy</button>
+            <pre id="json-pre"></pre>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('json-pre').innerHTML = syntaxHighlight(data);
+    }
+
+    function syntaxHighlight(json) {
+      const jsonStr = JSON.stringify(json, null, 2);
+      return jsonStr.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+        let cls = 'json-number';
+        if (/^"/.test(match)) cls = match.endsWith(':') ? 'json-key' : 'json-string';
+        else if (/true|false/.test(match)) cls = 'json-boolean';
+        else if (/null/.test(match)) cls = 'json-null';
+        return `<span class="${cls}">${match}</span>`;
+      });
+    }
+
+    function toggleJson() {
+      const block = document.getElementById('json-block');
+      const btn = document.querySelector('.json-toggle');
+      if (block.classList.contains('visible')) {
+        block.classList.remove('visible');
+        btn.textContent = '▼ View JSON Response';
+      } else {
+        block.classList.add('visible');
+        btn.textContent = '▲ Hide';
+      }
+    }
+
+    function copyToClipboard(text, el) {
+      navigator.clipboard.writeText(text);
+      el.textContent = '✓';
+      el.classList.add('copied');
+      setTimeout(() => { el.textContent = '📋'; el.classList.remove('copied'); }, 2000);
+    }
+
+    function copyJson() {
+      const json = document.getElementById('json-pre').textContent;
+      navigator.clipboard.writeText(json);
+      const btn = document.querySelector('.json-copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    }
+
+    function scrollLeftPanel() {
+      document.querySelector('.left-panel')?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       FLOW MODE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function renderFlowMode(serviceId) {
+      const service = SERVICES.find(s => s.id === serviceId);
+      const flow = FLOWS[serviceId];
+      if (!flow) return;
+
+      flowState = { step: 0, data: {} };
+      currentService = serviceId;
+
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="service-view">
+          <div class="left-panel" style="width:100%;max-width:800px;margin:0 auto;">
+            <div class="service-header">
+              <div class="service-header-top">
+                <div class="service-header-icon">${service.icon}</div>
+                <div>
+                  <h2>${service.name} — Flow Mode</h2>
+                  <span class="tier-badge ${service.tier}">⚡ Multi-step Flow</span>
+                </div>
+              </div>
+            </div>
+            <div class="flow-container" id="flow-container"></div>
+          </div>
+        </div>
+      `;
+
+      renderFlowSteps(flow);
+      updateBreadcrumb();
+    }
+
+    function renderFlowSteps(flow) {
+      const container = document.getElementById('flow-container');
+      container.innerHTML = flow.map((op, i) => {
+        const formDef = FORMS[currentService]?.[op];
+        return `
+          <div class="flow-step-card" id="flow-step-${i}" data-op="${op}">
+            <div class="step-checkmark">✓</div>
+            <div class="flow-step-header">
+              <div class="step-number">${i + 1}</div>
+              <div class="step-title">${op.replace(/-/g, ' ')}</div>
+            </div>
+            <div class="flow-form">${renderFlowForm(op, formDef, i)}</div>
+          </div>
+          ${i < flow.length - 1 ? '<div class="flow-connector" id="connector-' + i + '"></div>' : ''}
+        `;
+      }).join('');
+
+      // Attach run handlers
+      flow.forEach((op, i) => {
+        const btn = document.querySelector(`#flow-step-${i} .btn-primary`);
+        if (btn) {
+          btn.addEventListener('click', () => runFlowStep(i, flow));
+        }
+      });
+    }
+
+    function renderFlowForm(op, formDef, stepIndex) {
+      if (!formDef) return '<p>Form not found</p>';
+      const { fields } = formDef;
+      if (!fields?.length) return `<button class="btn-primary">Continue →</button>`;
+
+      return fields.map(field => {
+        const prefill = flowState.data[field.name] ? `value="${flowState.data[field.name]}" style="background:rgba(245,158,11,0.1);border-color:var(--yellow);"` : '';
+        return `
+          <div class="form-field">
+            <label>${field.label} ${field.required ? '<span style="color:var(--red)">*</span>' : ''}</label>
+            ${field.type === 'textarea'
+              ? `<textarea name="${field.name}" ${prefill} rows="3"></textarea>`
+              : field.type === 'select'
+              ? `<select name="${field.name}">${field.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`
+              : `<input type="${field.type}" name="${field.name}" ${prefill}>`
+            }
+          </div>
+        `;
+      }).join('') + `<button class="btn-primary">Continue →</button>`;
+    }
+
+    async function runFlowStep(stepIndex, flow) {
+      const stepCard = document.getElementById(`flow-step-${stepIndex}`);
+      const op = flow[stepIndex];
+      const formDef = FORMS[currentService]?.[op];
+
+      // Gather payload
+      const payload = {};
+      stepCard.querySelectorAll('input, textarea, select').forEach(el => {
+        if (el.name && el.value) payload[el.name] = el.type === 'number' ? parseFloat(el.value) : el.value;
+      });
+
+      // Execute
+      const result = await callService(currentService, op, payload, selectedProvider);
+      
+      // Store result for next step
+      Object.assign(flowState.data, result.data);
+      flowState.step = stepIndex + 1;
+
+      // Mark complete
+      stepCard.classList.add('completed');
+
+      // Animate connector
+      const connector = document.getElementById(`connector-${stepIndex}`);
+      if (connector) {
+        connector.classList.add('animate');
+      }
+
+      // Auto-fill next step
+      if (stepIndex < flow.length - 1) {
+        const nextStep = document.getElementById(`flow-step-${stepIndex + 1}`);
+        const nextFormDef = FORMS[currentService]?.[flow[stepIndex + 1]];
+        nextFormDef?.fields?.forEach(field => {
+          const input = nextStep.querySelector(`[name="${field.name}"]`);
+          if (input && flowState.data[field.name]) {
+            input.value = flowState.data[field.name];
+            input.style.background = 'rgba(245,158,11,0.1)';
+            input.style.borderColor = 'var(--yellow)';
+          }
+        });
+      } else {
+        // Flow complete
+        showFlowComplete(flow.length);
+      }
+    }
+
+    function showFlowComplete(totalSteps) {
+      const container = document.getElementById('flow-container');
+      container.innerHTML += `
+        <div class="flow-complete-card">
+          <div class="flow-complete-icon">🎉</div>
+          <div class="flow-complete-title">Flow Complete!</div>
+          <div class="flow-complete-summary">
+            Completed ${totalSteps} steps successfully.<br>
+            Total time: ~${totalSteps * 1.5}s
+          </div>
+        </div>
+      `;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       GLARE CARDS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function initGlareCards() {
+      document.querySelectorAll('.glare-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const rotateX = ((y - centerY) / centerY) * -8;
+          const rotateY = ((x - centerX) / centerX) * 8;
+
+          card.style.setProperty('--mouse-x', `${(x / rect.width) * 100}%`);
+          card.style.setProperty('--mouse-y', `${(y / rect.height) * 100}%`);
+          card.style.setProperty('--glare-opacity', '1');
+          card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+          card.style.setProperty('--glare-opacity', '0');
+          card.style.transform = 'perspective(800px) rotateX(0) rotateY(0)';
+        });
+
+        card.addEventListener('click', () => {
+          const serviceId = card.dataset.service;
+          if (serviceId) {
+            window.location.hash = `#/${serviceId}`;
+          }
+        });
+      });
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       BRANDING DRAWER
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function initBrandingDrawer() {
+      const drawer = document.getElementById('branding-drawer');
+      const btnBranding = document.getElementById('btn-branding');
+      const btnClose = document.getElementById('btn-close-drawer');
+      const btnApply = document.getElementById('btn-apply-branding');
+
+      btnBranding.addEventListener('click', () => drawer.classList.add('open'));
+      btnClose.addEventListener('click', () => drawer.classList.remove('open'));
+
+      // Load saved branding
+      const saved = localStorage.getItem('forge-branding');
+      if (saved) {
+        const branding = JSON.parse(saved);
+        document.getElementById('brand-client-name').value = branding.clientName || '';
+        document.getElementById('brand-logo-url').value = branding.logoUrl || '';
+        document.getElementById('brand-accent-color').value = branding.accentColor || '#4f6ef7';
+        document.getElementById('brand-demo-note').value = branding.demoNote || '';
+        applyBranding(branding);
+      }
+
+      btnApply.addEventListener('click', () => {
+        const branding = {
+          clientName: document.getElementById('brand-client-name').value,
+          logoUrl: document.getElementById('brand-logo-url').value,
+          accentColor: document.getElementById('brand-accent-color').value,
+          demoNote: document.getElementById('brand-demo-note').value
+        };
+        localStorage.setItem('forge-branding', JSON.stringify(branding));
+        applyBranding(branding);
+        drawer.classList.remove('open');
+      });
+    }
+
+    function applyBranding(branding) {
+      if (branding.clientName) {
+        document.querySelector('.brand-name').textContent = branding.clientName;
+      }
+      if (branding.logoUrl) {
+        document.querySelector('.logo').style.backgroundImage = `url(${branding.logoUrl})`;
+        document.querySelector('.logo').style.backgroundSize = 'cover';
+        document.querySelector('.logo').textContent = '';
+      }
+      if (branding.accentColor) {
+        document.documentElement.style.setProperty('--accent', branding.accentColor);
+        document.documentElement.style.setProperty('--accent-glow', branding.accentColor + '26');
+      }
+      if (branding.demoNote) {
+        const banner = document.getElementById('demo-banner');
+        banner.textContent = branding.demoNote;
+        banner.classList.add('visible');
+      }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       ROUTER
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function router() {
+      const hash = window.location.hash || '#/';
+      const parts = hash.slice(2).split('/');
+      const serviceId = parts[0];
+      const operation = parts[1];
+
+      if (!serviceId || serviceId === 'home') {
+        renderLanding();
+      } else if (operation === 'flow') {
+        renderFlowMode(serviceId);
+      } else {
+        renderServiceView(serviceId, operation);
+      }
+
+      window.scrollTo(0, 0);
+    }
+
+    function updateBreadcrumb() {
+      const breadcrumb = document.getElementById('breadcrumb');
+      const hash = window.location.hash;
+      
+      if (hash === '#/' || hash === '#/home') {
+        breadcrumb.classList.remove('visible');
+        return;
+      }
+
+      const parts = hash.slice(2).split('/');
+      const service = SERVICES.find(s => s.id === parts[0]);
+      if (service) {
+        breadcrumb.innerHTML = `<span style="color:var(--border)">/</span> <a href="#/">Forge</a> <span style="color:var(--border)">/</span> ${service.name}${parts[1] ? ` <span style="color:var(--border)">/</span> ${parts[1].replace(/-/g, ' ')}` : ''}`;
+        breadcrumb.classList.add('visible');
+      }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       REQUEST LOG UI
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    document.getElementById('log-pill')?.addEventListener('click', () => {
+      document.getElementById('log-panel').classList.toggle('visible');
+    });
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       INIT
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    window.addEventListener('hashchange', router);
+    window.addEventListener('DOMContentLoaded', () => {
+      router();
+      initGlareCards();
+      initBrandingDrawer();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forge — Live Service Demo Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-base: #0a0b0f;
+      --bg-surface: #111318;
+      --bg-card: #161820;
+      --border: #1e2130;
+      --border-glow: #2e3250;
+      --text-primary: #f0f2ff;
+      --text-secondary: #8b90a8;
+      --text-muted: #4a4f6a;
+      --accent: #4f6ef7;
+      --accent-glow: rgba(79,110,247,0.15);
+      --accent-glow-strong: rgba(79,110,247,0.25);
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --white: #ffffff;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Syne', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    button { cursor: pointer; font-family: inherit; }
+    input, select, textarea { font-family: 'DM Mono', monospace; }
+
+```
+/* ── NAV ── */
+#nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 56px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 24px; gap: 16px;
+}
+.nav-logo-wrap { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.nav-logo-box {
+  width: 32px; height: 32px; border-radius: 6px;
+  background: linear-gradient(135deg, #4f6ef7, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px; font-weight: 800; letter-spacing: -0.04em;
+  overflow: hidden; flex-shrink: 0;
+}
+.nav-logo-box img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+.nav-logo-text { font-size: 16px; font-weight: 700; color: var(--white); letter-spacing: -0.02em; }
+.nav-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.nav-env-pill {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted);
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 20px; padding: 2px 10px;
+}
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.nav-breadcrumb { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+.nav-breadcrumb span { color: var(--text-secondary); }
+.nav-breadcrumb a { color: var(--text-muted); }
+.nav-breadcrumb a:hover { color: var(--text-secondary); }
+.status-dot {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-secondary); font-family: 'DM Mono', monospace;
+}
+.status-dot::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 6px var(--green);
+  animation: pulse-green 2s ease-in-out infinite;
+}
+@keyframes pulse-green {
+  0%,100% { opacity: 1; } 50% { opacity: 0.5; }
+}
+.btn-outline {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-secondary); border-radius: 8px;
+  padding: 6px 12px; font-size: 12px; font-family: 'Syne', sans-serif;
+  transition: all 200ms ease; white-space: nowrap;
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--text-primary); }
+.btn-back {
+  display: none; align-items: center; gap: 6px; background: transparent;
+  border: none; color: var(--text-muted); font-size: 12px;
+  transition: color 200ms; padding: 0;
+}
+.btn-back:hover { color: var(--text-primary); }
+.btn-back.visible { display: flex; }
+
+/* ── DEMO NOTE BANNER ── */
+#demo-banner {
+  display: none; position: fixed; top: 56px; left: 0; right: 0; z-index: 99;
+  background: rgba(79,110,247,0.1); border-bottom: 1px solid rgba(79,110,247,0.2);
+  padding: 8px 24px; font-size: 12px; color: var(--text-secondary);
+  font-family: 'DM Mono', monospace; text-align: center;
+}
+#demo-banner.visible { display: block; }
+
+/* ── BRANDING DRAWER ── */
+#branding-drawer {
+  position: fixed; top: 0; right: -340px; width: 320px; height: 100vh;
+  background: var(--bg-surface); border-left: 1px solid var(--border);
+  z-index: 200; transition: right 300ms ease; padding: 24px;
+  display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
+}
+#branding-drawer.open { right: 0; }
+#branding-overlay {
+  display: none; position: fixed; inset: 0; z-index: 199;
+  background: rgba(0,0,0,0.5);
+}
+#branding-overlay.visible { display: block; }
+.drawer-title { font-size: 16px; font-weight: 700; color: var(--white); }
+.drawer-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+.field-input {
+  width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px; color: var(--text-primary);
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  transition: border-color 200ms, box-shadow 200ms; outline: none;
+}
+.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.field-input[type="color"] { padding: 4px 8px; height: 40px; cursor: pointer; }
+.btn-primary {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: 8px; padding: 12px 20px; font-size: 14px;
+  font-weight: 700; font-family: 'Syne', sans-serif;
+  transition: all 200ms ease; width: 100%;
+}
+.btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 20px var(--accent-glow-strong); }
+.btn-primary:active { transform: scale(0.98); }
+
+/* ── APP ROOT ── */
+#app { padding-top: 56px; min-height: 100vh; transition: opacity 200ms ease, transform 200ms ease; }
+#app.fade-out { opacity: 0; transform: translateY(8px); }
+#app.fade-in { opacity: 1; transform: translateY(0); }
+
+/* ── HERO ── */
+.hero {
+  position: relative; overflow: hidden;
+  padding: 72px 48px 56px; text-align: center;
+  min-height: 220px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+}
+.hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 20% 50%, rgba(79,110,247,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 70% at 80% 30%, rgba(139,92,246,0.09) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 50% 80%, rgba(79,110,247,0.06) 0%, transparent 60%);
+  animation: hero-shift 12s ease-in-out infinite alternate;
+}
+@keyframes hero-shift {
+  0% { background-position: 0% 0%, 100% 0%, 50% 100%; }
+  100% { background-position: 5% 10%, 95% 5%, 55% 95%; }
+}
+.hero h1 {
+  position: relative; z-index: 1;
+  font-size: clamp(36px, 5vw, 52px); font-weight: 800;
+  letter-spacing: -0.03em; color: var(--white);
+  line-height: 1.1;
+}
+.hero h1 span { color: var(--accent); }
+.hero-sub {
+  position: relative; z-index: 1;
+  font-size: 17px; color: var(--text-secondary); max-width: 480px;
+  font-weight: 400;
+}
+.hero-stats {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-muted);
+}
+.hero-stats-dot { color: var(--border-glow); }
+
+/* ── FILTER TABS ── */
+.filter-tabs {
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 48px 20px; overflow-x: auto;
+}
+.filter-tab {
+  background: transparent; border: none; padding: 6px 14px;
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+  color: var(--text-muted); border-radius: 20px;
+  transition: all 200ms ease; white-space: nowrap; position: relative;
+}
+.filter-tab::after {
+  content: ''; position: absolute; bottom: -2px; left: 50%; right: 50%;
+  height: 2px; background: var(--accent); border-radius: 2px;
+  transition: all 200ms ease;
+}
+.filter-tab.active { color: var(--white); }
+.filter-tab.active::after { left: 14px; right: 14px; }
+.filter-tab:hover { color: var(--text-secondary); }
+
+/* ── SERVICES GRID ── */
+.services-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px; padding: 0 48px 64px;
+}
+
+/* ── GLARE CARD ── */
+.glare-card {
+  background: var(--bg-card); border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
+  padding: 24px; position: relative; overflow: hidden;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transform-style: preserve-3d; will-change: transform;
+  cursor: pointer;
+}
+.glare-card:hover { border-color: var(--border-glow); box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px var(--border-glow); }
+.glare-overlay {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 100%);
+  transition: background 100ms ease; z-index: 1;
+}
+.glare-card-inner { position: relative; z-index: 2; }
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.card-icon-box {
+  width: 48px; height: 48px; border-radius: 10px;
+  background: rgba(79,110,247,0.1); border: 1px solid rgba(79,110,247,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; transition: all 200ms ease; flex-shrink: 0;
+}
+.glare-card:hover .card-icon-box {
+  background: rgba(79,110,247,0.18);
+  box-shadow: 0 0 16px rgba(79,110,247,0.2);
+}
+.card-name { font-size: 17px; font-weight: 700; color: var(--white); margin-bottom: 6px; letter-spacing: -0.01em; }
+.card-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; }
+.card-category {
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  color: var(--text-muted); background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px;
+}
+.card-ops { font-size: 12px; color: var(--text-muted); }
+.card-explore {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  display: flex; align-items: center; gap: 4px;
+  transition: gap 200ms;
+}
+.glare-card:hover .card-explore { gap: 8px; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  border-radius: 20px; padding: 3px 8px; font-weight: 500; white-space: nowrap;
+}
+.badge.live { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.badge.beta { background: rgba(245,158,11,0.1); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+.badge.scaffolded { background: rgba(139,144,168,0.1); color: var(--text-muted); border: 1px solid rgba(139,144,168,0.15); }
+.badge.admin { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+
+/* ── SERVICE VIEW ── */
+.service-view { display: flex; height: calc(100vh - 56px); overflow: hidden; }
+.left-panel {
+  width: 420px; min-width: 420px; flex-shrink: 0;
+  border-right: 1px solid var(--border); overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.right-panel { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.service-header { padding: 28px 28px 0; }
+.service-title-row { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.service-icon-lg {
+  width: 52px; height: 52px; border-radius: 12px; font-size: 26px;
+  background: rgba(79,110,247,0.1); border: 1px solid rgba(79,110,247,0.15);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.service-name-lg { font-size: 22px; font-weight: 800; color: var(--white); letter-spacing: -0.02em; }
+.service-desc-sm { font-size: 13px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 20px; }
+.service-sep { height: 1px; background: var(--border); margin: 0 -0px; }
+
+/* ── OP TABS ── */
+.op-tabs { display: flex; overflow-x: auto; padding: 0 28px; gap: 0; border-bottom: 1px solid var(--border); }
+.op-tab {
+  background: none; border: none; padding: 14px 16px;
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+  color: var(--text-muted); white-space: nowrap; position: relative;
+  transition: color 200ms;
+}
+.op-tab::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 100%;
+  height: 2px; background: var(--accent); transition: right 200ms ease;
+}
+.op-tab.active { color: var(--white); }
+.op-tab.active::after { right: 0; }
+.op-tab:hover { color: var(--text-secondary); }
+.op-tab.flow-tab { color: var(--accent); }
+.op-tab.flow-tab.active { color: var(--accent); }
+
+/* ── FORM AREA ── */
+.form-area { padding: 24px 28px; flex: 1; }
+.form-title { font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+.form-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+.providers-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.provider-pill {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-secondary); border-radius: 20px;
+  padding: 5px 14px; font-size: 12px; font-family: 'Syne', sans-serif; font-weight: 600;
+  transition: all 200ms ease;
+}
+.provider-pill.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+.provider-pill:hover:not(.selected) { border-color: var(--accent); color: var(--text-primary); }
+.field-row { margin-bottom: 16px; }
+.field-ref-wrap { position: relative; }
+.field-ref-wrap .field-input { padding-right: 36px; }
+.regen-btn {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-muted); font-size: 14px;
+  transition: color 200ms; padding: 4px;
+}
+.regen-btn:hover { color: var(--accent); }
+.copy-btn {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-muted); font-size: 12px;
+  transition: color 200ms; padding: 4px; cursor: pointer;
+}
+.copy-btn:hover { color: var(--accent); }
+select.field-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a4f6a' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
+textarea.field-input { resize: vertical; min-height: 80px; }
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.checkbox-item { display: flex; align-items: center; gap: 6px; }
+.checkbox-item input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+.checkbox-item label { font-size: 13px; color: var(--text-secondary); font-family: 'DM Mono', monospace; cursor: pointer; }
+.run-btn {
+  width: 100%; height: 44px; background: var(--accent);
+  border: none; border-radius: 8px; color: #fff; font-size: 15px;
+  font-weight: 700; font-family: 'Syne', sans-serif; margin-top: 20px;
+  transition: all 200ms ease; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.run-btn:hover { filter: brightness(1.1); box-shadow: 0 0 24px var(--accent-glow-strong); }
+.run-btn:active { transform: scale(0.99); }
+.run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.no-fields-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 140px; gap: 12px; color: var(--text-muted); font-size: 13px;
+}
+.no-fields-empty span { font-size: 32px; opacity: 0.3; }
+.field-invalid { border-color: var(--red) !important; animation: shake 0.3s ease; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ── RIGHT PANEL ── */
+.right-panel-inner { padding: 32px 36px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+.idle-state {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 1px dashed var(--border); border-radius: 12px;
+  gap: 16px; padding: 48px; min-height: 300px;
+}
+.idle-icon { font-size: 48px; opacity: 0.15; }
+.idle-text { font-size: 14px; color: var(--text-muted); text-align: center; max-width: 280px; line-height: 1.6; }
+
+/* ── PROCESSING STEPS ── */
+.steps-container { display: flex; flex-direction: column; gap: 0; }
+.steps-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 16px; }
+.step-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 0;
+  border-bottom: 1px solid rgba(30,33,48,0.5);
+  opacity: 0; transform: translateX(-8px);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.step-row.visible { opacity: 1; transform: translateX(0); }
+.step-row:last-child { border-bottom: none; }
+.step-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; }
+.step-icon.pending { background: rgba(74,79,106,0.2); border: 1px solid var(--border); }
+.step-icon.active { border: 2px solid var(--accent); animation: spin-ring 1s linear infinite; }
+@keyframes spin-ring { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.step-icon.done { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: var(--green); }
+.step-icon.error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
+.step-name { font-size: 13px; color: var(--text-secondary); flex: 1; }
+.step-name.active { color: var(--text-primary); }
+.step-name.done { color: var(--text-muted); }
+.step-status { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+
+/* ── RESULT CARD ── */
+.result-card {
+  background: var(--bg-card); border-radius: 12px;
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 0 24px var(--accent-glow);
+  overflow: hidden; animation: result-in 300ms ease forwards;
+}
+@keyframes result-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.result-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.result-status-text { display: flex; align-items: center; gap: 10px; }
+.result-icon { font-size: 20px; }
+.result-label { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+.result-label.success { color: var(--green); }
+.result-label.error { color: var(--red); }
+.result-label.warn { color: var(--yellow); }
+.result-label.muted { color: var(--text-muted); }
+.result-meta { display: flex; align-items: center; gap: 8px; }
+.http-pill { font-family: 'DM Mono', monospace; font-size: 11px; border-radius: 6px; padding: 3px 8px; }
+.http-pill.ok { background: rgba(34,197,94,0.15); color: var(--green); }
+.http-pill.err4 { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.http-pill.err5 { background: rgba(239,68,68,0.15); color: var(--red); }
+.http-pill.net { background: rgba(74,79,106,0.2); color: var(--text-muted); }
+.timing-pill { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+.result-kv { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.kv-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.kv-key { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+.kv-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-primary); text-align: right; word-break: break-all; }
+.json-toggle-row { padding: 12px 20px; border-top: 1px solid var(--border); }
+.json-toggle-btn {
+  background: none; border: none; color: var(--text-muted); font-size: 12px;
+  font-family: 'DM Mono', monospace; cursor: pointer; transition: color 200ms;
+  display: flex; align-items: center; gap: 6px;
+}
+.json-toggle-btn:hover { color: var(--text-secondary); }
+.json-block-wrap { display: none; }
+.json-block-wrap.open { display: block; }
+.json-block {
+  position: relative; background: var(--bg-base); border-top: 1px solid var(--border);
+  padding: 16px 20px; overflow-x: auto;
+}
+.json-block pre { font-family: 'DM Mono', monospace; font-size: 12px; line-height: 1.7; white-space: pre; }
+.json-copy-btn {
+  position: absolute; top: 12px; right: 12px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 8px; font-size: 11px; color: var(--text-muted);
+  cursor: pointer; font-family: 'DM Mono', monospace; transition: all 200ms;
+}
+.json-copy-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.j-key { color: var(--accent); }
+.j-str { color: var(--green); }
+.j-num { color: var(--yellow); }
+.j-bool { color: #f97316; }
+.j-null { color: var(--text-muted); }
+
+/* ── REQUEST LOG ── */
+#request-log {
+  position: fixed; bottom: 16px; right: 16px; z-index: 150;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+}
+.log-pill {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 6px 14px; font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--text-muted); cursor: pointer;
+  transition: all 200ms; display: flex; align-items: center; gap: 8px;
+}
+.log-pill:hover { border-color: var(--border-glow); color: var(--text-secondary); }
+#log-panel {
+  display: none; background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 12px; width: 400px; max-height: 260px; overflow-y: auto;
+}
+#log-panel.open { display: block; }
+.log-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; color: var(--text-secondary); display: flex; justify-content: space-between; }
+.log-panel-header button { background: none; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; font-family: 'DM Mono', monospace; }
+.log-entry { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid rgba(30,33,48,0.4); font-family: 'DM Mono', monospace; font-size: 11px; }
+.log-entry:last-child { border-bottom: none; }
+.log-method { color: var(--accent); font-weight: 700; }
+.log-url { color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-status-ok { color: var(--green); }
+.log-status-err { color: var(--red); }
+.log-status-warn { color: var(--yellow); }
+.log-ms { color: var(--text-muted); }
+
+/* ── FLOW MODE ── */
+.flow-view { padding: 32px 48px 64px; max-width: 700px; margin: 0 auto; }
+.flow-title { font-size: 24px; font-weight: 800; color: var(--white); margin-bottom: 6px; letter-spacing: -0.02em; }
+.flow-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 36px; }
+.flow-step-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; position: relative;
+  transition: border-color 300ms, box-shadow 300ms;
+}
+.flow-step-card.done { border-left: 3px solid var(--green); }
+.flow-step-card.active-step { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+.flow-step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.flow-step-num {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--accent);
+  color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+}
+.flow-step-num.done { background: var(--green); }
+.flow-step-name { font-size: 16px; font-weight: 700; color: var(--white); }
+.flow-check { font-size: 18px; margin-left: auto; }
+.flow-connector { height: 32px; display: flex; align-items: center; justify-content: center; position: relative; }
+.flow-connector svg { height: 32px; width: 2px; overflow: visible; }
+.flow-connector-line { stroke: var(--border); stroke-width: 2; stroke-dasharray: 4 3; }
+.flow-connector-line.animated { stroke: var(--accent); stroke-dasharray: 32; stroke-dashoffset: 32; animation: draw-line 500ms ease forwards; }
+@keyframes draw-line { to { stroke-dashoffset: 0; } }
+.continue-btn {
+  margin-top: 16px; background: var(--accent); border: none;
+  border-radius: 8px; padding: 10px 20px; color: #fff; font-size: 13px;
+  font-weight: 700; font-family: 'Syne', sans-serif; transition: all 200ms;
+}
+.continue-btn:hover { filter: brightness(1.1); }
+.continue-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.flow-prefill-tag { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.2); border-radius: 4px; padding: 1px 5px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--yellow); margin-left: 6px; }
+.flow-complete-card {
+  background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.05));
+  border: 1px solid rgba(34,197,94,0.3); border-radius: 12px;
+  padding: 32px; text-align: center; animation: result-in 400ms ease forwards;
+}
+.flow-complete-icon { font-size: 48px; margin-bottom: 16px; }
+.flow-complete-title { font-size: 22px; font-weight: 800; color: var(--green); margin-bottom: 8px; }
+.flow-complete-sub { font-size: 14px; color: var(--text-secondary); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-glow); }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  .service-view { flex-direction: column; height: auto; overflow: visible; }
+  .left-panel { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }
+  .hero { padding: 48px 24px 40px; }
+  .services-grid { padding: 0 16px 48px; }
+  .filter-tabs { padding: 0 16px 16px; }
+  .flow-view { padding: 24px 20px 48px; }
+}
+```
+
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+
+<nav id="nav">
+  <div class="nav-logo-wrap">
+    <div class="nav-logo-box" id="nav-logo-box">F</div>
+    <span class="nav-logo-text" id="nav-logo-text">Forge</span>
+    <div class="nav-sep"></div>
+    <span class="nav-env-pill">Demo Environment</span>
+  </div>
+  <div class="nav-right">
+    <div class="nav-breadcrumb" id="nav-breadcrumb"></div>
+    <button class="btn-back" id="btn-back" onclick="window.location.hash='/'">← Services</button>
+    <div class="status-dot">Status</div>
+    <button class="btn-outline" onclick="openBrandingDrawer()">⬡ Branding</button>
+  </div>
+</nav>
+
+<!-- DEMO BANNER -->
+
+<div id="demo-banner"></div>
+
+<!-- BRANDING DRAWER -->
+
+<div id="branding-overlay" onclick="closeBrandingDrawer()"></div>
+<div id="branding-drawer">
+  <div>
+    <div class="drawer-title">Client Branding</div>
+    <div class="drawer-sub">Customize the demo environment for your client.</div>
+  </div>
+  <div class="field-group">
+    <div class="field-label">Client Name</div>
+    <input class="field-input" id="b-client-name" type="text" placeholder="Acme Corp" />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Client Logo URL</div>
+    <input class="field-input" id="b-logo-url" type="text" placeholder="https://..." />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Accent Color</div>
+    <input class="field-input" id="b-accent" type="color" value="#4f6ef7" />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Demo Note (shown as banner)</div>
+    <input class="field-input" id="b-note" type="text" placeholder="Prepared exclusively for Acme Corp" />
+  </div>
+  <button class="btn-primary" onclick="applyBranding()">Apply Branding</button>
+  <button class="btn-outline" style="width:100%" onclick="resetBranding()">Reset to Default</button>
+</div>
+
+<!-- APP -->
+
+<div id="app"></div>
+
+<!-- REQUEST LOG -->
+
+<div id="request-log">
+  <div id="log-panel">
+    <div class="log-panel-header">
+      Request Log
+      <button onclick="clearLog()">Clear</button>
+    </div>
+    <div id="log-entries"></div>
+  </div>
+  <div class="log-pill" onclick="toggleLog()" id="log-pill">
+    <span id="log-count">0 calls</span>
+  </div>
+</div>
+
+<script>
+// ───────────────────────────────────────────
+// 1. CONSTANTS & CONFIG
+// ───────────────────────────────────────────
+const GATEWAY_BASE = window.FORGE_GATEWAY || 'https://api.yourdomain.com';
+let clientName = '';
+const requestLog = [];
+let logOpen = false;
+
+// ───────────────────────────────────────────
+// 2. SERVICES REGISTRY
+// ───────────────────────────────────────────
+const SERVICES = [
+  { id:'payments', name:'Payment Processing', description:'Initialize, verify, and manage payment transactions across multiple providers.', icon:'💳', tier:'live', category:'Financial', operations:['initialize','verify','refund','status'] },
+  { id:'banking', name:'Banking & Accounts', description:'Account verification, balance inquiry, and fund transfers via open banking.', icon:'🏦', tier:'live', category:'Financial', operations:['verify-account','balance','transfer','statement'] },
+  { id:'verification', name:'KYC & Verification', description:'Identity checks, document OCR, and liveness detection for onboarding.', icon:'🪪', tier:'scaffolded', category:'Compliance', operations:['identity','document','liveness','watchlist'] },
+  { id:'security', name:'Security Services', description:'Token issuance, fraud scoring, and threat detection for API protection.', icon:'🔐', tier:'beta', category:'Security', operations:['auth','token','fraud-score','scan'] },
+  { id:'ai', name:'AI Services', description:'Intelligent chat, document summarization, and classification at the edge.', icon:'🤖', tier:'beta', category:'Intelligence', operations:['chat','summarize','classify','extract'] },
+  { id:'memory', name:'Memory & Context', description:'Store, retrieve, and search persistent context for AI-driven workflows.', icon:'🧠', tier:'beta', category:'Intelligence', operations:['store','retrieve','search','flush'] },
+  { id:'infrastructure', name:'Infrastructure', description:'System health, uptime metrics, rate limits, and gateway diagnostics.', icon:'⚙️', tier:'live', category:'Platform', operations:['health','metrics','logs','rate-limits'] },
+  { id:'mcp', name:'MCP Tool Explorer', description:'Browse and invoke registered Model Context Protocol tools on the gateway.', icon:'🔌', tier:'beta', category:'Platform', operations:['list-tools','invoke','schema','history'] },
+];
+
+// ───────────────────────────────────────────
+// 3. FORMS DEFINITIONS
+// ───────────────────────────────────────────
+function genRef() { return 'ref_'+Math.random().toString(36).substr(2,9)+'_'+Date.now().toString(36); }
+function genUUID() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:r&0x3|0x8).toString(16);}); }
+
+const FORMS = {
+  payments: {
+    initialize: {
+      label:'Initialize Payment', providers:['Paystack','Flutterwave','Stripe'],
+      fields:[
+        {name:'amount',label:'Amount',type:'number',placeholder:'50000',required:true},
+        {name:'currency',label:'Currency',type:'select',options:['NGN','USD','GBP'],required:true},
+        {name:'email',label:'Customer Email',type:'text',placeholder:'customer@email.com',required:true},
+        {name:'reference',label:'Reference',type:'text',placeholder:'auto-generated',ref:true},
+        {name:'metadata',label:'Metadata (optional)',type:'textarea',placeholder:'{"order_id":"123"}'}
+      ],
+      steps:['Validating payload','Authenticating with provider','Creating transaction record','Awaiting gateway response','Processing complete'],
+      mock:()=>({transaction_id:'txn_'+genRef(),reference:genRef(),amount:50000,currency:'NGN',status:'pending',checkout_url:'https://checkout.provider.com/pay/'+genRef(),provider:'Paystack'})
+    },
+    verify: {
+      label:'Verify Payment', providers:[],
+      fields:[
+        {name:'reference',label:'Transaction Reference',type:'text',placeholder:'ref_abc123',required:true},
+      ],
+      steps:['Looking up transaction','Calling provider API','Parsing status','Returning result'],
+      mock:()=>({reference:genRef(),status:'success',amount:50000,currency:'NGN',settled_at:new Date().toISOString(),fee:750})
+    },
+    refund: {
+      label:'Issue Refund', providers:[],
+      fields:[
+        {name:'transaction_id',label:'Transaction ID',type:'text',placeholder:'txn_abc123',required:true},
+        {name:'amount',label:'Refund Amount',type:'number',placeholder:'Leave blank for full refund'},
+        {name:'reason',label:'Reason',type:'select',options:['duplicate','fraudulent','requested_by_customer','other']},
+        {name:'notes',label:'Notes',type:'textarea',placeholder:'Additional context...'}
+      ],
+      steps:['Validating request','Checking eligibility','Processing refund','Sending notifications'],
+      mock:()=>({refund_id:'ref_'+genRef(),status:'processing',eta:'2-3 business days',amount_refunded:50000})
+    },
+    status: {
+      label:'Get Status', providers:[],
+      fields:[{name:'transaction_id',label:'Transaction ID',type:'text',placeholder:'txn_abc123',required:true}],
+      steps:['Fetching record','Querying provider','Returning status'],
+      mock:()=>({transaction_id:'txn_'+genRef(),status:'completed',amount:50000,updated_at:new Date().toISOString()})
+    }
+  },
+  banking: {
+    'verify-account': {
+      label:'Verify Account', providers:['Mono','Okra','Stitch'],
+      fields:[
+        {name:'account_number',label:'Account Number',type:'text',placeholder:'0123456789',required:true},
+        {name:'bank_code',label:'Bank',type:'select',options:['044 — Access Bank','023 — Citibank','063 — Diamond Bank','050 — EcoBank','070 — Fidelity Bank','011 — First Bank','214 — First City Monument Bank','058 — GTBank','030 — Heritage Bank','301 — Jaiz Bank'],required:true},
+        {name:'bvn',label:'BVN (optional)',type:'text',placeholder:'22234567890'}
+      ],
+      steps:['Resolving account','Verifying with bureau','Returning account name'],
+      mock:()=>({account_name:'JOHN ADEWALE DOE',account_number:'0123456789',bank:'Guaranty Trust Bank',verified:true,bvn_match:true})
+    },
+    balance: {
+      label:'Get Balance', providers:[],
+      fields:[
+        {name:'account_id',label:'Account ID',type:'text',placeholder:'acc_abc123',required:true},
+        {name:'currency',label:'Currency',type:'select',options:['NGN','USD','GBP']}
+      ],
+      steps:['Authenticating','Fetching balance','Returning data'],
+      mock:()=>({balance:1284750.50,currency:'NGN',available:1200000.00,last_updated:new Date().toISOString()})
+    },
+    transfer: {
+      label:'Transfer Funds', providers:[],
+      fields:[
+        {name:'from_account',label:'From Account',type:'text',placeholder:'acc_abc123',required:true},
+        {name:'to_account',label:'To Account',type:'text',placeholder:'0123456789',required:true},
+        {name:'amount',label:'Amount (kobo)',type:'number',placeholder:'500000',required:true},
+        {name:'narration',label:'Narration',type:'text',placeholder:'Payment for invoice #123'}
+      ],
+      steps:['Validating accounts','Checking balance','Initiating transfer','Confirming with bank','Transfer complete'],
+      mock:()=>({transfer_id:'trf_'+genRef(),status:'successful',amount:500000,fee:1050,session_id:genUUID()})
+    },
+    statement: {
+      label:'Get Statement', providers:[],
+      fields:[
+        {name:'account_id',label:'Account ID',type:'text',placeholder:'acc_abc123',required:true},
+        {name:'from',label:'From Date',type:'text',placeholder:'2024-01-01'},
+        {name:'to',label:'To Date',type:'text',placeholder:'2024-12-31'}
+      ],
+      steps:['Authenticating','Fetching transactions','Formatting statement'],
+      mock:()=>({transactions:12,total_debits:450000,total_credits:1800000,period:'2024-01-01 to 2024-12-31',download_url:'https://api.yourdomain.com/statements/'+genRef()+'.pdf'})
+    }
+  },
+  verification: {
+    identity: {
+      label:'Verify Identity', providers:[],
+      fields:[
+        {name:'full_name',label:'Full Name',type:'text',placeholder:'John Doe',required:true},
+        {name:'dob',label:'Date of Birth',type:'text',placeholder:'1990-05-15'},
+        {name:'id_type',label:'ID Type',type:'select',options:['NIN','BVN','Passport','Driver\'s License']},
+        {name:'id_number',label:'ID Number',type:'text',placeholder:'12345678901',required:true}
+      ],
+      steps:['Submitting request','OCR parsing','Cross-referencing bureau','Computing match score','Returning decision'],
+      mock:()=>({match_score:97,verified:true,confidence:'high',flags:[],id_type:'NIN',check_id:genUUID()})
+    },
+    document: {
+      label:'Verify Document', providers:[],
+      fields:[
+        {name:'document_type',label:'Document Type',type:'select',options:['Passport','Driver\'s License','National ID','Utility Bill']},
+        {name:'document_url',label:'Document URL',type:'text',placeholder:'https://storage.example.com/doc.jpg',required:true}
+      ],
+      steps:['Downloading document','Running OCR','Checking authenticity','Returning extracted data'],
+      mock:()=>({extracted:{name:'JOHN DOE',dob:'1990-05-15',expiry:'2029-05-14',country:'Nigeria'},authenticity_score:94,tamper_detected:false})
+    },
+    liveness: {
+      label:'Liveness Check', providers:[],
+      fields:[
+        {name:'session_id',label:'Session ID',type:'text',placeholder:'sess_abc123',ref:true,required:true},
+        {name:'video_url',label:'Liveness Video URL',type:'text',placeholder:'https://storage.example.com/liveness.mp4'}
+      ],
+      steps:['Processing video','Detecting face','Running liveness model','Returning result'],
+      mock:()=>({liveness_score:99.2,is_live:true,spoof_detected:false,session_id:genRef()})
+    },
+    watchlist: {
+      label:'Watchlist Check', providers:[],
+      fields:[
+        {name:'full_name',label:'Full Name',type:'text',placeholder:'John Doe',required:true},
+        {name:'country',label:'Country',type:'text',placeholder:'NG'},
+        {name:'dob',label:'Date of Birth',type:'text',placeholder:'1990-05-15'}
+      ],
+      steps:['Searching global databases','Checking PEP lists','Checking sanctions','Returning results'],
+      mock:()=>({match_found:false,pep:false,sanctions:false,adverse_media:false,checked_at:new Date().toISOString()})
+    }
+  },
+  security: {
+    auth: {
+      label:'Authenticate Client', providers:[],
+      fields:[
+        {name:'client_id',label:'Client ID',type:'text',placeholder:'client_abc123',required:true},
+        {name:'scope',label:'Scopes',type:'checkboxes',options:['read','write','admin']},
+        {name:'ttl',label:'TTL (seconds)',type:'number',placeholder:'3600'}
+      ],
+      steps:['Validating client credentials','Checking requested scope','Issuing access token','Logging event'],
+      mock:()=>({access_token:'eyJ'+genRef()+'....',token_type:'Bearer',expires_in:3600,scope:'read write',issued_at:new Date().toISOString()})
+    },
+    token: {
+      label:'Issue Token', providers:[],
+      fields:[
+        {name:'subject',label:'Subject (user ID)',type:'text',placeholder:'user_abc123',required:true},
+        {name:'audience',label:'Audience',type:'text',placeholder:'api.yourdomain.com'},
+        {name:'ttl',label:'TTL (seconds)',type:'number',placeholder:'86400'}
+      ],
+      steps:['Generating token','Signing with key','Returning token'],
+      mock:()=>({token:'eyJ'+genRef()+'....',type:'JWT',expires_in:86400,jti:genUUID()})
+    },
+    'fraud-score': {
+      label:'Score Transaction', providers:[],
+      fields:[
+        {name:'user_id',label:'User ID',type:'text',placeholder:'user_abc123',required:true},
+        {name:'transaction_amount',label:'Transaction Amount',type:'number',placeholder:'25000'},
+        {name:'ip_address',label:'IP Address',type:'text',placeholder:'192.168.1.1'},
+        {name:'device_fingerprint',label:'Device Fingerprint',type:'text',placeholder:'fp_abc123'}
+      ],
+      steps:['Loading user profile','Running score engine','Applying rules','Returning decision'],
+      mock:()=>({score:23,risk_level:'low',flags:[],recommendation:'allow',velocity_checks:'passed',model_version:'v2.4.1'})
+    },
+    scan: {
+      label:'Security Scan', providers:[],
+      fields:[
+        {name:'target',label:'Target Endpoint',type:'text',placeholder:'/api/v1/payments',required:true},
+        {name:'scan_type',label:'Scan Type',type:'select',options:['quick','full','deep']}
+      ],
+      steps:['Initializing scanner','Probing endpoint','Analyzing response','Generating report'],
+      mock:()=>({vulnerabilities_found:0,warnings:1,scan_type:'quick',duration_ms:1240,report_id:genUUID()})
+    }
+  },
+  ai: {
+    chat: {
+      label:'Send Message', providers:[],
+      fields:[
+        {name:'message',label:'Message',type:'textarea',placeholder:'What can you help me with today?',required:true},
+        {name:'system_prompt',label:'System Prompt (optional)',type:'textarea',placeholder:'You are a helpful assistant...'},
+        {name:'model',label:'Model',type:'select',options:['claude-3-5-sonnet','gpt-4o','gemini-1.5-pro','llama-3.3-70b']}
+      ],
+      steps:['Tokenizing input','Routing to model','Running inference','Streaming response','Complete'],
+      mock:()=>({reply:'This is a simulated AI response from the Forge demo gateway. In production, this would be a real model response based on your system prompt and message.',tokens_used:247,model:'claude-3-5-sonnet',latency_ms:1840,finish_reason:'stop'})
+    },
+    summarize: {
+      label:'Summarize Document', providers:[],
+      fields:[
+        {name:'content',label:'Content to Summarize',type:'textarea',placeholder:'Paste document text here...',required:true},
+        {name:'max_length',label:'Max Length (words)',type:'number',placeholder:'150'},
+        {name:'style',label:'Style',type:'select',options:['concise','detailed','bullet-points']}
+      ],
+      steps:['Preprocessing content','Chunking document','Running summarization','Merging chunks'],
+      mock:()=>({summary:'This is a concise AI-generated summary of the provided document. Key themes identified include: core topics, relevant insights, and actionable takeaways.',word_count:38,model:'claude-3-5-sonnet',chunks_processed:3})
+    },
+    classify: {
+      label:'Classify Text', providers:[],
+      fields:[
+        {name:'text',label:'Text to Classify',type:'textarea',placeholder:'Enter text here...',required:true},
+        {name:'taxonomy',label:'Taxonomy',type:'select',options:['sentiment','intent','topic','language','toxicity']}
+      ],
+      steps:['Preprocessing','Running classifier','Returning labels'],
+      mock:()=>({classification:'positive',confidence:0.94,taxonomy:'sentiment',labels:[{label:'positive',score:0.94},{label:'neutral',score:0.05},{label:'negative',score:0.01}]})
+    },
+    extract: {
+      label:'Extract Entities', providers:[],
+      fields:[
+        {name:'text',label:'Source Text',type:'textarea',placeholder:'Enter text to extract from...',required:true},
+        {name:'entities',label:'Entity Types',type:'select',options:['all','persons+organizations','dates+amounts','addresses']}
+      ],
+      steps:['Tokenizing','Running NER model','Resolving entities','Returning results'],
+      mock:()=>({entities:[{text:'John Doe',type:'PERSON',confidence:0.99},{text:'Acme Corp',type:'ORG',confidence:0.97},{text:'₦50,000',type:'MONEY',confidence:0.98},{text:'January 15, 2024',type:'DATE',confidence:0.96}]})
+    }
+  },
+  memory: {
+    store: {
+      label:'Store Context', providers:[],
+      fields:[
+        {name:'key',label:'Key',type:'text',placeholder:'session:user_123',required:true,ref:true},
+        {name:'value',label:'Value (JSON)',type:'textarea',placeholder:'{"context":"..."}',required:true},
+        {name:'ttl',label:'TTL (seconds, 0 = permanent)',type:'number',placeholder:'86400'}
+      ],
+      steps:['Validating payload','Serializing data','Writing to store','Confirming'],
+      mock:()=>({stored:true,key:'session:'+genRef(),bytes_written:248,ttl:86400,expires_at:new Date(Date.now()+86400000).toISOString()})
+    },
+    retrieve: {
+      label:'Retrieve Context', providers:[],
+      fields:[
+        {name:'key',label:'Key',type:'text',placeholder:'session:user_123',required:true},
+      ],
+      steps:['Looking up key','Deserializing','Returning value'],
+      mock:()=>({key:'session:user_123',value:{context:'User is in checkout flow',step:3,cart_total:45000},hit:true,age_seconds:3600})
+    },
+    search: {
+      label:'Search Memory', providers:[],
+      fields:[
+        {name:'query',label:'Search Query',type:'text',placeholder:'checkout flow context',required:true},
+        {name:'limit',label:'Limit',type:'number',placeholder:'10'}
+      ],
+      steps:['Embedding query','Searching vector store','Ranking results','Returning matches'],
+      mock:()=>({results:[{key:'session:user_123',score:0.94,preview:'User is in checkout flow...'},{key:'session:user_456',score:0.78,preview:'User browsing products...'}],total_searched:1240,latency_ms:45})
+    },
+    flush: {
+      label:'Flush Keys', providers:[],
+      fields:[
+        {name:'pattern',label:'Key Pattern',type:'text',placeholder:'session:*',required:true},
+        {name:'confirm',label:'Confirm Pattern',type:'text',placeholder:'Type the pattern again'}
+      ],
+      steps:['Matching pattern','Counting keys','Flushing','Confirming deletion'],
+      mock:()=>({flushed:true,keys_deleted:47,pattern:'session:*',duration_ms:12})
+    }
+  },
+  infrastructure: {
+    health: {
+      label:'Check Health', providers:[],
+      fields:[],
+      steps:['Pinging gateway','Checking services','Aggregating metrics','Returning status'],
+      mock:()=>({status:'healthy',services:[{name:'payments-svc',status:'up',latency_ms:42},{name:'auth-svc',status:'up',latency_ms:18},{name:'ai-svc',status:'up',latency_ms:230},{name:'memory-svc',status:'up',latency_ms:8}],uptime:'99.97%',version:'2.4.1',checked_at:new Date().toISOString()})
+    },
+    metrics: {
+      label:'Get Metrics', providers:[],
+      fields:[
+        {name:'window',label:'Time Window',type:'select',options:['1m','5m','1h','24h','7d']},
+        {name:'service',label:'Filter by Service',type:'text',placeholder:'payments (leave blank for all)'}
+      ],
+      steps:['Fetching metrics','Aggregating data','Returning metrics'],
+      mock:()=>({requests_total:48291,errors:23,p50_ms:45,p95_ms:180,p99_ms:890,rps:16.4,error_rate:0.05})
+    },
+    logs: {
+      label:'Fetch Logs', providers:[],
+      fields:[
+        {name:'service',label:'Service',type:'select',options:['all','payments','banking','security','ai']},
+        {name:'level',label:'Log Level',type:'select',options:['all','info','warn','error']},
+        {name:'limit',label:'Limit',type:'number',placeholder:'100'}
+      ],
+      steps:['Querying log store','Filtering by level','Formatting output'],
+      mock:()=>({logs:[{ts:new Date().toISOString(),level:'info',svc:'payments',msg:'Transaction initialized',ref:genRef()},{ts:new Date().toISOString(),level:'warn',svc:'auth',msg:'Rate limit approaching',remaining:12}],total:248,truncated:true})
+    },
+    'rate-limits': {
+      label:'Get Rate Limits', providers:[],
+      fields:[
+        {name:'client_id',label:'Client ID',type:'text',placeholder:'client_abc123'}
+      ],
+      steps:['Fetching limits','Returning data'],
+      mock:()=>({limits:{requests_per_minute:{limit:1000,remaining:847,resets_in:32},requests_per_day:{limit:100000,remaining:92441,resets_in:38400}},tier:'production'})
+    }
+  },
+  mcp: {
+    'list-tools': {
+      label:'List Tools', providers:[],
+      fields:[],
+      steps:['Connecting to MCP gateway','Fetching tool registry','Returning manifest'],
+      mock:()=>({tools:[{name:'web_search',description:'Search the web for real-time information',schema:{query:'string',max_results:'number'}},{name:'code_executor',description:'Execute sandboxed code snippets',schema:{language:'string',code:'string'}},{name:'file_reader',description:'Read and parse structured files',schema:{url:'string',format:'string'}},{name:'database_query',description:'Run read-only SQL on connected databases',schema:{query:'string',db:'string'}},{name:'email_sender',description:'Send transactional emails via configured provider',schema:{to:'string',subject:'string',body:'string'}}],count:5,registry_version:'1.2.0'})
+    },
+    invoke: {
+      label:'Invoke Tool', providers:[],
+      fields:[
+        {name:'tool_name',label:'Tool Name',type:'select',options:['web_search','code_executor','file_reader','database_query','email_sender'],required:true},
+        {name:'arguments',label:'Arguments (JSON)',type:'textarea',placeholder:'{"query":"latest news"}'}
+      ],
+      steps:['Validating arguments against schema','Routing to tool handler','Executing tool','Parsing output','Returning result'],
+      mock:()=>({tool:'web_search',result:{results:3,data:[{title:'Demo result',url:'https://example.com'}]},execution_ms:340,request_id:genUUID()})
+    },
+    schema: {
+      label:'Get Schema', providers:[],
+      fields:[
+        {name:'tool_name',label:'Tool Name',type:'text',placeholder:'web_search',required:true}
+      ],
+      steps:['Looking up tool','Returning schema'],
+      mock:()=>({tool:'web_search',schema:{type:'object',required:['query'],properties:{query:{type:'string',description:'Search query'},max_results:{type:'number',default:5,maximum:20}}},version:'1.0.0'})
+    },
+    history: {
+      label:'Invocation History', providers:[],
+      fields:[
+        {name:'tool_name',label:'Filter by Tool',type:'text',placeholder:'Leave blank for all'},
+        {name:'limit',label:'Limit',type:'number',placeholder:'20'}
+      ],
+      steps:['Querying history store','Filtering','Returning results'],
+      mock:()=>({invocations:[{id:genUUID(),tool:'web_search',status:'success',execution_ms:320,invoked_at:new Date().toISOString()},{id:genUUID(),tool:'code_executor',status:'success',execution_ms:890,invoked_at:new Date().toISOString()}],total:147})
+    }
+  }
+};
+
+// ───────────────────────────────────────────
+// 4. FLOWS DEFINITIONS
+// ───────────────────────────────────────────
+const FLOWS = {
+  payments: ['initialize','verify','status'],
+  verification: ['identity','document','liveness'],
+  banking: ['verify-account','balance','transfer'],
+  security: ['auth','token','fraud-score']
+};
+
+// ───────────────────────────────────────────
+// 5. CALL SERVICE
+// ───────────────────────────────────────────
+async function callService(serviceId, operation, payload, provider=null) {
+  const url = `${GATEWAY_BASE}/${serviceId}/${operation}`;
+  const headers = { 'Content-Type':'application/json', 'X-Forge-Demo':'true' };
+  if(provider) headers['X-Provider'] = provider;
+  const t0 = performance.now();
+  try {
+    const res = await fetch(url, { method:'POST', headers, body:JSON.stringify(payload) });
+    const latency = Math.round(performance.now()-t0);
+    const data = await res.json().catch(()=>({}));
+    addToLog('POST', url, res.status, latency);
+    return { status: res.status, ok: res.ok, data, latency };
+  } catch(err) {
+    const latency = Math.round(performance.now()-t0);
+    addToLog('POST', url, 0, latency);
+    return { status: 0, ok: false, data:{}, latency, networkError: true };
+  }
+}
+
+// ───────────────────────────────────────────
+// 6. RENDER LANDING
+// ───────────────────────────────────────────
+function renderLanding() {
+  const app = document.getElementById('app');
+  const categories = ['All',...new Set(SERVICES.map(s=>s.category))];
+
+  app.innerHTML = `
+    <div class="hero">
+      <div class="hero-bg"></div>
+      <h1>API Services, <span>Live.</span></h1>
+      <p class="hero-sub">Select a service below to explore its capabilities end-to-end.</p>
+      <div class="hero-stats">
+        <span>${SERVICES.length} Services</span>
+        <span class="hero-stats-dot">•</span>
+        <span>${SERVICES.reduce((a,s)=>a+s.operations.length,0)} Operations</span>
+        <span class="hero-stats-dot">•</span>
+        <span>Live Backend</span>
+      </div>
+    </div>
+    <div class="filter-tabs">
+      ${categories.map((c,i)=>`<button class="filter-tab${i===0?' active':''}" data-cat="${c}">${c}</button>`).join('')}
+    </div>
+    <div class="services-grid" id="services-grid">
+      ${SERVICES.map(renderServiceCard).join('')}
+    </div>
+  `;
+
+  // Category filter
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const cat = tab.dataset.cat;
+      document.querySelectorAll('.service-card-wrap').forEach(card => {
+        card.style.display = (cat==='All'||card.dataset.category===cat) ? '' : 'none';
+      });
+    });
+  });
+
+  initGlareCards();
+}
+
+function renderServiceCard(svc) {
+  const tierLabel = {live:'🟢 Live', beta:'🟡 Beta', scaffolded:'⚪ Coming Soon', admin:'🔒 Admin'};
+  return `
+    <div class="service-card-wrap" data-category="${svc.category}">
+      <div class="glare-card" onclick="navigateTo('${svc.id}')">
+        <div class="glare-overlay"></div>
+        <div class="glare-card-inner">
+          <div class="card-top">
+            <div class="card-icon-box">${svc.icon}</div>
+            <span class="badge ${svc.tier}">${tierLabel[svc.tier]||svc.tier}</span>
+          </div>
+          <div class="card-name">${svc.name}</div>
+          <div class="card-desc">${svc.description}</div>
+          <div class="card-bottom">
+            <div>
+              <span class="card-category">${svc.category}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span class="card-ops">${svc.operations.length} ops</span>
+              <span class="card-explore">Explore →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ───────────────────────────────────────────
+// 7. RENDER SERVICE VIEW
+// ───────────────────────────────────────────
+let currentService = null;
+let currentOperation = null;
+let currentProvider = null;
+let isRunning = false;
+
+function renderServiceView(serviceId, operation) {
+  const svc = SERVICES.find(s=>s.id===serviceId);
+  if(!svc) { window.location.hash='/'; return; }
+  currentService = svc;
+  currentOperation = operation||svc.operations[0];
+  currentProvider = null;
+
+  const app = document.getElementById('app');
+  const hasFlow = !!FLOWS[serviceId];
+  const ops = svc.operations;
+  const tierLabel = {live:'🟢 Live', beta:'🟡 Beta', scaffolded:'⚪ Coming Soon', admin:'🔒 Admin'};
+
+  app.innerHTML = `
+    <div class="service-view">
+      <div class="left-panel" id="left-panel">
+        <div class="service-header">
+          <div class="service-title-row">
+            <div class="service-icon-lg">${svc.icon}</div>
+            <div>
+              <div class="service-name-lg">${svc.name}</div>
+              <span class="badge ${svc.tier}">${tierLabel[svc.tier]}</span>
+            </div>
+          </div>
+          <div class="service-desc-sm">${svc.description}</div>
+        </div>
+        <div class="op-tabs" id="op-tabs">
+          ${ops.map(op=>`<button class="op-tab${op===currentOperation?' active':''}" data-op="${op}" onclick="switchOp('${serviceId}','${op}')">${op}</button>`).join('')}
+          ${hasFlow?`<button class="op-tab flow-tab" onclick="navigateTo('${serviceId}/flow')">⟶ Flow</button>`:''}
+        </div>
+        <div class="form-area" id="form-area"></div>
+      </div>
+      <div class="right-panel">
+        <div class="right-panel-inner" id="right-panel-inner">
+          <div class="idle-state" id="idle-state">
+            <div class="idle-icon">${svc.icon}</div>
+            <div class="idle-text">Run an operation to see the live response here.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  renderForm(serviceId, currentOperation);
+}
+
+function renderForm(serviceId, operation) {
+  const formDefs = FORMS[serviceId];
+  if(!formDefs || !formDefs[operation]) return;
+  const def = formDefs[operation];
+  const formArea = document.getElementById('form-area');
+  if(!formArea) return;
+
+  let providersHTML = '';
+  if(def.providers && def.providers.length>0) {
+    currentProvider = def.providers[0];
+    providersHTML = `
+      <div style="margin-bottom:16px">
+        <div class="field-label" style="margin-bottom:8px">Provider</div>
+        <div class="providers-row">
+          ${def.providers.map((p,i)=>`<button class="provider-pill${i===0?' selected':''}" data-provider="${p}" onclick="selectProvider('${p}',this)">${p}</button>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  let fieldsHTML = '';
+  if(def.fields.length===0) {
+    fieldsHTML = `<div class="no-fields-empty"><span>${SERVICES.find(s=>s.id===serviceId)?.icon||'⚙️'}</span>No input required — click Run to execute.</div>`;
+  } else {
+    fieldsHTML = def.fields.map(f => renderField(f)).join('');
+  }
+
+  formArea.innerHTML = `
+    <div class="form-title">${def.label}</div>
+    ${providersHTML}
+    <div id="fields-container">${fieldsHTML}</div>
+    <button class="run-btn" id="run-btn" onclick="runOperation('${serviceId}','${operation}')">
+      <span>Run</span><span>→</span>
+    </button>
+  `;
+
+  // Auto-fill refs
+  formArea.querySelectorAll('.ref-field').forEach(input => {
+    input.value = genRef();
+  });
+}
+
+function renderField(f) {
+  if(f.type==='select') {
+    return `
+      <div class="field-row">
+        <div class="field-label">${f.label}${f.required?'<span style="color:var(--red)">*</span>':''}</div>
+        <select class="field-input" name="${f.name}" id="field-${f.name}">
+          ${(f.options||[]).map(o=>`<option value="${o}">${o}</option>`).join('')}
+        </select>
+      </div>
+    `;
+  }
+  if(f.type==='textarea') {
+    return `
+      <div class="field-row">
+        <div class="field-label">${f.label}</div>
+        <textarea class="field-input" name="${f.name}" id="field-${f.name}" placeholder="${f.placeholder||''}"></textarea>
+
+```
+  </div>
+`;
+```
+
+}
+if(f.type===‘checkboxes’) {
+return ` <div class="field-row"> <div class="field-label">${f.label}</div> <div class="checkbox-group"> ${(f.options||[]).map(o=>`<div class="checkbox-item"><input type="checkbox" id="cb-${f.name}-${o}" name="${f.name}[]" value="${o}" checked><label for="cb-${f.name}-${o}">${o}</label></div>`).join('')} </div> </div> `;
+}
+// default text/number
+const isRef = f.ref;
+return ` <div class="field-row"> <div class="field-label">${f.label}${f.required?'<span style="color:var(--red)"> *</span>':''}</div> <div class="${isRef?'field-ref-wrap':''}"> <input class="field-input${isRef?' ref-field':''}" type="${f.type||'text'}" name="${f.name}" id="field-${f.name}" placeholder="${f.placeholder||''}" /> ${isRef?`<button class="regen-btn" onclick="regenRef('field-${f.name}')" title="Regenerate">↺</button>`:''} </div> </div> `;
+}
+
+function regenRef(id) {
+const el = document.getElementById(id);
+if(el) { el.value = genRef(); }
+}
+
+function selectProvider(name, btn) {
+document.querySelectorAll(’.provider-pill’).forEach(p=>p.classList.remove(‘selected’));
+btn.classList.add(‘selected’);
+currentProvider = name;
+}
+
+function switchOp(serviceId, op) {
+currentOperation = op;
+document.querySelectorAll(’.op-tab’).forEach(t=>{
+t.classList.toggle(‘active’, t.dataset.op===op);
+});
+renderForm(serviceId, op);
+// Reset right panel
+const rpi = document.getElementById(‘right-panel-inner’);
+const svc = SERVICES.find(s=>s.id===serviceId);
+if(rpi && svc) {
+rpi.innerHTML = `<div class="idle-state" id="idle-state"><div class="idle-icon">${svc.icon}</div><div class="idle-text">Run an operation to see the live response here.</div></div>`;
+}
+document.getElementById(‘left-panel’)?.scrollTo({top:0,behavior:‘smooth’});
+}
+
+// ───────────────────────────────────────────
+// 8. RUN OPERATION
+// ───────────────────────────────────────────
+async function runOperation(serviceId, operation) {
+if(isRunning) return;
+const def = FORMS[serviceId]?.[operation];
+if(!def) return;
+const svc = SERVICES.find(s=>s.id===serviceId);
+
+// Collect form data
+const payload = {};
+let valid = true;
+def.fields.forEach(f => {
+if(f.type===‘checkboxes’) {
+const checked = […document.querySelectorAll(`input[name="${f.name}[]"]:checked`)].map(c=>c.value);
+payload[f.name] = checked;
+} else {
+const el = document.getElementById(`field-${f.name}`);
+if(el) {
+const val = el.value.trim();
+if(f.required && !val) {
+el.classList.add(‘field-invalid’);
+setTimeout(()=>el.classList.remove(‘field-invalid’),600);
+valid = false;
+} else {
+el.classList.remove(‘field-invalid’);
+payload[f.name] = val;
+}
+}
+}
+});
+if(!valid) return;
+
+isRunning = true;
+const runBtn = document.getElementById(‘run-btn’);
+if(runBtn) { runBtn.disabled = true; runBtn.innerHTML = ‘<span>Running…</span>’; }
+
+// Show steps
+const rpi = document.getElementById(‘right-panel-inner’);
+if(rpi) {
+rpi.innerHTML = ` <div class="steps-container"> <div class="steps-title">Processing</div> ${def.steps.map((s,i)=>`
+<div class="step-row" id="step-${i}">
+<div class="step-icon pending" id="step-icon-${i}"></div>
+<span class="step-name" id="step-name-${i}">${s}</span>
+<span class="step-status" id="step-status-${i}"></span>
+</div>
+`).join('')} </div> <div id="result-container"></div> `;
+}
+
+// Animate steps
+const t0 = performance.now();
+await animateSteps(def.steps.length);
+
+// Call or mock
+let result;
+const isScaffolded = svc?.tier===‘scaffolded’;
+if(isScaffolded) {
+await delay(400);
+result = { status:200, ok:true, data: def.mock(), latency: Math.round(performance.now()-t0) };
+} else {
+result = await callService(serviceId, operation, payload, currentProvider);
+// If network error, use mock for better demo experience but show grey state
+if(result.networkError || result.status===0) {
+result.data = def.mock();
+result.mocked = true;
+}
+}
+
+// Mark last step
+markStepDone(def.steps.length-1, result.ok || isScaffolded || result.mocked);
+await delay(200);
+
+renderResultCard(result, def, isScaffolded);
+
+isRunning = false;
+if(runBtn) { runBtn.disabled = false; runBtn.innerHTML = ‘<span>Run</span><span>→</span>’; }
+}
+
+async function animateSteps(count) {
+for(let i=0; i<count-1; i++) {
+const row = document.getElementById(`step-${i}`);
+const icon = document.getElementById(`step-icon-${i}`);
+const name = document.getElementById(`step-name-${i}`);
+if(row) { row.classList.add(‘visible’); }
+if(icon) { icon.className=‘step-icon active’; }
+if(name) { name.className=‘step-name active’; }
+await delay(220+Math.random()*180);
+if(icon) { icon.className=‘step-icon done’; icon.textContent=‘✓’; }
+if(name) { name.className=‘step-name done’; }
+}
+// Show last step
+const lastRow = document.getElementById(`step-${count-1}`);
+const lastIcon = document.getElementById(`step-icon-${count-1}`);
+const lastName = document.getElementById(`step-name-${count-1}`);
+if(lastRow) lastRow.classList.add(‘visible’);
+if(lastIcon) { lastIcon.className=‘step-icon active’; }
+if(lastName) { lastName.className=‘step-name active’; }
+await delay(300);
+}
+
+function markStepDone(idx, success) {
+const icon = document.getElementById(`step-icon-${idx}`);
+const name = document.getElementById(`step-name-${idx}`);
+if(icon) { icon.className=`step-icon ${success?'done':'error'}`; icon.textContent=success?‘✓’:‘✗’; }
+if(name) { name.className=‘step-name done’; }
+}
+
+// ───────────────────────────────────────────
+// 9. RENDER RESULT CARD
+// ───────────────────────────────────────────
+function renderResultCard(result, def, isMocked=false) {
+const container = document.getElementById(‘result-container’);
+if(!container) return;
+
+let statusClass, statusIcon, statusText, httpClass;
+if(isMocked || result.ok) {
+statusClass=‘success’; statusIcon=‘✓’; statusText=‘Success’;
+httpClass = isMocked?‘net’:‘ok’;
+} else if(result.networkError||result.status===0) {
+statusClass=‘muted’; statusIcon=‘⚡’; statusText=‘Gateway Offline’;
+httpClass=‘net’;
+} else if(result.status>=500) {
+statusClass=‘error’; statusIcon=‘✗’; statusText=‘Server Error’;
+httpClass=‘err5’;
+} else {
+statusClass=‘warn’; statusIcon=‘⚠’; statusText=‘Client Error’;
+httpClass=‘err4’;
+}
+
+const statusPill = result.status ? `HTTP ${result.status}` : ‘Network’;
+const note = result.networkError && !isMocked ? `<div style="padding:12px 20px;font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace;border-top:1px solid var(--border)">⚡ Could not reach gateway — endpoint may not be configured yet. Showing mock response.</div>` : ‘’;
+
+// Extract key-value pairs from data
+const flat = flattenObj(result.data, 4);
+const kvHTML = flat.map(([k,v])=>`<div class="kv-row"> <span class="kv-key">${k}</span> <span class="kv-val" style="position:relative"> ${v} ${(String(v).length > 8) ?`<button class="copy-btn" onclick="copyText('${escHTML(String(v))}',this)" title="Copy">⎘</button>`: ''} </span> </div>`).join(’’);
+
+const jsonStr = JSON.stringify(result.data, null, 2);
+const jsonHighlighted = highlightJSON(jsonStr);
+const jsonId = ‘json-’+Math.random().toString(36).substr(2,6);
+
+container.innerHTML = `<div class="result-card"> <div class="result-header"> <div class="result-status-text"> <span class="result-icon">${statusIcon}</span> <span class="result-label ${statusClass}">${statusText}</span> </div> <div class="result-meta"> <span class="http-pill ${httpClass}">${statusPill}</span> <span class="timing-pill">${result.latency||0}ms</span> </div> </div> ${note} <div class="result-kv">${kvHTML}</div> <div class="json-toggle-row"> <button class="json-toggle-btn" onclick="toggleJSON('${jsonId}',this)">▼ View JSON Response</button> </div> <div class="json-block-wrap" id="${jsonId}"> <div class="json-block"> <button class="json-copy-btn" onclick="copyJSON('${jsonId}',this)">⎘ Copy</button> <pre>${jsonHighlighted}</pre> </div> </div> </div>`;
+}
+
+function flattenObj(obj, maxDepth=3, prefix=’’, depth=0) {
+const result = [];
+if(!obj || typeof obj!==‘object’) return [[prefix||‘value’, obj]];
+for(const [k,v] of Object.entries(obj)) {
+const key = prefix ? `${prefix}.${k}` : k;
+if(depth<maxDepth && v && typeof v===‘object’ && !Array.isArray(v)) {
+result.push(…flattenObj(v, maxDepth, key, depth+1));
+} else if(Array.isArray(v)) {
+result.push([key, `[${v.length} items]`]);
+} else {
+result.push([key, v]);
+}
+if(result.length>=10) break;
+}
+return result;
+}
+
+function highlightJSON(str) {
+return escHTML(str)
+.replace(/”([^”]+)”:/g, ‘<span class="j-key">”$1”</span>:’)
+.replace(/: “([^”]*)”/g, ‘: <span class="j-str">”$1”</span>’)
+.replace(/: (\d+.?\d*)/g, ‘: <span class="j-num">$1</span>’)
+.replace(/: (true|false)/g, ‘: <span class="j-bool">$1</span>’)
+.replace(/: null/g, ‘: <span class="j-null">null</span>’);
+}
+
+function escHTML(str) {
+return String(str).replace(/&/g,’&’).replace(/</g,’<’).replace(/>/g,’>’).replace(/”/g,’"’);
+}
+
+function toggleJSON(id, btn) {
+const wrap = document.getElementById(id);
+if(!wrap) return;
+const open = wrap.classList.toggle(‘open’);
+btn.textContent = open ? ‘▲ Hide JSON’ : ‘▼ View JSON Response’;
+}
+
+function copyJSON(id, btn) {
+const wrap = document.getElementById(id);
+const pre = wrap?.querySelector(‘pre’);
+if(pre) {
+navigator.clipboard.writeText(pre.textContent||’’);
+btn.textContent=‘✓ Copied’; setTimeout(()=>btn.textContent=‘⎘ Copy’,2000);
+}
+}
+
+function copyText(text, btn) {
+navigator.clipboard.writeText(text);
+const old = btn.textContent; btn.textContent=‘✓’; setTimeout(()=>btn.textContent=old,2000);
+}
+
+// ───────────────────────────────────────────
+// 10. RENDER FLOW MODE
+// ───────────────────────────────────────────
+function renderFlowMode(serviceId) {
+const svc = SERVICES.find(s=>s.id===serviceId);
+const steps = FLOWS[serviceId];
+if(!svc||!steps) { navigateTo(serviceId); return; }
+
+const app = document.getElementById(‘app’);
+app.innerHTML = `<div class="flow-view"> <div style="margin-bottom:24px"> <div class="flow-title">${svc.icon} ${svc.name} — Flow Mode</div> <div class="flow-sub">Execute a chained sequence of operations. Outputs from each step pre-fill the next.</div> </div> <div id="flow-steps-container"> ${steps.map((op,i)=>renderFlowStepCard(serviceId,op,i,steps.length)).join('')} </div> <div id="flow-complete" style="display:none"></div> </div>`;
+
+activateFlowStep(0, serviceId, steps);
+}
+
+function renderFlowStepCard(serviceId, op, idx, total) {
+const def = FORMS[serviceId]?.[op];
+if(!def) return ‘’;
+const fields = def.fields.slice(0,3); // show first 3 fields
+const connector = idx<total-1 ? `<div class="flow-connector"> <svg><line class="flow-connector-line" id="conn-${idx}" x1="1" y1="0" x2="1" y2="32"/></svg> </div>` : ‘’;
+
+return ` <div class="flow-step-card" id="flow-card-${idx}" style="opacity:0.4;pointer-events:none"> <div class="flow-step-header"> <div class="flow-step-num" id="flow-num-${idx}">${idx+1}</div> <div class="flow-step-name">${def.label||op}</div> <span class="flow-check" id="flow-check-${idx}" style="display:none">✅</span> </div> <div id="flow-fields-${idx}"> ${fields.map(f=>`
+<div class="field-row">
+<div class="field-label">${f.label}</div>
+<div class="field-ref-wrap">
+<input class="field-input" type="${f.type==='textarea'?'text':f.type||'text'}" id="flow-field-${idx}-${f.name}" placeholder="${f.placeholder||''}" />
+<span class="flow-prefill-tag" id="flow-tag-${idx}-${f.name}" style="display:none">pre-filled</span>
+</div>
+</div>
+`).join('')} </div> <button class="continue-btn" id="flow-btn-${idx}" disabled onclick="runFlowStep(${idx},'${serviceId}','${op}')"> ${idx===0?'Start →':'Continue →'} </button> </div> ${connector} `;
+}
+
+function activateFlowStep(idx, serviceId, steps) {
+const card = document.getElementById(`flow-card-${idx}`);
+if(!card) return;
+card.style.opacity=‘1’;
+card.style.pointerEvents=‘auto’;
+card.classList.add(‘active-step’);
+const btn = document.getElementById(`flow-btn-${idx}`);
+if(btn) btn.disabled = false;
+}
+
+let flowResults = {};
+async function runFlowStep(idx, serviceId, op) {
+const def = FORMS[serviceId]?.[op];
+if(!def) return;
+const steps = FLOWS[serviceId];
+
+const btn = document.getElementById(`flow-btn-${idx}`);
+if(btn) { btn.disabled=true; btn.textContent=‘Running…’; }
+
+const payload = {};
+def.fields.slice(0,3).forEach(f=>{
+const el = document.getElementById(`flow-field-${idx}-${f.name}`);
+if(el) payload[f.name]=el.value;
+});
+
+await delay(1200+Math.random()*800);
+const mockData = def.mock();
+flowResults[op] = mockData;
+
+// Mark card done
+const card = document.getElementById(`flow-card-${idx}`);
+if(card) { card.classList.remove(‘active-step’); card.classList.add(‘done’); }
+const num = document.getElementById(`flow-num-${idx}`);
+if(num) num.classList.add(‘done’);
+const check = document.getElementById(`flow-check-${idx}`);
+if(check) check.style.display=‘inline’;
+
+// Animate connector
+const conn = document.getElementById(`conn-${idx}`);
+if(conn) conn.classList.add(‘animated’);
+
+// Pre-fill next step
+const nextIdx = idx+1;
+if(nextIdx<steps.length) {
+await delay(400);
+const nextOp = steps[nextIdx];
+const nextDef = FORMS[serviceId]?.[nextOp];
+if(nextDef) {
+nextDef.fields.slice(0,3).forEach(f=>{
+const nextEl = document.getElementById(`flow-field-${nextIdx}-${f.name}`);
+// Try to fill from mock data
+const val = mockData[f.name] || mockData.transaction_id || mockData.reference || mockData.account_id || mockData.access_token || ‘’;
+if(nextEl && val) {
+nextEl.value = val;
+const tag = document.getElementById(`flow-tag-${nextIdx}-${f.name}`);
+if(tag && val) tag.style.display=‘inline’;
+}
+});
+}
+activateFlowStep(nextIdx, serviceId, steps);
+} else {
+// Flow complete
+await delay(400);
+const fc = document.getElementById(‘flow-complete’);
+if(fc) {
+fc.style.display=‘block’;
+const t = Object.keys(flowResults).length;
+fc.innerHTML = `<div class="flow-complete-card"> <div class="flow-complete-icon">🎉</div> <div class="flow-complete-title">Flow Complete!</div> <div class="flow-complete-sub">${t} steps executed successfully · All outputs captured</div> <button class="continue-btn" style="margin-top:16px" onclick="navigateTo('${serviceId}')">Back to Service</button> </div>`;
+}
+}
+}
+
+// ───────────────────────────────────────────
+// 11. GLARE CARDS
+// ───────────────────────────────────────────
+function initGlareCards() {
+document.querySelectorAll(’.glare-card’).forEach(card => {
+card.addEventListener(‘mousemove’, e => {
+const rect = card.getBoundingClientRect();
+const cx = rect.left + rect.width/2;
+const cy = rect.top + rect.height/2;
+const dx = (e.clientX - cx) / (rect.width/2);
+const dy = (e.clientY - cy) / (rect.height/2);
+const rotX = -dy*7;
+const rotY = dx*7;
+card.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+const overlay = card.querySelector(’.glare-overlay’);
+if(overlay) {
+const px = ((e.clientX-rect.left)/rect.width)*100;
+const py = ((e.clientY-rect.top)/rect.height)*100;
+overlay.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 60%)`;
+}
+});
+card.addEventListener(‘mouseleave’, () => {
+card.style.transition = ‘transform 400ms ease’;
+card.style.transform = ‘perspective(800px) rotateX(0deg) rotateY(0deg)’;
+const overlay = card.querySelector(’.glare-overlay’);
+if(overlay) overlay.style.background = ‘none’;
+setTimeout(()=>card.style.transition=’’,400);
+});
+});
+}
+
+// ───────────────────────────────────────────
+// 12. BRANDING DRAWER
+// ───────────────────────────────────────────
+function openBrandingDrawer() {
+document.getElementById(‘branding-drawer’).classList.add(‘open’);
+document.getElementById(‘branding-overlay’).classList.add(‘visible’);
+// Load saved
+const saved = JSON.parse(localStorage.getItem(‘forge-branding’)||’{}’);
+if(saved.clientName) document.getElementById(‘b-client-name’).value=saved.clientName;
+if(saved.logoUrl) document.getElementById(‘b-logo-url’).value=saved.logoUrl;
+if(saved.accent) document.getElementById(‘b-accent’).value=saved.accent;
+if(saved.note) document.getElementById(‘b-note’).value=saved.note;
+}
+function closeBrandingDrawer() {
+document.getElementById(‘branding-drawer’).classList.remove(‘open’);
+document.getElementById(‘branding-overlay’).classList.remove(‘visible’);
+}
+function applyBranding() {
+const cn = document.getElementById(‘b-client-name’).value.trim();
+const logoUrl = document.getElementById(‘b-logo-url’).value.trim();
+const accent = document.getElementById(‘b-accent’).value;
+const note = document.getElementById(‘b-note’).value.trim();
+clientName = cn;
+if(accent) document.documentElement.style.setProperty(’–accent’, accent);
+if(cn) document.getElementById(‘nav-logo-text’).textContent = cn + ’ · Forge’;
+const logoBox = document.getElementById(‘nav-logo-box’);
+if(logoUrl && logoBox) {
+logoBox.innerHTML = `<img src="${logoUrl}" onerror="this.parentNode.innerHTML='F'" />`;
+}
+const banner = document.getElementById(‘demo-banner’);
+if(note && banner) { banner.textContent=note; banner.classList.add(‘visible’); }
+else if(banner) banner.classList.remove(‘visible’);
+localStorage.setItem(‘forge-branding’, JSON.stringify({clientName:cn,logoUrl,accent,note}));
+closeBrandingDrawer();
+}
+function resetBranding() {
+localStorage.removeItem(‘forge-branding’);
+document.documentElement.style.setProperty(’–accent’,’#4f6ef7’);
+document.getElementById(‘nav-logo-text’).textContent=‘Forge’;
+document.getElementById(‘nav-logo-box’).innerHTML=‘F’;
+document.getElementById(‘demo-banner’).classList.remove(‘visible’);
+document.getElementById(‘b-client-name’).value=’’;
+document.getElementById(‘b-logo-url’).value=’’;
+document.getElementById(‘b-accent’).value=’#4f6ef7’;
+document.getElementById(‘b-note’).value=’’;
+}
+function loadBranding() {
+const saved = JSON.parse(localStorage.getItem(‘forge-branding’)||’{}’);
+if(saved.accent) document.documentElement.style.setProperty(’–accent’, saved.accent);
+if(saved.clientName) { clientName=saved.clientName; document.getElementById(‘nav-logo-text’).textContent=saved.clientName+’ · Forge’; }
+if(saved.logoUrl) {
+const lb = document.getElementById(‘nav-logo-box’);
+if(lb) lb.innerHTML=`<img src="${saved.logoUrl}" onerror="this.parentNode.innerHTML='F'" />`;
+}
+if(saved.note) {
+const b = document.getElementById(‘demo-banner’);
+if(b) { b.textContent=saved.note; b.classList.add(‘visible’); }
+}
+}
+
+// ───────────────────────────────────────────
+// 13. REQUEST LOG
+// ───────────────────────────────────────────
+function addToLog(method, url, status, ms) {
+requestLog.unshift({method,url,status,ms,ts:new Date()});
+if(requestLog.length>20) requestLog.pop();
+updateLogUI();
+}
+function updateLogUI() {
+const pill = document.getElementById(‘log-count’);
+if(pill) pill.textContent=`${requestLog.length} call${requestLog.length!==1?'s':''}`;
+const entries = document.getElementById(‘log-entries’);
+if(!entries) return;
+entries.innerHTML = requestLog.slice(0,5).map(e=>{
+let sc=’’, txt=’’;
+if(e.status===0) { sc=‘log-status-warn’; txt=‘ERR’; }
+else if(e.status<300) { sc=‘log-status-ok’; txt=e.status; }
+else if(e.status<500) { sc=‘log-status-warn’; txt=e.status; }
+else { sc=‘log-status-err’; txt=e.status; }
+const short = e.url.replace(GATEWAY_BASE,’’);
+return `<div class="log-entry"><span class="log-method">${e.method}</span><span class="log-url">${short}</span><span class="${sc}">${txt}</span><span class="log-ms">${e.ms}ms</span></div>`;
+}).join(’’);
+}
+function toggleLog() {
+logOpen = !logOpen;
+document.getElementById(‘log-panel’).classList.toggle(‘open’, logOpen);
+updateLogUI();
+}
+function clearLog() { requestLog.length=0; updateLogUI(); }
+
+// ───────────────────────────────────────────
+// 14. ROUTER
+// ───────────────────────────────────────────
+function navigateTo(hash) {
+window.location.hash = ‘/’+hash;
+}
+
+function router() {
+const hash = window.location.hash.replace(’#/’,’’).replace(’#’,’’) || ‘’;
+const parts = hash.split(’/’).filter(Boolean);
+const serviceId = parts[0];
+const sub = parts[1];
+
+const app = document.getElementById(‘app’);
+const backBtn = document.getElementById(‘btn-back’);
+const breadcrumb = document.getElementById(‘nav-breadcrumb’);
+
+// Animate out
+app.classList.add(‘fade-out’);
+setTimeout(()=>{
+app.classList.remove(‘fade-out’);
+app.style.opacity=‘0’;
+
+```
+if(!serviceId || serviceId==='home') {
+  renderLanding();
+  if(backBtn) backBtn.classList.remove('visible');
+  if(breadcrumb) breadcrumb.innerHTML='';
+} else if(sub==='flow') {
+  renderFlowMode(serviceId);
+  if(backBtn) backBtn.classList.add('visible');
+  const svc=SERVICES.find(s=>s.id===serviceId);
+  if(breadcrumb) breadcrumb.innerHTML=`<a href="#/${serviceId}">${svc?.name||serviceId}</a> <span>/</span> Flow`;
+} else {
+  const op = sub;
+  renderServiceView(serviceId, op);
+  if(backBtn) backBtn.classList.add('visible');
+  const svc=SERVICES.find(s=>s.id===serviceId);
+  if(breadcrumb) breadcrumb.innerHTML=`<span>${svc?.name||serviceId}</span>`;
+}
+
+requestAnimationFrame(()=>{
+  app.style.transition='opacity 200ms ease, transform 200ms ease';
+  app.style.opacity='1';
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+```
+
+}, 150);
+}
+
+// ───────────────────────────────────────────
+// UTILS
+// ───────────────────────────────────────────
+function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// Keyboard shortcut Ctrl/Cmd+Enter
+document.addEventListener(‘keydown’, e=>{
+if((e.ctrlKey||e.metaKey) && e.key===‘Enter’) {
+const btn = document.getElementById(‘run-btn’);
+if(btn && !btn.disabled) btn.click();
+}
+});
+
+// ───────────────────────────────────────────
+// INIT
+// ───────────────────────────────────────────
+document.addEventListener(‘DOMContentLoaded’, ()=>{
+loadBranding();
+window.addEventListener(‘hashchange’, router);
+if(!window.location.hash || window.location.hash===’#’) window.location.hash=’#/’;
+router();
+});
+</script>
+
+</body>
+</html>
