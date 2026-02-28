@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forge — Onasis Gateway</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       DESIGN SYSTEM
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    :root {
+      --bg-base: #0a0b0f;
+      --bg-surface: #111318;
+      --bg-card: #161820;
+      --bg-elevated: #1a1d28;
+      --border: #1e2130;
+      --border-glow: #2e3250;
+      --text-primary: #f0f2ff;
+      --text-secondary: #8b90a8;
+      --text-muted: #4a4f6a;
+      --accent: #4f6ef7;
+      --accent-glow: rgba(79, 110, 247, 0.15);
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --orange: #f97316;
+      --purple: #8b5cf6;
+      --white: #ffffff;
+      
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --radius-pill: 20px;
+      --radius-input: 8px;
+      
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
+      --shadow-glow: 0 0 24px var(--accent-glow);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       NAVIGATION
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 1000;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: white;
+    }
+
+    .brand-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .nav-separator {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    .env-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--green);
+      background: rgba(34, 197, 94, 0.1);
+      padding: 4px 8px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .breadcrumb {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .breadcrumb.visible { display: flex; }
+    .breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--accent); }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       APP CONTAINER
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #app {
+      margin-top: 56px;
+      min-height: calc(100vh - 56px);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       LOADING STATE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: calc(100vh - 56px);
+      gap: 24px;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       LANDING PAGE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .landing {
+      animation: fadeIn 300ms ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      text-align: center;
+      padding: 80px 24px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 20% 50%, rgba(79, 110, 247, 0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+      animation: gradientShift 8s ease-in-out infinite;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .hero-content { position: relative; z-index: 1; }
+
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .stats-row span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stats-row span:not(:last-child)::after {
+      content: '•';
+      color: var(--border);
+    }
+
+    /* Category Filter */
+    .category-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 24px 32px;
+      flex-wrap: wrap;
+    }
+
+    .category-tab {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .category-tab:hover {
+      border-color: var(--border-glow);
+      color: var(--text-primary);
+    }
+
+    .category-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* Services Grid */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      padding: 0 48px 64px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* GLARE CARD */
+    .glare-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      cursor: pointer;
+      transition: border-color 200ms ease, transform 200ms ease;
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+    }
+
+    .glare-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                    rgba(255,255,255,0.1) 0%, transparent 50%);
+      opacity: var(--glare-opacity, 0);
+      transition: opacity 200ms ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .glare-card:hover {
+      border-color: var(--border-glow);
+    }
+
+    .glare-card:hover .service-icon-bg {
+      box-shadow: var(--shadow-glow);
+    }
+
+    .card-content { position: relative; z-index: 2; }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .service-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .service-icon-bg { transition: box-shadow 200ms ease; }
+
+    .status-badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-badge.active {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .status-badge.inactive {
+      background: rgba(74, 79, 106, 0.3);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .service-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+
+    .service-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .category-pill {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      text-transform: capitalize;
+    }
+
+    .explore-link {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .explore-link:hover { text-decoration: underline; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SERVICE VIEW
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .service-view {
+      display: flex;
+      min-height: calc(100vh - 56px);
+      animation: fadeIn 300ms ease;
+    }
+
+    .left-panel {
+      width: 440px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .right-panel {
+      flex-grow: 1;
+      padding: 32px;
+      overflow-y: auto;
+      background: var(--bg-base);
+    }
+
+    .service-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .service-header-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .service-header-icon {
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .service-header h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .service-header p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .service-meta {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .meta-pill {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      background: var(--bg-card);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+    }
+
+    /* Operation Tabs */
+    .operation-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      overflow-x: auto;
+      gap: 4px;
+    }
+
+    .op-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 14px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: color 200ms ease;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .op-tab:hover { color: var(--text-secondary); background: var(--bg-card); }
+    .op-tab.active { color: var(--white); background: var(--bg-elevated); }
+    .op-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    /* Form Area */
+    .form-area { padding: 24px; }
+
+    .provider-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .provider-pill {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .provider-pill:hover { border-color: var(--border-glow); }
+    .provider-pill.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .form-field { margin-bottom: 16px; }
+
+    .form-field label {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .form-field input,
+    .form-field textarea,
+    .form-field select {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-input);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      transition: all 200ms ease;
+    }
+
+    .form-field input:focus,
+    .form-field textarea:focus,
+    .form-field select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .form-field input.invalid,
+    .form-field textarea.invalid {
+      border-color: var(--red);
+      animation: shake 300ms ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-4px); }
+    }
+
+    .field-row { display: flex; gap: 12px; }
+    .field-row .form-field { flex: 1; }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: var(--radius-btn);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 200ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 44px;
+    }
+
+    .btn-primary:hover {
+      background: #405ddb;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+
+    /* Right Panel - Processing */
+    .processing-timeline { margin-bottom: 24px; }
+
+    .timeline-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      opacity: 0;
+      transform: translateX(-16px);
+      animation: slideIn 300ms ease forwards;
+    }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .step-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .step-icon.pending { background: var(--bg-card); color: var(--text-muted); }
+    .step-icon.active {
+      border: 2px solid var(--accent);
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+    .step-icon.done { background: var(--green); color: white; }
+    .step-icon.error { background: var(--red); color: white; }
+
+    .step-name { font-size: 14px; color: var(--text-primary); }
+
+    /* Result Card */
+    .result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      animation: fadeIn 300ms ease;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .result-status.success { color: var(--green); }
+    .result-status.error { color: var(--red); }
+    .result-status.warning { color: var(--yellow); }
+
+    .status-code-pill {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+    }
+
+    .result-timing {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .result-fields { margin-bottom: 20px; }
+
+    .result-field {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .result-field:last-child { border-bottom: none; }
+    .result-field-label { color: var(--text-secondary); }
+    .result-field-value {
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      word-break: break-all;
+    }
+
+    .json-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-btn);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 200ms ease;
+    }
+
+    .json-toggle:hover { border-color: var(--accent); color: var(--text-primary); }
+
+    .json-block {
+      margin-top: 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-input);
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      overflow-x: auto;
+      position: relative;
+      display: none;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .json-block.visible { display: block; }
+
+    .json-copy {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .json-copy:hover { color: var(--text-primary); }
+
+    .json-key { color: var(--accent); }
+    .json-string { color: var(--green); }
+    .json-number { color: var(--yellow); }
+    .json-boolean { color: var(--yellow); }
+    .json-null { color: var(--text-muted); }
+
+    /* Idle State */
+    .idle-placeholder {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-card);
+      padding: 64px 32px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .idle-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.3; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       REQUEST LOG
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #request-log {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+    }
+
+    .log-pill {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 200ms ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .log-pill:hover { border-color: var(--accent); color: var(--text-primary); }
+
+    .log-pill .status {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .log-pill .status.success { background: var(--green); }
+    .log-pill .status.error { background: var(--red); }
+    .log-pill .status.pending { background: var(--yellow); }
+
+    .log-panel {
+      position: absolute;
+      bottom: 48px;
+      right: 0;
+      width: 450px;
+      max-height: 300px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      overflow-y: auto;
+      display: none;
+      box-shadow: var(--shadow-card);
+    }
+
+    .log-panel.visible { display: block; }
+
+    .log-entry {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .log-entry:last-child { border-bottom: none; }
+    .log-url { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CONFIG PANEL
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .config-panel {
+      position: fixed;
+      top: 56px;
+      right: -400px;
+      width: 400px;
+      height: calc(100vh - 56px);
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border);
+      padding: 24px;
+      transition: right 300ms ease;
+      z-index: 999;
+      overflow-y: auto;
+    }
+
+    .config-panel.open { right: 0; }
+
+    .config-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .config-title { font-size: 18px; font-weight: 600; }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .config-section { margin-bottom: 24px; }
+    .config-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .config-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-input);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .config-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn-save {
+      width: 100%;
+      background: var(--green);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: var(--radius-btn);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .btn-save:hover { background: #16a34a; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       RESPONSIVE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    @media (max-width: 768px) {
+      .service-view { flex-direction: column; }
+      .left-panel { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .services-grid { padding: 0 16px 48px; }
+      .hero h1 { font-size: 32px; }
+      .right-panel { padding: 16px; }
+      .log-panel { width: calc(100vw - 48px); }
+    }
+
+    .hidden { display: none !important; }
+    .copy-icon { cursor: pointer; margin-left: 8px; opacity: 0.6; }
+    .copy-icon:hover { opacity: 1; }
+    .copy-icon.copied { color: var(--green); }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="nav">
+    <div class="nav-left">
+      <div class="logo">F</div>
+      <span class="brand-name">Forge</span>
+      <div class="nav-separator"></div>
+      <span class="env-tag">Gateway</span>
+      <span class="breadcrumb" id="breadcrumb"></span>
+    </div>
+    <div class="nav-right">
+      <button class="btn-branding" id="btn-config" style="background:transparent;border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:var(--radius-btn);font-size:13px;cursor:pointer;">⚙ Config</button>
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span>Gateway</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Config Panel -->
+  <div class="config-panel" id="config-panel">
+    <div class="config-header">
+      <span class="config-title">Gateway Configuration</span>
+      <button class="btn-close" id="btn-close-config">×</button>
+    </div>
+    <div class="config-section">
+      <h3>Gateway URL</h3>
+      <input type="text" class="config-input" id="config-gateway-url" placeholder="http://localhost:3000">
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Base URL for all API service calls</p>
+    </div>
+    <div class="config-section">
+      <h3>Catalog Source</h3>
+      <select class="config-input" id="config-catalog-source">
+        <option value="local">Local Registry (Built-in)</option>
+        <option value="remote">Remote (catalog.json)</option>
+      </select>
+      <input type="text" class="config-input" id="config-catalog-url" placeholder="Path to catalog.json" style="margin-top:8px;">
+    </div>
+    <div class="config-section">
+      <h3>Environment</h3>
+      <select class="config-input" id="config-environment">
+        <option value="development">Development</option>
+        <option value="staging">Staging</option>
+        <option value="production">Production</option>
+      </select>
+    </div>
+    <button class="btn-save" id="btn-save-config">Save Configuration</button>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:16px;">Configuration is saved to localStorage and persists across sessions.</p>
+  </div>
+
+  <!-- App Root -->
+  <div id="app"></div>
+
+  <!-- Request Log -->
+  <div id="request-log">
+    <div class="log-pill" id="log-pill">
+      <span class="status pending"></span>
+      <span>Request Log</span>
+    </div>
+    <div class="log-panel" id="log-panel"></div>
+  </div>
+
+  <script>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CONFIGURATION
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const CONFIG = {
+      gatewayUrl: localStorage.getItem('forge-gateway-url') || 'http://localhost:3000',
+      catalogSource: localStorage.getItem('forge-catalog-source') || 'local',
+      catalogUrl: localStorage.getItem('forge-catalog-url') || '',
+      environment: localStorage.getItem('forge-environment') || 'development'
+    };
+
+    const requestLog = [];
+    let services = [];
+    let categories = {};
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       DEFAULT SERVICES REGISTRY
+       (Used when catalog.json is not available)
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const DEFAULT_SERVICES = {
+      apiServices: [
+        {
+          id: 'credit-as-a-service',
+          name: 'Credit as a Service',
+          description: 'Comprehensive credit management and lending platform with provider integration',
+          category: 'financial',
+          enabled: true,
+          status: 'active',
+          icon: '💳',
+          operations: [
+            { id: 'apply', name: 'Apply for Credit', description: 'Submit a credit application' },
+            { id: 'status', name: 'Check Status', description: 'Check application status' },
+            { id: 'disburse', name: 'Disburse', description: 'Disburse approved credit' },
+            { id: 'repay', name: 'Repayment', description: 'Process repayment' }
+          ]
+        },
+        {
+          id: 'flutterwave-payment-gateway',
+          name: 'Flutterwave Payment Gateway',
+          description: 'Comprehensive Flutterwave payment processing with wallet capabilities',
+          category: 'payment_gateway',
+          enabled: true,
+          status: 'active',
+          icon: '🌍',
+          operations: [
+            { id: 'initialize', name: 'Initialize', description: 'Initialize payment' },
+            { id: 'verify', name: 'Verify', description: 'Verify transaction' },
+            { id: 'refund', name: 'Refund', description: 'Process refund' },
+            { id: 'wallet', name: 'Wallet', description: 'Wallet operations' }
+          ],
+          providers: ['Flutterwave'],
+          countries: ['NG', 'GH', 'KE', 'ZA', 'TZ', 'UG', 'RW'],
+          currencies: ['NGN', 'GHS', 'KES', 'ZAR', 'USD', 'EUR', 'GBP']
+        },
+        {
+          id: 'paystack-payment-gateway',
+          name: 'PayStack Payment Gateway',
+          description: 'Comprehensive PayStack payment processing with advanced features for African markets',
+          category: 'payment_gateway',
+          enabled: true,
+          status: 'active',
+          icon: '💳',
+          operations: [
+            { id: 'initialize', name: 'Initialize', description: 'Initialize payment' },
+            { id: 'verify', name: 'Verify', description: 'Verify transaction' },
+            { id: 'refund', name: 'Refund', description: 'Process refund' },
+            { id: 'subscription', name: 'Subscription', description: 'Manage subscriptions' }
+          ],
+          providers: ['Paystack'],
+          countries: ['NG', 'GH', 'ZA'],
+          currencies: ['NGN', 'GHS', 'ZAR']
+        },
+        {
+          id: 'providus-bank',
+          name: 'Providus Bank API',
+          description: 'Nigerian banking and wallet services',
+          category: 'banking',
+          enabled: true,
+          status: 'active',
+          icon: '🏦',
+          operations: [
+            { id: 'verify-account', name: 'Verify Account', description: 'Verify bank account' },
+            { id: 'balance', name: 'Balance', description: 'Check balance' },
+            { id: 'transfer', name: 'Transfer', description: 'Fund transfer' },
+            { id: 'statement', name: 'Statement', description: 'Get statement' }
+          ],
+          providers: ['Providus'],
+          countries: ['NG'],
+          currencies: ['NGN']
+        },
+        {
+          id: 'verification-service',
+          name: 'Verification Service',
+          description: 'Comprehensive KYC, KYB, and AML verification service with multi-provider integration',
+          category: 'identity_verification',
+          enabled: true,
+          status: 'active',
+          icon: '🔐',
+          operations: [
+            { id: 'kyc', name: 'KYC Check', description: 'Individual verification' },
+            { id: 'kyb', name: 'KYB Check', description: 'Business verification' },
+            { id: 'aml', name: 'AML Screening', description: 'Anti-money laundering check' },
+            { id: 'bvn', name: 'BVN Lookup', description: 'BVN verification' }
+          ]
+        },
+        {
+          id: 'memory-as-a-service',
+          name: 'Memory as a Service',
+          description: 'Semantic memory storage with vector embeddings for AI applications',
+          category: 'ai_infrastructure',
+          enabled: true,
+          status: 'active',
+          icon: '🧠',
+          operations: [
+            { id: 'store', name: 'Store', description: 'Store memory' },
+            { id: 'retrieve', name: 'Retrieve', description: 'Retrieve memory' },
+            { id: 'search', name: 'Search', description: 'Semantic search' },
+            { id: 'delete', name: 'Delete', description: 'Delete memory' }
+          ]
+        }
+      ],
+      categories: {
+        financial: { name: 'Financial', icon: '💰' },
+        payment_gateway: { name: 'Payment Gateway', icon: '💳' },
+        banking: { name: 'Banking', icon: '🏦' },
+        identity_verification: { name: 'Identity Verification', icon: '🔐' },
+        ai_infrastructure: { name: 'AI Infrastructure', icon: '🤖' }
+      }
+    };
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       STATE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    let currentService = null;
+    let currentOperation = null;
+    let selectedProvider = null;
+    let formData = {};
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       INITIALIZATION
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    async function init() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="loading-screen">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">Loading services from gateway...</div>
+        </div>
+      `;
+
+      try {
+        if (CONFIG.catalogSource === 'remote' && CONFIG.catalogUrl) {
+          await loadCatalogRemote();
+        } else {
+          loadCatalogLocal();
+        }
+        
+        router();
+        initConfigPanel();
+        initGlareCards();
+      } catch (err) {
+        console.error('Failed to load catalog:', err);
+        loadCatalogLocal();
+        router();
+      }
+    }
+
+    function loadCatalogLocal() {
+      services = DEFAULT_SERVICES.apiServices;
+      categories = DEFAULT_SERVICES.categories;
+    }
+
+    async function loadCatalogRemote() {
+      try {
+        const response = await fetch(CONFIG.catalogUrl);
+        const catalog = await response.json();
+        services = catalog.apiServices || [];
+        categories = catalog.categories || {};
+        
+        // Add default operations if not present
+        services.forEach(service => {
+          if (!service.operations) {
+            service.operations = generateDefaultOperations(service.category);
+          }
+          if (!service.icon) {
+            service.icon = categories[service.category]?.icon || '⚙️';
+          }
+        });
+      } catch (err) {
+        console.warn('Failed to load remote catalog, using local:', err);
+        loadCatalogLocal();
+      }
+    }
+
+    function generateDefaultOperations(category) {
+      const defaults = {
+        financial: [
+          { id: 'apply', name: 'Apply', description: 'Submit application' },
+          { id: 'status', name: 'Status', description: 'Check status' },
+          { id: 'disburse', name: 'Disburse', description: 'Disburse funds' }
+        ],
+        payment_gateway: [
+          { id: 'initialize', name: 'Initialize', description: 'Initialize payment' },
+          { id: 'verify', name: 'Verify', description: 'Verify transaction' },
+          { id: 'refund', name: 'Refund', description: 'Process refund' }
+        ],
+        banking: [
+          { id: 'verify-account', name: 'Verify Account', description: 'Verify account' },
+          { id: 'balance', name: 'Balance', description: 'Check balance' },
+          { id: 'transfer', name: 'Transfer', description: 'Transfer funds' }
+        ],
+        identity_verification: [
+          { id: 'kyc', name: 'KYC', description: 'KYC verification' },
+          { id: 'kyb', name: 'KYB', description: 'KYB verification' },
+          { id: 'aml', name: 'AML', description: 'AML screening' }
+        ],
+        ai_infrastructure: [
+          { id: 'store', name: 'Store', description: 'Store data' },
+          { id: 'retrieve', name: 'Retrieve', description: 'Retrieve data' },
+          { id: 'search', name: 'Search', description: 'Search data' }
+        ]
+      };
+      return defaults[category] || [
+        { id: 'execute', name: 'Execute', description: 'Execute operation' },
+        { id: 'status', name: 'Status', description: 'Check status' }
+      ];
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       API CALL FUNCTION
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    async function callService(serviceId, operation, payload, provider = null) {
+      const startTime = Date.now();
+      const service = services.find(s => s.id === serviceId);
+      
+      try {
+        const url = `${CONFIG.gatewayUrl}/api/${serviceId}/${operation}`;
+        const headers = { 
+          'Content-Type': 'application/json',
+          'X-Forge-Demo': 'true',
+          'X-Environment': CONFIG.environment
+        };
+        if (provider) headers['X-Provider'] = provider;
+
+        const res = await fetch(url, { 
+          method: 'POST', 
+          headers, 
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(30000)
+        });
+        
+        const data = await res.json().catch(() => ({}));
+        const timing = Date.now() - startTime;
+
+        addToLog('POST', url, res.status, timing);
+
+        return { status: res.status, ok: res.ok, data, timing };
+      } catch (err) {
+        const timing = Date.now() - startTime;
+        addToLog('POST', `${CONFIG.gatewayUrl}/api/${serviceId}/${operation}`, 0, timing, true);
+        
+        // Return mock response for demo purposes
+        return {
+          status: 200,
+          ok: true,
+          data: generateMockResponse(serviceId, operation, payload),
+          timing,
+          mocked: true
+        };
+      }
+    }
+
+    function generateMockResponse(serviceId, operation, payload) {
+      const mocks = {
+        'credit-as-a-service': {
+          apply: { application_id: 'app_' + Date.now(), status: 'pending', amount: payload.amount || 100000 },
+          status: { application_id: payload.application_id, status: 'approved', score: 750 },
+          disburse: { disbursement_id: 'dis_' + Date.now(), status: 'completed', amount: payload.amount },
+          repay: { repayment_id: 'rep_' + Date.now(), status: 'processed', amount: payload.amount }
+        },
+        'flutterwave-payment-gateway': {
+          initialize: { transaction_id: 'flw_' + Date.now(), status: 'pending', checkout_url: 'https://checkout.flutterwave.com/xxx' },
+          verify: { transaction_id: payload.transaction_id, status: 'success', amount: payload.amount },
+          refund: { refund_id: 'ref_' + Date.now(), status: 'processing' },
+          wallet: { wallet_id: 'wlt_' + Date.now(), balance: 50000 }
+        },
+        'paystack-payment-gateway': {
+          initialize: { transaction_id: 'psk_' + Date.now(), status: 'pending', authorization_url: 'https://checkout.paystack.com/xxx' },
+          verify: { transaction_id: payload.transaction_id, status: 'success' },
+          refund: { refund_id: 'ref_' + Date.now(), status: 'processing' },
+          subscription: { subscription_id: 'sub_' + Date.now(), status: 'active' }
+        },
+        'providus-bank': {
+          'verify-account': { account_name: 'John Doe', account_number: payload.account_number, verified: true },
+          balance: { balance: 250000, currency: 'NGN', available: 245000 },
+          transfer: { transfer_id: 'trf_' + Date.now(), status: 'completed' },
+          statement: { transactions: 15, period: '30 days' }
+        },
+        'verification-service': {
+          kyc: { verification_id: 'kyc_' + Date.now(), status: 'verified', score: 95 },
+          kyb: { verification_id: 'kyb_' + Date.now(), status: 'verified', business_name: payload.business_name },
+          aml: { screening_id: 'aml_' + Date.now(), status: 'clear', risk_level: 'low' },
+          bvn: { bvn: payload.bvn, name: 'John Doe', verified: true }
+        },
+        'memory-as-a-service': {
+          store: { memory_id: 'mem_' + Date.now(), stored: true, size_bytes: 256 },
+          retrieve: { memory_id: payload.memory_id, data: { key: 'value' } },
+          search: { results: [{ id: 'mem_1', score: 0.95 }], total: 1 },
+          delete: { memory_id: payload.memory_id, deleted: true }
+        }
+      };
+
+      return mocks[serviceId]?.[operation] || { success: true, timestamp: new Date().toISOString() };
+    }
+
+    function addToLog(method, url, status, timing, error = false) {
+      requestLog.unshift({ method, url, status, timing, error, id: Date.now() });
+      if (requestLog.length > 8) requestLog.pop();
+      renderLog();
+    }
+
+    function renderLog() {
+      const panel = document.getElementById('log-panel');
+      panel.innerHTML = requestLog.map(log => `
+        <div class="log-entry">
+          <span class="log-url">${log.method} ${log.url.split('/').slice(-3).join('/')}</span>
+          <span style="color: ${log.error ? 'var(--red)' : log.status >= 400 ? 'var(--yellow)' : 'var(--green)'};white-space:nowrap;">${log.status || 'ERR'} • ${log.timing}ms</span>
+        </div>
+      `).join('');
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       RENDER FUNCTIONS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function renderLanding() {
+      const app = document.getElementById('app');
+      const categoryList = ['All', ...new Set(services.map(s => s.category))];
+      const totalOps = services.reduce((a, s) => a + (s.operations?.length || 0), 0);
+      
+      app.innerHTML = `
+        <div class="landing">
+          <div class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-content">
+              <h1>Onasis Gateway</h1>
+              <p>API Services Platform — Explore and test all gateway services in one place</p>
+              <div class="stats-row">
+                <span>${services.length} Services</span>
+                <span>${totalOps} Operations</span>
+                <span>${CONFIG.environment}</span>
+              </div>
+            </div>
+          </div>
+          <div class="category-tabs" id="category-tabs">
+            ${categoryList.map((c, i) => `<button class="category-tab ${i === 0 ? 'active' : ''}" data-category="${c}">${c === 'All' ? 'All' : (categories[c]?.name || c)}</button>`).join('')}
+          </div>
+          <div class="services-grid" id="services-grid">
+            ${services.filter(s => s.enabled !== false).map(service => renderServiceCard(service)).join('')}
+          </div>
+        </div>
+      `;
+
+      // Category filter
+      document.querySelectorAll('.category-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const category = tab.dataset.category;
+          document.querySelectorAll('.glare-card').forEach(card => {
+            const cardCat = card.dataset.category;
+            card.style.display = category === 'All' || cardCat === category ? 'block' : 'none';
+          });
+        });
+      });
+
+      initGlareCards();
+      updateBreadcrumb();
+    }
+
+    function renderServiceCard(service) {
+      const catInfo = categories[service.category] || { name: service.category, icon: '⚙️' };
+      return `
+        <div class="glare-card" data-category="${service.category}" data-service="${service.id}">
+          <div class="card-content">
+            <div class="card-top">
+              <div class="service-icon service-icon-bg">${service.icon || catInfo.icon}</div>
+              <span class="status-badge ${service.status === 'active' ? 'active' : 'inactive'}">
+                ${service.status === 'active' ? '●' : '○'} ${service.status || 'active'}
+              </span>
+            </div>
+            <div class="service-name">${service.name}</div>
+            <div class="service-desc">${service.description}</div>
+            <div class="card-bottom">
+              <span class="category-pill">${catInfo.name}</span>
+              <span class="explore-link">Explore →</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderServiceView(serviceId, operation = null) {
+      const service = services.find(s => s.id === serviceId);
+      if (!service) return renderLanding();
+
+      currentService = service;
+      const ops = service.operations || [];
+      const defaultOp = operation || ops[0]?.id;
+      currentOperation = defaultOp;
+
+      const catInfo = categories[service.category] || { name: service.category };
+
+      const app = document.getElementById('app');
+      
+      app.innerHTML = `
+        <div class="service-view">
+          <div class="left-panel">
+            <div class="service-header">
+              <div class="service-header-top">
+                <div class="service-header-icon">${service.icon || catInfo.icon}</div>
+                <div>
+                  <h2>${service.name}</h2>
+                  <span class="status-badge ${service.status === 'active' ? 'active' : 'inactive'}" style="display:inline-flex;margin-top:6px;">
+                    ${service.status === 'active' ? '●' : '○'} ${service.status || 'active'}
+                  </span>
+                </div>
+              </div>
+              <p>${service.description}</p>
+              <div class="service-meta">
+                <span class="meta-pill">${catInfo.name}</span>
+                ${service.providers ? `<span class="meta-pill">${service.providers.length} Provider${service.providers.length > 1 ? 's' : ''}</span>` : ''}
+                ${service.currencies ? `<span class="meta-pill">${service.currencies.length} Currencies</span>` : ''}
+                ${service.countries ? `<span class="meta-pill">${service.countries.length} Countries</span>` : ''}
+              </div>
+            </div>
+            <div class="operation-tabs">
+              ${ops.map(op => `<button class="op-tab ${op.id === defaultOp ? 'active' : ''}" data-op="${op.id}">${op.name}</button>`).join('')}
+            </div>
+            <div class="form-area" id="form-area">
+              ${renderForm(service, defaultOp)}
+            </div>
+          </div>
+          <div class="right-panel" id="right-panel">
+            <div class="idle-placeholder">
+              <div class="idle-icon">${service.icon || catInfo.icon}</div>
+              <p>Select an operation and run it to see the response here.</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Operation tabs
+      document.querySelectorAll('.op-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.op-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentOperation = tab.dataset.op;
+          document.getElementById('form-area').innerHTML = renderForm(service, currentOperation);
+          scrollLeftPanel();
+        });
+      });
+
+      updateBreadcrumb();
+    }
+
+    function renderForm(service, operationId) {
+      const op = service.operations?.find(o => o.id === operationId);
+      if (!op) return '<div class="empty-state">Operation not found</div>';
+
+      formData = {};
+      let html = '';
+
+      // Provider selection
+      if (service.providers?.length) {
+        selectedProvider = service.providers[0];
+        html += `<div class="provider-selector">${service.providers.map((p, i) => `<button class="provider-pill ${i === 0 ? 'selected' : ''}" data-provider="${p}">${p}</button>`).join('')}</div>`;
+      }
+
+      // Generate form fields based on operation
+      const fields = getOperationFields(service.id, operationId);
+      
+      if (!fields.length) {
+        html += `
+          <div class="empty-state">
+            <p>No input required — click Run to execute.</p>
+          </div>
+          <button class="btn-primary" id="btn-run">Run →</button>
+        `;
+      } else {
+        html += fields.map(field => {
+          const value = field.default || '';
+          return `
+            <div class="form-field">
+              <label>${field.label} ${field.required ? '<span style="color:var(--red)">*</span>' : ''}</label>
+              ${field.type === 'textarea' 
+                ? `<textarea name="${field.name}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} rows="4">${value}</textarea>`
+                : field.type === 'select'
+                ? `<select name="${field.name}" ${field.required ? 'required' : ''}>${field.options.map(opt => `<option value="${opt}" ${field.default === opt ? 'selected' : ''}>${opt}</option>`).join('')}</select>`
+                : `<input type="${field.type}" name="${field.name}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} value="${value}">`
+              }
+            </div>
+          `;
+        }).join('');
+        html += `<button class="btn-primary" id="btn-run">Run →</button>`;
+      }
+
+      // Attach handlers
+      setTimeout(() => {
+        document.querySelectorAll('.provider-pill').forEach(pill => {
+          pill.addEventListener('click', () => {
+            document.querySelectorAll('.provider-pill').forEach(p => p.classList.remove('selected'));
+            pill.classList.add('selected');
+            selectedProvider = pill.dataset.provider;
+          });
+        });
+
+        const runBtn = document.getElementById('btn-run');
+        if (runBtn) {
+          runBtn.addEventListener('click', handleSubmit);
+          document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSubmit();
+          });
+        }
+      }, 0);
+
+      return html;
+    }
+
+    function getOperationFields(serviceId, operationId) {
+      // Dynamic field generation based on service and operation
+      const fieldMaps = {
+        'credit-as-a-service': {
+          apply: [
+            { name: 'amount', type: 'number', label: 'Amount', required: true, placeholder: '100000' },
+            { name: 'tenure', type: 'select', label: 'Tenure (months)', options: ['3', '6', '12', '24'], required: true },
+            { name: 'purpose', type: 'select', label: 'Purpose', options: ['Business', 'Personal', 'Education', 'Medical'], required: true },
+            { name: 'bvn', type: 'text', label: 'BVN', required: true, placeholder: '12345678901' }
+          ],
+          status: [{ name: 'application_id', type: 'text', label: 'Application ID', required: true }],
+          disburse: [
+            { name: 'application_id', type: 'text', label: 'Application ID', required: true },
+            { name: 'account_number', type: 'text', label: 'Account Number', required: true }
+          ],
+          repay: [
+            { name: 'loan_id', type: 'text', label: 'Loan ID', required: true },
+            { name: 'amount', type: 'number', label: 'Amount', required: true }
+          ]
+        },
+        'flutterwave-payment-gateway': {
+          initialize: [
+            { name: 'amount', type: 'number', label: 'Amount', required: true },
+            { name: 'currency', type: 'select', label: 'Currency', options: ['NGN', 'USD', 'GHS', 'KES', 'ZAR'], required: true },
+            { name: 'email', type: 'email', label: 'Customer Email', required: true },
+            { name: 'tx_ref', type: 'text', label: 'Reference', required: true, default: 'tx_' + Date.now() }
+          ],
+          verify: [{ name: 'transaction_id', type: 'text', label: 'Transaction ID', required: true }],
+          refund: [
+            { name: 'transaction_id', type: 'text', label: 'Transaction ID', required: true },
+            { name: 'amount', type: 'number', label: 'Refund Amount' }
+          ],
+          wallet: [{ name: 'wallet_id', type: 'text', label: 'Wallet ID', required: true }]
+        },
+        'paystack-payment-gateway': {
+          initialize: [
+            { name: 'amount', type: 'number', label: 'Amount (kobo)', required: true },
+            { name: 'email', type: 'email', label: 'Customer Email', required: true },
+            { name: 'reference', type: 'text', label: 'Reference', required: true, default: 'ref_' + Date.now() }
+          ],
+          verify: [{ name: 'reference', type: 'text', label: 'Reference', required: true }],
+          refund: [{ name: 'transaction_id', type: 'text', label: 'Transaction ID', required: true }],
+          subscription: [
+            { name: 'customer_email', type: 'email', label: 'Customer Email', required: true },
+            { name: 'plan_code', type: 'text', label: 'Plan Code', required: true }
+          ]
+        },
+        'providus-bank': {
+          'verify-account': [
+            { name: 'account_number', type: 'text', label: 'Account Number', required: true, placeholder: '0123456789' },
+            { name: 'bank_code', type: 'select', label: 'Bank Code', options: ['058', '011', '033', '044', '057'], required: true }
+          ],
+          balance: [{ name: 'account_id', type: 'text', label: 'Account ID', required: true }],
+          transfer: [
+            { name: 'from_account', type: 'text', label: 'From Account', required: true },
+            { name: 'to_account', type: 'text', label: 'To Account', required: true },
+            { name: 'amount', type: 'number', label: 'Amount', required: true }
+          ],
+          statement: [
+            { name: 'account_id', type: 'text', label: 'Account ID', required: true },
+            { name: 'from_date', type: 'date', label: 'From Date', required: true },
+            { name: 'to_date', type: 'date', label: 'To Date', required: true }
+          ]
+        },
+        'verification-service': {
+          kyc: [
+            { name: 'first_name', type: 'text', label: 'First Name', required: true },
+            { name: 'last_name', type: 'text', label: 'Last Name', required: true },
+            { name: 'bvn', type: 'text', label: 'BVN', required: true }
+          ],
+          kyb: [
+            { name: 'business_name', type: 'text', label: 'Business Name', required: true },
+            { name: 'rc_number', type: 'text', label: 'RC Number', required: true }
+          ],
+          aml: [{ name: 'entity_name', type: 'text', label: 'Entity Name', required: true }],
+          bvn: [{ name: 'bvn', type: 'text', label: 'BVN', required: true }]
+        },
+        'memory-as-a-service': {
+          store: [
+            { name: 'key', type: 'text', label: 'Key', required: true },
+            { name: 'value', type: 'textarea', label: 'Value', required: true }
+          ],
+          retrieve: [{ name: 'memory_id', type: 'text', label: 'Memory ID', required: true }],
+          search: [{ name: 'query', type: 'text', label: 'Search Query', required: true }],
+          delete: [{ name: 'memory_id', type: 'text', label: 'Memory ID', required: true }]
+        }
+      };
+
+      return fieldMaps[serviceId]?.[operationId] || [];
+    }
+
+    async function handleSubmit() {
+      const formArea = document.getElementById('form-area');
+      const inputs = formArea.querySelectorAll('input[required], textarea[required], select[required]');
+      let valid = true;
+      
+      inputs.forEach(input => {
+        if (!input.value.trim()) {
+          input.classList.add('invalid');
+          valid = false;
+          setTimeout(() => input.classList.remove('invalid'), 500);
+        }
+      });
+      
+      if (!valid) return;
+
+      const payload = {};
+      formArea.querySelectorAll('input, textarea, select').forEach(el => {
+        if (el.name && el.value) {
+          payload[el.name] = el.type === 'number' ? parseFloat(el.value) : el.value;
+        }
+      });
+
+      renderProcessingSteps(['Validating request', 'Processing', 'Returning response']);
+      const result = await callService(currentService.id, currentOperation, payload, selectedProvider);
+      renderResultCard(result);
+    }
+
+    function renderProcessingSteps(steps) {
+      const rightPanel = document.getElementById('right-panel');
+      rightPanel.innerHTML = `<div class="processing-timeline" id="timeline"></div>`;
+      const timeline = document.getElementById('timeline');
+
+      steps.forEach((step, i) => {
+        timeline.innerHTML += `
+          <div class="timeline-step" id="step-${i}" style="animation-delay: ${i * 150}ms">
+            <div class="step-icon pending" id="step-icon-${i}">●</div>
+            <span class="step-name">${step}</span>
+          </div>
+        `;
+      });
+
+      animateSteps(steps.length);
+    }
+
+    async function animateSteps(totalSteps) {
+      for (let i = 0; i < totalSteps; i++) {
+        await new Promise(r => setTimeout(r, 300));
+        const icon = document.getElementById(`step-icon-${i}`);
+        if (icon) {
+          icon.classList.remove('pending');
+          icon.classList.add('active');
+          icon.innerHTML = '';
+        }
+        await new Promise(r => setTimeout(r, 250));
+        if (icon) {
+          icon.classList.remove('active');
+          icon.classList.add('done');
+          icon.innerHTML = '✓';
+        }
+      }
+    }
+
+    function renderResultCard(result) {
+      const rightPanel = document.getElementById('right-panel');
+      const isSuccess = result.ok;
+      const statusClass = result.mocked ? 'warning' : isSuccess ? 'success' : 'error';
+      const statusText = result.mocked ? '⚠ Demo Response' : isSuccess ? '✓ Success' : '✗ Failed';
+
+      const data = result.data || {};
+      const fields = Object.entries(data).filter(([_, v]) => typeof v !== 'object' || v === null).slice(0, 8);
+
+      rightPanel.innerHTML = `
+        <div class="result-card">
+          <div class="result-header">
+            <div class="result-status ${statusClass}">${statusText}</div>
+            <div>
+              <span class="status-code-pill">${result.mocked ? 'DEMO' : result.status}</span>
+              <span class="result-timing" style="margin-left:8px">${result.timing}ms</span>
+            </div>
+          </div>
+          <div class="result-fields">
+            ${fields.map(([k, v]) => `
+              <div class="result-field">
+                <span class="result-field-label">${formatLabel(k)}</span>
+                <span class="result-field-value">${formatValue(v)} <span class="copy-icon" onclick="copyToClipboard('${String(v).replace(/'/g, "\\'")}', this)">📋</span></span>
+              </div>
+            `).join('')}
+          </div>
+          <button class="json-toggle" onclick="toggleJson()">▼ View JSON Response</button>
+          <div class="json-block" id="json-block">
+            <button class="json-copy" onclick="copyJson()">Copy</button>
+            <pre id="json-pre"></pre>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('json-pre').innerHTML = syntaxHighlight(data);
+    }
+
+    function formatLabel(key) {
+      return key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+    }
+
+    function formatValue(v) {
+      if (v === null) return 'null';
+      if (typeof v === 'boolean') return v ? 'true' : 'false';
+      return String(v);
+    }
+
+    function syntaxHighlight(json) {
+      const jsonStr = JSON.stringify(json, null, 2);
+      return jsonStr.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+        let cls = 'json-number';
+        if (/^"/.test(match)) cls = match.endsWith(':') ? 'json-key' : 'json-string';
+        else if (/true|false/.test(match)) cls = 'json-boolean';
+        else if (/null/.test(match)) cls = 'json-null';
+        return `<span class="${cls}">${match}</span>`;
+      });
+    }
+
+    function toggleJson() {
+      const block = document.getElementById('json-block');
+      const btn = document.querySelector('.json-toggle');
+      if (block.classList.contains('visible')) {
+        block.classList.remove('visible');
+        btn.textContent = '▼ View JSON Response';
+      } else {
+        block.classList.add('visible');
+        btn.textContent = '▲ Hide';
+      }
+    }
+
+    function copyToClipboard(text, el) {
+      navigator.clipboard.writeText(text);
+      el.textContent = '✓';
+      el.classList.add('copied');
+      setTimeout(() => { el.textContent = '📋'; el.classList.remove('copied'); }, 2000);
+    }
+
+    function copyJson() {
+      const json = document.getElementById('json-pre').textContent;
+      navigator.clipboard.writeText(json);
+      const btn = document.querySelector('.json-copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    }
+
+    function scrollLeftPanel() {
+      document.querySelector('.left-panel')?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       GLARE CARDS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function initGlareCards() {
+      document.querySelectorAll('.glare-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const rotateX = ((y - centerY) / centerY) * -6;
+          const rotateY = ((x - centerX) / centerX) * 6;
+
+          card.style.setProperty('--mouse-x', `${(x / rect.width) * 100}%`);
+          card.style.setProperty('--mouse-y', `${(y / rect.height) * 100}%`);
+          card.style.setProperty('--glare-opacity', '1');
+          card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+          card.style.setProperty('--glare-opacity', '0');
+          card.style.transform = 'perspective(800px) rotateX(0) rotateY(0)';
+        });
+
+        card.addEventListener('click', () => {
+          const serviceId = card.dataset.service;
+          if (serviceId) window.location.hash = `#/${serviceId}`;
+        });
+      });
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CONFIG PANEL
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function initConfigPanel() {
+      const panel = document.getElementById('config-panel');
+      const btnConfig = document.getElementById('btn-config');
+      const btnClose = document.getElementById('btn-close-config');
+      const btnSave = document.getElementById('btn-save-config');
+
+      // Load current config
+      document.getElementById('config-gateway-url').value = CONFIG.gatewayUrl;
+      document.getElementById('config-catalog-source').value = CONFIG.catalogSource;
+      document.getElementById('config-catalog-url').value = CONFIG.catalogUrl;
+      document.getElementById('config-environment').value = CONFIG.environment;
+
+      btnConfig.addEventListener('click', () => panel.classList.add('open'));
+      btnClose.addEventListener('click', () => panel.classList.remove('open'));
+
+      btnSave.addEventListener('click', () => {
+        CONFIG.gatewayUrl = document.getElementById('config-gateway-url').value;
+        CONFIG.catalogSource = document.getElementById('config-catalog-source').value;
+        CONFIG.catalogUrl = document.getElementById('config-catalog-url').value;
+        CONFIG.environment = document.getElementById('config-environment').value;
+
+        localStorage.setItem('forge-gateway-url', CONFIG.gatewayUrl);
+        localStorage.setItem('forge-catalog-source', CONFIG.catalogSource);
+        localStorage.setItem('forge-catalog-url', CONFIG.catalogUrl);
+        localStorage.setItem('forge-environment', CONFIG.environment);
+
+        panel.classList.remove('open');
+        
+        // Reload if catalog source changed
+        if (CONFIG.catalogSource === 'remote') {
+          init();
+        }
+      });
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       ROUTER
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    function router() {
+      const hash = window.location.hash || '#/';
+      const parts = hash.slice(2).split('/');
+      const serviceId = parts[0];
+
+      if (!serviceId) {
+        renderLanding();
+      } else {
+        renderServiceView(serviceId, parts[1]);
+      }
+
+      window.scrollTo(0, 0);
+    }
+
+    function updateBreadcrumb() {
+      const breadcrumb = document.getElementById('breadcrumb');
+      const hash = window.location.hash;
+      
+      if (hash === '#/') {
+        breadcrumb.classList.remove('visible');
+        return;
+      }
+
+      const parts = hash.slice(2).split('/');
+      const service = services.find(s => s.id === parts[0]);
+      if (service) {
+        const op = service.operations?.find(o => o.id === parts[1]);
+        breadcrumb.innerHTML = `<a href="#/">Gateway</a> <span style="color:var(--border)">/</span> ${service.name}${op ? ` <span style="color:var(--border)">/</span> ${op.name}` : ''}`;
+        breadcrumb.classList.add('visible');
+      }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       REQUEST LOG UI
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    document.getElementById('log-pill')?.addEventListener('click', () => {
+      document.getElementById('log-panel').classList.toggle('visible');
+    });
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       INIT
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    window.addEventListener('hashchange', router);
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
