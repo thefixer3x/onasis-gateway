@@ -1,3 +1,5 @@
+// Secrets injected at runtime by dotenvx from .env.production
+// Start command: dotenvx run --ops-off -f .env.production -- node unified_gateway.js
 module.exports = {
   apps: [
     {
