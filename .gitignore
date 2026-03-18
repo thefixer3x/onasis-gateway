@@ -6,13 +6,14 @@
 node_modules/
 bun.lockb
 
-# Environment
+# Environment — plaintext secrets, never commit
 .env
 .env.local
 /gateways/unified-gateway/.env
 /gateways/unified-gateway/.env.local
-# .env.production is safe to commit (encrypted with dotenvx AES-256-GCM)
-# .env.keys contains the private key - NEVER commit
+
+# dotenvx: .env.production is AES-256-GCM encrypted (safe to commit)
+# .env.production
 .env.keys
 
 # Logs

@@ -5,11 +5,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "start": "dotenvx run --ops-off -f .env.production -- node unified_gateway.js",
-    "start:unified": "node unified_gateway.js",
-    "start:api": "node api_server.js",
-    "start:mcp": "node mcp_server.js",
+    "start": "npx dotenvx run -f .env.production -- node unified_gateway.js",
+    "start:unified": "npx dotenvx run -f .env.production -- node unified_gateway.js",
+    "start:api": "npx dotenvx run -f .env.production -- node api_server.js",
+    "start:mcp": "npx dotenvx run -f .env.production -- node mcp_server.js",
     "start:railway": "node unified_gateway.js",
+    "start:pm2": "npx dotenvx run -f .env.production -- pm2-runtime start ecosystem.config.js",
     "start:bun": "bun run bun-neon-server.ts",
     "dev": "bun --watch bun-neon-server.ts",
     "generate-adapters": "bun run scripts/generate-adapters.js",
@@ -25,8 +26,7 @@
     "clean": "rm -rf dist && rm -rf src/adapters/generated",
     "registry:build": "bun run src/generators/registry-generator.ts",
     "health": "bun run src/utils/health-check.ts",
-    "postbuild": "bun run registry:build",
-    "start:pm2": "dotenvx run --ops-off -f .env.production -- pm2-runtime start ecosystem.config.js"
+    "postbuild": "bun run registry:build"
   },
   "keywords": [
     "microservices",
@@ -68,6 +68,7 @@
     "ws": "^8.19.0"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.55.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.2.3",
     "@typescript-eslint/eslint-plugin": "^8.56.0",

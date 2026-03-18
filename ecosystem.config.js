@@ -1,5 +1,9 @@
-// Secrets injected at runtime by dotenvx from .env.production
-// Start command: dotenvx run --ops-off -f .env.production -- node unified_gateway.js
+// PM2 Ecosystem Configuration for Onasis Gateway
+//
+// Secrets are injected at runtime by dotenvx from .env.production (AES-256-GCM encrypted).
+// Start command: npx dotenvx run -f .env.production -- pm2-runtime start ecosystem.config.js
+// Or use: npm run start:pm2
+//
 module.exports = {
   apps: [
     {
@@ -7,19 +11,10 @@ module.exports = {
       script: 'server.js',
       instances: 1,
       exec_mode: 'cluster',
+      // Non-secret runtime defaults only — all secrets injected by dotenvx at startup
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
-        CORS_ORIGIN: '*',
-        HEALTH_AUTH_URL: 'http://127.0.0.1:4000/health',
-        HEALTH_MCP_CORE_URL: 'http://127.0.0.1:3001/health',
-        HEALTH_ENTERPRISE_MCP_URL: 'http://127.0.0.1:3001/health',
-        HEALTH_TIMEOUT_MS: 4000
-      },
-      env_production: {
-        NODE_ENV: 'production',
-        PORT: 3000,
-        CORS_ORIGIN: 'https://api.connectionpoint.tech',
         HEALTH_AUTH_URL: 'http://127.0.0.1:4000/health',
         HEALTH_MCP_CORE_URL: 'http://127.0.0.1:3001/health',
         HEALTH_ENTERPRISE_MCP_URL: 'http://127.0.0.1:3001/health',
