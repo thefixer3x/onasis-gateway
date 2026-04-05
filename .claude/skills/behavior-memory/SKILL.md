@@ -1,51 +1,64 @@
 ---
 name: behavior-memory
-description: "Guidance for using @lanonasis/mem-intel-sdk to store and recall workflow memory. Use when implementing behavior pattern capture, search, or mem-intel auth flows."
+description: Use this skill when recording, recalling, or analyzing behavioral workflow patterns via the LanOnasis MaaS API. Trigger when the user or an agent wants to save a successful workflow for future reuse, recall past patterns before starting a task, analyze how Claude has handled similar tasks before, or when working with the `@lanonasis/mem-intel-sdk` behavior features. Also trigger when the user says things like "remember how I did this", "what's my usual pattern for X", "log this workflow", or "use my previous approach."
 ---
 
 # Skill: Behavior Memory Integration
 
-## Purpose & Scope
+## Purpose
 
-This skill teaches AI agents to leverage `@lanonasis/mem-intel-sdk` for **behavioral pattern learning** - recording successful workflows and recalling them in future sessions.
+Teach agents to **record successful workflows** and **recall them in future sessions** using the LanOnasis MaaS API — so Claude learns from real execution history instead of starting from scratch every time.
 
-**Key Principle**: Local-first processing with cached embeddings. API calls are fallback, not primary.
+**Local-first**: Use cached embeddings for recall. API is fallback, not primary.
 
-## API Reference
+---
 
-Base URL: `https://api.lanonasis.com/api/v1`
+## API Quick Reference
 
-| Operation | Endpoint | Method | Description |
-|-----------|----------|--------|-------------|
-| Store pattern | `/memories` | POST | Create with `type: workflow` |
-| Recall patterns | `/memories/search` | POST | Semantic search with `type: workflow` |
-| List patterns | `/memories?type=workflow` | GET | Filter by workflow type |
-| Update pattern | `/memories/{id}` | PUT | Update use_count in metadata |
-| Delete pattern | `/memories/{id}` | DELETE | Remove stale patterns |
-| Analyze patterns | `/intelligence/analyze-patterns` | POST | mem-intel-sdk |
-| Find related | `/intelligence/find-related` | POST | mem-intel-sdk |
-| Extract insights | `/intelligence/extract-insights` | POST | mem-intel-sdk |
+**Base URL**: `https://api.lanonasis.com/api/v1`
 
-### Authentication (3 methods)
+| Operation | Endpoint | Method |
+|-----------|----------|--------|
+| Record pattern | `/memories` | POST |
+| Recall patterns | `/memories/search` | POST |
+| List patterns | `/memories?type=workflow` | GET |
+| Update pattern | `/memories/{id}` | PUT |
+| Delete pattern | `/memories/{id}` | DELETE |
+| Analyze patterns | `/intelligence/analyze-patterns` | POST |
+| Find related | `/intelligence/find-related` | POST |
+| Extract insights | `/intelligence/extract-insights` | POST |
+
+### Authentication
 ```
-OAuth2 PKCE (Primary): Authorization header with token
-API Key (Fallback):    X-API-Key: lano_*
-JWT (Legacy):          Authorization: Bearer <jwt>
-```
-
-### MemoryType Enum
-```typescript
-type MemoryType = 'context' | 'project' | 'knowledge' | 'reference' | 'personal' | 'workflow';
-//                                                                                  ^^^^^^^^
-//                                                                      Use this for behavior patterns
+Primary:  Authorization: Bearer <oauth2_pkce_token>
+Fallback: X-API-Key: lano_*
+Legacy:   Authorization: Bearer <jwt>
 ```
 
-### API Payload Examples
+---
 
-**Record Pattern (POST /memories)**
+## Session Flow
+
+```
+SESSION START
+  └─ 1. Recall: semantic search for patterns matching current task
+  └─ 2. Inject: enrich agent context — "User usually does X when Y"
+
+SESSION EXECUTION
+  └─ 3. Act: execute with pattern-informed behavior, track tool outcomes
+
+SESSION END
+  └─ 4. Record: store trigger → actions → outcome as workflow memory
+```
+
+---
+
+## Recording a Pattern
+
 ```json
+POST /memories
 {
-  "title": "Workflow: Fix authentication bug in TypeScript API",
+  "title": "Workflow: Fix auth bug in TypeScript API",
   "content": "{\"trigger\":\"fix auth bug\",\"actions\":[{\"tool\":\"Read\",\"outcome\":\"success\"},{\"tool\":\"Edit\",\"outcome\":\"success\"},{\"tool\":\"Bash\",\"outcome\":\"success\"}],\"final_outcome\":\"success\",\"duration_ms\":45000}",
   "type": "workflow",
   "tags": ["auth", "bugfix", "typescript-api"],
@@ -61,8 +74,25 @@ type MemoryType = 'context' | 'project' | 'knowledge' | 'reference' | 'personal'
 }
 ```
 
-**Recall Patterns (POST /memories/search)**
+### Confidence Formula
+```javascript
+function calculateConfidence(outcome) {
+  let score = 0.5;                              // base
+  if (outcome.userExplicitApproval) score += 0.3;
+  if (outcome.noErrors)             score += 0.1;
+  if (outcome.completedAllSteps)    score += 0.1;
+  return Math.min(score, 1.0);
+}
+```
+
+**Only record patterns with confidence ≥ 0.5. Never record failed workflows.**
+
+---
+
+## Recalling Patterns
+
 ```json
+POST /memories/search
 {
   "query": "fix authentication bug in typescript",
   "type": "workflow",
@@ -71,121 +101,8 @@ type MemoryType = 'context' | 'project' | 'knowledge' | 'reference' | 'personal'
 }
 ```
 
-## Architecture Understanding
-
-```
-+------------------------------------------------------------------+
-|                 BEHAVIOR MEMORY FLOW                              |
-+------------------------------------------------------------------+
-|                                                                   |
-|  SESSION START                                                    |
-|  +-------------------+                                            |
-|  | 1. Recall         |---> Query cached patterns for context      |
-|  |    Patterns       |---> Semantic match: current task -> history|
-|  +-------------------+                                            |
-|           |                                                       |
-|           v                                                       |
-|  +-------------------+                                            |
-|  | 2. Inject         |---> Enrich agent context with patterns     |
-|  |    Context        |---> "User typically does X when Y"         |
-|  +-------------------+                                            |
-|           |                                                       |
-|           v                                                       |
-|  SESSION EXECUTION                                                |
-|  +-------------------+                                            |
-|  | 3. Agent          |---> Execute with pattern-informed behavior |
-|  |    Actions        |---> Track tools used, outcomes             |
-|  +-------------------+                                            |
-|           |                                                       |
-|           v                                                       |
-|  SESSION END                                                      |
-|  +-------------------+                                            |
-|  | 4. Record         |---> Store: trigger -> actions -> outcome   |
-|  |    Pattern        |---> Generate embedding for future recall   |
-|  +-------------------+                                            |
-|                                                                   |
-+------------------------------------------------------------------+
-```
-
-## Memory Types for Behavior Patterns
-
-| Memory Type | Use For |
-|-------------|---------|
-| `workflow` | Multi-step action sequences |
-| `context` | Session context (directory, project type) |
-| `project` | Project-specific patterns |
-| `knowledge` | Learned preferences and rules |
-| `personal` | User-specific behavior preferences |
-
-## MCP Tools Available
-
-### Analysis Tools (Read-Only)
-
-```typescript
-// Analyze user's behavior patterns over time
-memory_analyze_patterns({
-  user_id: "uuid",
-  time_range_days: 30,
-  response_format: "markdown"
-})
-
-// Find related memories using vector similarity
-memory_find_related({
-  memory_id: "uuid",
-  user_id: "uuid",
-  limit: 10,
-  similarity_threshold: 0.7
-})
-
-// Extract insights from memories
-memory_extract_insights({
-  user_id: "uuid",
-  topic: "deployment",
-  memory_type: "workflow",
-  max_memories: 20
-})
-```
-
-## Critical Rules - NEVER Do
-
-### Data Privacy
-- **NEVER** store PII in behavior patterns
-- **NEVER** record authentication tokens or secrets
-- **NEVER** log sensitive file contents in patterns
-- **NEVER** share patterns across user boundaries
-
-### Pattern Quality
-- **NEVER** record failed sessions as successful patterns
-- **NEVER** store patterns with confidence < 0.5
-- **NEVER** record incomplete workflows
-- **NEVER** overwrite high-confidence patterns with lower ones
-
-### Performance
-- **NEVER** call API when cache is fresh and relevant
-- **NEVER** skip `processingMode: 'offline-fallback'` for recall operations
-- **NEVER** generate embeddings client-side when API can do it
-- **NEVER** store duplicate patterns (use `detectDuplicates` first)
-Embeddings are normally generated by the API on first ingest and then cached locally for fast/offline recall (`processingMode: 'offline-fallback'`, `detectDuplicates`); client-side embedding generation is only permitted as a fallback when the API is unavailable or when privacy-sensitive data must never leave the client.
-
-## Required Patterns - MUST Follow
-
-### Memory Storage
+### Client Configuration (always use offline-fallback for recall)
 ```javascript
-// MUST include these fields for workflow memories
-{
-  type: 'workflow',           // Required for behavior patterns
-  tags: [...],                // Required for filtering
-  metadata: {
-    confidence: 0.0-1.0,      // Required for ranking
-    directory: string,        // Required for context matching
-    project_type: string      // Required for project filtering
-  }
-}
-```
-
-### Pattern Recall
-```javascript
-// MUST use offline-fallback for recall operations
 const client = new MemoryIntelligenceClient({
   processingMode: 'offline-fallback',
   enableCache: true,
@@ -193,25 +110,76 @@ const client = new MemoryIntelligenceClient({
 });
 ```
 
-### Confidence Scoring
-```javascript
-// MUST calculate confidence based on outcome
-function calculateConfidence(outcome) {
-  let confidence = 0.5;  // Base
+---
 
-  if (outcome.userExplicitApproval) confidence += 0.3;
-  if (outcome.noErrors) confidence += 0.1;
-  if (outcome.completedAllSteps) confidence += 0.1;
+## MCP Tools
 
-  return Math.min(confidence, 1.0);
-}
+### Analysis (Read-Only)
+```typescript
+// Analyze patterns over time
+memory_analyze_patterns({ user_id, time_range_days: 30, response_format: "markdown" })
+
+// Find related memories by vector similarity
+memory_find_related({ memory_id, user_id, limit: 10, similarity_threshold: 0.7 })
+
+// Extract themes and insights
+memory_extract_insights({ user_id, topic: "deployment", memory_type: "workflow", max_memories: 20 })
 ```
 
-## Integration with Other Skills
+### Behavior Write Tools (v2.0)
+```typescript
+// Record a successful workflow pattern
+behavior_record({
+  user_id,
+  trigger: "fix auth bug",
+  context: { directory: "/apps/mcp-core", project_type: "typescript-api", branch: "main" },
+  actions: [{ tool: "Read", outcome: "success" }, { tool: "Edit", outcome: "success" }],
+  final_outcome: "success",
+  confidence: 0.85
+})
 
-| Skill | Integration Point |
-|-------|-------------------|
-| `skill-base-client.md` | Record API call patterns |
-| `skill-compliance-manager.md` | Filter sensitive data before storage |
-| `skill-metrics-collector.md` | Track pattern usage metrics |
-| `skill-version-manager.md` | Version-tag workflow patterns |
+// Recall relevant patterns for current context
+behavior_recall({
+  user_id,
+  context: { currentDirectory: "/apps/mcp-core", currentTask: "fix auth middleware", projectType: "typescript-api" },
+  limit: 5,
+  similarityThreshold: 0.7
+})
+
+// Get AI-powered next-action suggestions
+behavior_suggest({ user_id, current_state: { task, context, history } })
+```
+
+---
+
+## Memory Types
+
+| Type | Use For |
+|------|---------|
+| `workflow` | Multi-step action sequences ← **primary for behavior patterns** |
+| `context` | Session context (directory, project type) |
+| `project` | Project-specific patterns |
+| `knowledge` | Learned preferences and rules |
+| `personal` | User-specific behavior preferences |
+
+---
+
+## Failure Modes & Recovery
+
+| Failure | Recovery |
+|---------|----------|
+| API unreachable | Use `processingMode: 'offline-fallback'` — serve from local cache |
+| Cache miss + API down | Proceed without pattern context; log the miss |
+| Auth error (401) | Try `X-API-Key` header fallback; if both fail, skip pattern recording |
+| Confidence < 0.5 | Do not record; log reason |
+| Duplicate detected (similarity > 0.95) | Update `use_count` on existing record instead of creating new |
+
+---
+
+## Hard Rules
+
+- **Never** store PII, tokens, or secrets in patterns
+- **Never** record failed sessions as successful patterns
+- **Never** call API when cache is fresh and relevant
+- **Never** create duplicates — check first with `detectDuplicates`
+- **Never** overwrite a high-confidence pattern with a lower-confidence one
