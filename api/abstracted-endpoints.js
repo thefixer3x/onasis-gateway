@@ -63,6 +63,10 @@ class AbstractedAPIEndpoints {
     this.router.post('/api/v1/auth/:operation', this.handleAuthOperation.bind(this));
     this.router.post('/api/v1/ai/:operation', this.handleAIOperation.bind(this));
     this.router.post('/api/v1/memory/:operation', this.handleMemoryOperation.bind(this));
+    // Plural aliases — enterprise-mcp client uses /memories/* and /memories for create
+    this.router.get('/api/v1/memories/:operation', this.handleMemoryOperation.bind(this));
+    this.router.post('/api/v1/memories/:operation', this.handleMemoryOperation.bind(this));
+    this.router.post('/api/v1/memories', (req, res) => { req.params.operation = 'create'; this.handleMemoryOperation(req, res); });
     this.router.post('/api/v1/intelligence/:operation', this.handleIntelligenceOperation.bind(this));
     this.router.post('/api/v1/security/:operation', this.handleSecurityOperation.bind(this));
     this.router.post('/api/v1/verification/:operation', this.handleVerificationOperation.bind(this));
