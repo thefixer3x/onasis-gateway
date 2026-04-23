@@ -92,6 +92,21 @@ npm start
 # Gateway runs on http://localhost:3000
 ```
 
+## 📚 Operating Docs
+
+For current strategy and workflow guidance, start with:
+
+- `/Users/seyederick/onasis-gateway/docs/plans/2026-04-21-integration-intelligence-provider-eligibility-framework.md`
+- `/Users/seyederick/onasis-gateway/docs/plans/2026-04-23-postman-operating-playbook.md`
+- `/Users/seyederick/onasis-gateway/docs/implementation/README.md`
+
+Use the Postman operating playbook when:
+
+- curating canonical collections for owned APIs
+- importing or reviewing third-party provider collections
+- organizing local Postman sync artifacts
+- trying to avoid drift between Postman, OpenAPI, gateway behavior, and adapters
+
 ## 🔧 Usage Examples
 
 ### Service Discovery
