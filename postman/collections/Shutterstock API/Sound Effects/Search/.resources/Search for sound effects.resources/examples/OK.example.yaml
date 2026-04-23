@@ -1,0 +1,235 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/sfx/search?added_date=2022-09-23&added_date_start=2021-03-29&added_date_end=2021-03-29&duration=180&duration_from=30&duration_to=180&page=1&per_page=1&query=drum&safe=true&sort=popular&view=full&language=cs"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    added_date: 2022-09-23
+    added_date_start: 2021-03-29
+    added_date_end: 2021-03-29
+    duration: "180"
+    duration_from: "30"
+    duration_to: "180"
+    page: "1"
+    per_page: "1"
+    query: drum
+    safe: "true"
+    sort: popular
+    view: full
+    language: cs
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "description": "Sound effects search results",
+       "properties": {
+        "data": {
+         "description": "List of tracks",
+         "items": {
+          "description": "SFX metadata",
+          "example": {
+           "id": "123",
+           "media_type": "sfx",
+           "contributor": {
+            "id": "1234"
+           }
+          },
+          "properties": {
+           "added_date": {
+            "description": "Date this sound effect was added to the Shutterstock library",
+            "format": "date",
+            "type": "string"
+           },
+           "affiliate_url": {
+            "description": "Affiliate referral link; appears only for registered affiliate partners",
+            "type": "string"
+           },
+           "artist": {
+            "description": "Artist of the sound effect",
+            "type": "string"
+           },
+           "assets": {
+            "description": "Files that are available as part of an sound effect asset",
+            "properties": {
+             "preview_mp3": {
+              "description": "Information about a file that is part of an sound effect asset",
+              "properties": {
+               "file_size": {
+                "description": "File size of the sound effect",
+                "type": "integer"
+               },
+               "url": {
+                "description": "URL the sound effect is available at",
+                "type": "string"
+               }
+              },
+              "type": "object",
+              "example": {
+               "file_size": 123,
+               "url": "https://cdn.shutterstock.com/shutterstock/sfx/11222/preview_ecom_ster/hand-throw-catch-cellphone.mp3"
+              }
+             },
+             "waveform": {
+              "description": "Information about a file that is part of an sound effect asset",
+              "properties": {
+               "file_size": {
+                "description": "File size of the sound effect",
+                "type": "integer"
+               },
+               "url": {
+                "description": "URL the sound effect is available at",
+                "type": "string"
+               }
+              },
+              "type": "object",
+              "example": {
+               "file_size": 123,
+               "url": "https://cdn.shutterstock.com/shutterstock/sfx/11222/preview_ecom_ster/hand-throw-catch-cellphone.mp3"
+              }
+             }
+            },
+            "type": "object",
+            "example": {
+             "preview_mp3": {
+              "file_size": 123,
+              "url": "https://cdn.shutterstock.com/shutterstock/sfx/11222/preview_ecom_ster/hand-throw-catch-cellphone.mp3"
+             },
+             "waveform": {
+              "file_size": 123,
+              "url": "https://cdn.shutterstock.com/shutterstock/sfx/11222/preview_ecom_ster/hand-throw-catch-cellphone.mp3"
+             }
+            }
+           },
+           "contributor": {
+            "description": "Information about a contributor",
+            "properties": {
+             "id": {
+              "description": "ID of the contributor",
+              "type": "string"
+             }
+            },
+            "required": [
+             "id"
+            ],
+            "type": "object",
+            "example": {
+             "id": "12345678"
+            }
+           },
+           "description": {
+            "description": "Description of this sound effect",
+            "type": "string"
+           },
+           "duration": {
+            "description": "Duration of this sound effect in seconds",
+            "type": "number"
+           },
+           "id": {
+            "description": "Shutterstock ID of this sound effect",
+            "type": "string"
+           },
+           "keywords": {
+            "description": "List of all keywords for this sound effect",
+            "items": {
+             "description": "Keyword for this track",
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "media_type": {
+            "description": "Media type of this track; should always be \"sfx\"",
+            "type": "string"
+           },
+           "releases": {
+            "description": "List of all releases of this sound effect",
+            "items": {
+             "description": "Release of this sound effect",
+             "type": "string"
+            },
+            "type": "array"
+           },
+           "title": {
+            "description": "Title of this sound effect",
+            "type": "string"
+           },
+           "updated_time": {
+            "description": "Time this sound effect was last updated",
+            "format": "date-time",
+            "type": "string"
+           },
+           "url": {
+            "description": "",
+            "type": "string"
+           }
+          },
+          "required": [
+           "id",
+           "media_type",
+           "contributor"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "message": {
+         "description": "Server-generated message, if any",
+         "type": "string"
+        },
+        "page": {
+         "description": "Current page that is returned",
+         "type": "integer"
+        },
+        "per_page": {
+         "description": "Number of results per page",
+         "type": "integer"
+        },
+        "total_count": {
+         "description": "Total count of all results across all pages",
+         "type": "integer"
+        },
+        "search_id": {
+         "description": "ID of the search",
+         "type": "string"
+        }
+       },
+       "required": [
+        "data",
+        "total_count",
+        "search_id"
+       ],
+       "type": "object",
+       "example": {
+        "data": [
+         {
+          "id": "123",
+          "description": "User interface calculations, scanning, thinking, text displayed on screen. Screen gak or garble.",
+          "assets": {
+           "preview_mp3": {
+            "url": "https://cdn.shutterstock.com/shutterstock/sfx/21230/preview_ecom_ster/heavy-duty-interface-feedback.mp3"
+           },
+           "waveform": {
+            "url": "https://cdn.shutterstock.com/shutterstock/sfx/21230/wvfm_img/heavy-duty-interface-feedback.png"
+           }
+          },
+          "contributor": {
+           "id": "321402911"
+          },
+          "title": "Heavy Duty Interface Feedback",
+          "media_type": "sfx",
+          "updated_time": "2022-08-04T15:11:15.711Z",
+          "added_date": "2022-07-29"
+         }
+        ],
+        "total_count": 14881,
+        "search_id": "e6f84c4c-ffdd-499b-ad89-72c65a896ead"
+       }
+      }
+order: 1000

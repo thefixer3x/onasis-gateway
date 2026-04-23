@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/contributors/:contributor_id/collections?sort=<string>"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    sort: <string>
+  pathVariables:
+    contributor_id: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "293542904",
+         "name": "My collection",
+         "total_item_count": 85,
+         "items_updated_time": "2021-05-20T16:15:22-04:00",
+         "cover_item": {
+          "id": "297886754"
+         }
+        }
+       ],
+       "page": 1,
+       "per_page": 100,
+       "total_count": 1
+      }
+order: 1000

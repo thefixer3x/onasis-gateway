@@ -1,0 +1,20 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/oauth/authorize?client_id=6d097450b209c6dcd859&realm=customer&redirect_uri=localhost&response_type=code&scope=user.view&state=1540290465000"
+  method: GET
+  queryParams:
+    client_id: 6d097450b209c6dcd859
+    realm: customer
+    redirect_uri: localhost
+    response_type: code
+    scope: user.view
+    state: "1540290465000"
+response:
+  statusCode: 302
+  statusText: Found
+  headers:
+    Content-Type: text/html
+  body:
+    type: text
+    content: Moved temporarily. Redirecting to https://accounts.shutterstock.com/login?next=%2Foauth%2Fauthorize%3Fresponse_type%3Dcode%26state%3D1539619928633%26scope%3Dlicenses.create%20licenses.view%20purchases.view%26client_id%3D6d097450b209c6dcd859%26redirect_uri%3Dhttp%3A%2F%2Flocalhost%3A3000%2Fmyapp%2Fauth%2Fcallback%26realm%3Dcustomer
+order: 1000

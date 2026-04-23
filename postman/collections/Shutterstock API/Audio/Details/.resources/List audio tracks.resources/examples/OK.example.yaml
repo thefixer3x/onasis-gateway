@@ -1,0 +1,111 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/audio?id=442583&id=434750&view=full&search_id=00000000-0000-0000-0000-000000000000"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: id
+      value: "442583"
+    - key: id
+      value: "434750"
+    - key: view
+      value: full
+    - key: search_id
+      value: 00000000-0000-0000-0000-000000000000
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "added_date": "2016-04-12",
+         "artists": [
+          {
+           "name": "Fin Productions"
+          }
+         ],
+         "assets": {
+          "clean_audio": {
+           "file_size": 30760372
+          },
+          "preview_mp3": {
+           "file_size": 3846606,
+           "url": "https://ak.picdn.net/shutterstock/audio/434750/preview/preview.mp3"
+          },
+          "preview_ogg": {
+           "file_size": 4402608,
+           "url": "https://ak.picdn.net/shutterstock/audio/434750/preview/preview.ogg"
+          },
+          "waveform": {
+           "file_size": 19822,
+           "url": "https://ak.picdn.net/shutterstock/audio/434750/waveform/waveform.png"
+          }
+         },
+         "bpm": 100,
+         "contributor": {
+          "id": "2847971"
+         },
+         "description": "Pulsing and feel-good, featuring slick electric guitar, synthesizer, bass, electronic drum pads and drums that create a positive, celebratory mood.",
+         "duration": 160,
+         "genres": [
+          "Dance/Electronic",
+          "Electro Pop",
+          "Pop/Rock"
+         ],
+         "id": "434750",
+         "instruments": [
+          "Bass",
+          "Drums",
+          "Electric guitar",
+          "Pads",
+          "Percussion",
+          "Synthesizer"
+         ],
+         "is_adult": false,
+         "is_instrumental": true,
+         "isrc": "",
+         "keywords": [
+          "breezy",
+          "celebration",
+          "festive",
+          "good times",
+          "hopeful",
+          "optimistic",
+          "party",
+          "positive",
+          "reflective"
+         ],
+         "language": "en",
+         "lyrics": "",
+         "media_type": "audio",
+         "moods": [
+          "Bright",
+          "Confident",
+          "Fun",
+          "Happy",
+          "Inspiring",
+          "Optimistic",
+          "Playful",
+          "Sophisticated",
+          "Stylish",
+          "Uplifting"
+         ],
+         "published_time": "2016-04-12T17:45:29-04:00",
+         "recording_version": "",
+         "releases": [],
+         "similar_artists": [],
+         "title": "Fresh Love",
+         "updated_time": "2016-08-18T18:03:11-04:00",
+         "vocal_description": ""
+        }
+       ]
+      }
+order: 1000

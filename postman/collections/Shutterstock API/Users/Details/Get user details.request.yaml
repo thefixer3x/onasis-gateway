@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/v2/user"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+examples: ./.resources/Get user details.resources/examples
+order: 1000

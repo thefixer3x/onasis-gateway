@@ -1,0 +1,11 @@
+name: "WhatsApp Cloud API"
+postman_collection_id: "13382743-84d01ff8-4253-4720-b454-af661f36acc2"
+postman_workspace: "WhatsApp Business Platform"
+fork_count: 264203
+category: messaging
+description: "Official WhatsApp Cloud API collection for sending messages, managing templates, and handling webhooks via Meta's Cloud API."
+postman_url: "https://www.postman.com/meta/workspace/whatsapp-business-platform/collection/13382743-84d01ff8-4253-4720-b454-af661f36acc2"
+auth_type: bearer
+base_url_var: "{{whatsapp_base_url}}"
+token_var: "{{whatsapp_token}}"
+notes: "Requires a Meta Business account and a WhatsApp Business App. Use a permanent system user token for production."

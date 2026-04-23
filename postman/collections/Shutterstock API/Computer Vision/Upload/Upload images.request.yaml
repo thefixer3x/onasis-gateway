@@ -1,0 +1,19 @@
+$kind: http-request
+description: This endpoint uploads an image for reverse image or video search. Images must be in JPEG or PNG format. To get the search results, pass the upload ID that this endpoint returns to the GET /v2/cv/similar/images or GET /v2/cv/similar/videos endpoints. Contact us for access to this endpoint.
+url: "{{baseUrl}}/v2/cv/images"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+body:
+  type: text
+  content: |-
+    {
+        "base64_image": "<string>"
+    }
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/Upload images.resources/examples
+order: 1000

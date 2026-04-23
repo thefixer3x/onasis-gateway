@@ -1,0 +1,11 @@
+name: "Slack Web API"
+postman_collection_id: "13509546-993e3b18-d277-4189-8ce5-af45df38e336"
+postman_workspace: "Slack API"
+fork_count: 34679
+category: messaging
+description: "Official Slack Web API collection covering messages, channels, users, and more."
+postman_url: "https://www.postman.com/slackhq/workspace/slack-api/collection/13509546-993e3b18-d277-4189-8ce5-af45df38e336"
+auth_type: bearer
+base_url_var: "{{slack_base_url}}"
+token_var: "{{slack_token}}"
+notes: "Fork this collection into your workspace to get started. Requires a Slack App with appropriate OAuth scopes."

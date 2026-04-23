@@ -1,0 +1,18 @@
+$kind: http-request
+description: This endpoint lists the categories (Shutterstock-assigned genres) that videos can belong to.
+url: "{{baseUrl}}/v2/videos/categories"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: language
+    value: <string>
+    disabled: true
+    description: Language for the keywords and categories in the response
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List video categories.resources/examples
+order: 3000

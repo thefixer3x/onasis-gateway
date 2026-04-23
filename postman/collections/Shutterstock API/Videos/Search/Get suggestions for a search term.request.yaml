@@ -1,0 +1,21 @@
+$kind: http-request
+description: This endpoint provides autocomplete suggestions for partial search terms.
+url: "{{baseUrl}}/v2/videos/search/suggestions?query=<string>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: query
+    value: <string>
+    description: (Required) Search term for which you want keyword suggestions
+  - key: limit
+    value: "10"
+    disabled: true
+    description: Limit the number of the suggestions
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/Get suggestions for a search term.resources/examples
+order: 2000

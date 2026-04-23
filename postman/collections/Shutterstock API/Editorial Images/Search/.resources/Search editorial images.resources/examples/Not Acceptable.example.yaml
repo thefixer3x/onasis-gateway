@@ -1,0 +1,38 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/images/search?query=The Academy Awards&sort=relevant&category=Alone,Performing&country=USA&supplier_code=<string>&supplier_code=<string>&date_start=2020-05-29&date_end=2021-05-29&per_page=20&cursor=eyJ2IjoxLCJzIjoxfQ=="
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: query
+      value: The Academy Awards
+    - key: sort
+      value: relevant
+    - key: category
+      value: Alone,Performing
+    - key: country
+      value: USA
+    - key: supplier_code
+      value: <string>
+    - key: supplier_code
+      value: <string>
+    - key: date_start
+      value: 2020-05-29
+    - key: date_end
+      value: 2021-05-29
+    - key: per_page
+      value: "20"
+    - key: cursor
+      value: eyJ2IjoxLCJzIjoxfQ==
+response:
+  statusCode: 406
+  statusText: Not Acceptable
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 5000

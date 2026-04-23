@@ -1,0 +1,64 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos/:id/similar?language=es&page=1&per_page=20&view=minimal"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    language: es
+    page: "1"
+    per_page: "20"
+    view: minimal
+  pathVariables:
+    id: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "1033184651",
+         "aspect": 1.778,
+         "aspect_ratio": "16:9",
+         "assets": {
+          "thumb_webm": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/stock-footage-camera-follows-hipster-millennial-young-woman-in-orange-jacket-running-up-on-top-of-mountain-summit.webm"
+          },
+          "thumb_mp4": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/stock-footage-camera-follows-hipster-millennial-young-woman-in-orange-jacket-running-up-on-top-of-mountain-summit.mp4"
+          },
+          "preview_webm": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/preview/stock-footage-camera-follows-hipster-millennial-young-woman-in-orange-jacket-running-up-on-top-of-mountain-summit.webm"
+          },
+          "preview_mp4": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/preview/stock-footage-camera-follows-hipster-millennial-young-woman-in-orange-jacket-running-up-on-top-of-mountain-summit.mp4"
+          },
+          "thumb_jpg": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/12.jpg"
+          },
+          "preview_jpg": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/12.jpg"
+          }
+         },
+         "contributor": {
+          "id": "4411978"
+         },
+         "description": "Camera follows hipster millennial young woman in orange jacket running up on top of mountain summit at sunset, jumps on top of rocks, raises arms into air, happy and drunk on life, youth and happiness",
+         "duration": 14.081,
+         "has_model_release": true,
+         "media_type": "video"
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "total_count": 123,
+       "search_id": "749090bb-2967-4a20-b22e-c800dc845e10"
+      }
+order: 1000

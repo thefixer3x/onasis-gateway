@@ -1,0 +1,88 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos/search?added_date=2020-05-29&added_date_start=2020-05-29&added_date_end=2020-05-29&aspect_ratio=4_3&category=<string>&contributor=<string>&contributor=<string>&contributor_country=<country-code-2>&contributor_country=<country-code-2>&duration=<integer>&duration_from=60&duration_to=180&fps=<number>&fps_from=24&fps_to=60&keyword_safe_search=true&language=cs&license=commercial&license=editorial&model=442583&model=434750&orientation=<string>&page=1&per_page=20&people_age=20s&people_ethnicity=<string>&people_ethnicity=<string>&people_gender=female&people_number=2&people_model_released=true&query=dogs running on the beach&resolution=4k&safe=true&sort=popular&view=minimal"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: added_date
+      value: 2020-05-29
+    - key: added_date_start
+      value: 2020-05-29
+    - key: added_date_end
+      value: 2020-05-29
+    - key: aspect_ratio
+      value: 4_3
+    - key: category
+      value: <string>
+    - key: contributor
+      value: <string>
+    - key: contributor
+      value: <string>
+    - key: contributor_country
+      value: <country-code-2>
+    - key: contributor_country
+      value: <country-code-2>
+    - key: duration
+      value: <integer>
+    - key: duration_from
+      value: "60"
+    - key: duration_to
+      value: "180"
+    - key: fps
+      value: <number>
+    - key: fps_from
+      value: "24"
+    - key: fps_to
+      value: "60"
+    - key: keyword_safe_search
+      value: "true"
+    - key: language
+      value: cs
+    - key: license
+      value: commercial
+    - key: license
+      value: editorial
+    - key: model
+      value: "442583"
+    - key: model
+      value: "434750"
+    - key: orientation
+      value: <string>
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "20"
+    - key: people_age
+      value: 20s
+    - key: people_ethnicity
+      value: <string>
+    - key: people_ethnicity
+      value: <string>
+    - key: people_gender
+      value: female
+    - key: people_number
+      value: "2"
+    - key: people_model_released
+      value: "true"
+    - key: query
+      value: dogs running on the beach
+    - key: resolution
+      value: 4k
+    - key: safe
+      value: "true"
+    - key: sort
+      value: popular
+    - key: view
+      value: minimal
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 2000

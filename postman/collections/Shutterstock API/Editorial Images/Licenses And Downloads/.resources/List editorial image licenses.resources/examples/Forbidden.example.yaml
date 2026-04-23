@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/images/licenses?image_id=12345678&license=premier_editorial_all_digital&page=1&per_page=20&sort=newest&username=aUniqueUsername&start_date=2021-03-29T13:25:13.521Z&end_date=2021-03-29T13:25:13.521Z&download_availability=all&team_history=false"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    image_id: "12345678"
+    license: premier_editorial_all_digital
+    page: "1"
+    per_page: "20"
+    sort: newest
+    username: aUniqueUsername
+    start_date: 2021-03-29T13:25:13.521Z
+    end_date: 2021-03-29T13:25:13.521Z
+    download_availability: all
+    team_history: "false"
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 4000

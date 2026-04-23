@@ -1,0 +1,38 @@
+$kind: http-request
+description: This endpoint lists videos that have been updated in the specified time period to update content management systems (CMS) or digital asset management (DAM) systems. In most cases, use the `interval` parameter to show videos that were updated recently, but you can also use the `start_date` and `end_date` parameters to specify a range of no more than three days. Do not use the `interval` parameter with either `start_date` or `end_date`.
+url: "{{baseUrl}}/v2/videos/updated"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: start_date
+    value: <date-or-date-time>
+    disabled: true
+    description: Show videos updated on or after the specified date. The API will default to UTC (00:00:00) if no specific time is provided, ensuring consistency.
+  - key: end_date
+    value: <date-or-date-time>
+    disabled: true
+    description: Show videos updated before the specified date. The API will default to UTC (00:00:00) if no specific time is provided, ensuring consistency. Please note that the end date must be at least 5 minutes after the start date.
+  - key: interval
+    value: 1 HOUR
+    disabled: true
+    description: Show videos updated in the specified time period, where the time period is an interval (like SQL INTERVAL) such as 1 DAY, 6 HOUR, or 30 MINUTE; the default is 1 HOUR, which shows videos that were updated in the hour preceding the request
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "100"
+    disabled: true
+    description: Number of results per page
+  - key: sort
+    value: newest
+    disabled: true
+    description: Sort by oldest or newest videos first
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List updated videos.resources/examples
+order: 4000

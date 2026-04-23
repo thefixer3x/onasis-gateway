@@ -1,0 +1,23 @@
+$kind: http-request
+description: This endpoint gets more detailed information about a collection, including the timestamp for its creation and the number of videos in it. To get the videos in collections, use GET /v2/videos/collections/{id}/items.
+url: "{{baseUrl}}/v2/videos/collections/:id"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: embed
+    value: <string>
+    disabled: true
+    description: Which sharing information to include in the response, such as a URL to the collection
+  - key: share_code
+    value: <string>
+    disabled: true
+    description: Code to retrieve a shared collection
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) The ID of the collection to return
+auth:
+  type: oauth2
+examples: ./.resources/Get the details of video collections.resources/examples
+order: 3000

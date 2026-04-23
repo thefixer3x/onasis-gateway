@@ -1,0 +1,31 @@
+$kind: http-request
+description: This endpoint creates a catalog collection and optionally adds assets. To add assets to the collection later, use `PATCH /v2/catalog/collections/{collection_id}/items`.
+url: "{{baseUrl}}/v2/catalog/collections"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+body:
+  type: text
+  content: |-
+    {
+        "name": "<string>",
+        "visibility": "private",
+        "items": [
+            {
+                "asset": {
+                    "type": "<string>",
+                    "id": "<string>"
+                }
+            },
+            {
+                "asset": {
+                    "type": "<string>",
+                    "id": "<string>"
+                }
+            }
+        ]
+    }
+auth:
+  type: oauth2
+examples: ./.resources/Create catalog collections.resources/examples
+order: 2000

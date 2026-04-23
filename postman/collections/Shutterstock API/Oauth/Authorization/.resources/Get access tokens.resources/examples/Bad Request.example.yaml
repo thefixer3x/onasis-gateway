@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/oauth/access_token"
+  method: POST
+  body:
+    type: urlencoded
+    content:
+      - key: client_id
+        value: 141024g14g28104gff1h
+        description: (Required) Client ID (Consumer Key) of your application
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 2000

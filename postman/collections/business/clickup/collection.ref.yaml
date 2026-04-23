@@ -1,0 +1,11 @@
+name: "ClickUp API V2"
+postman_collection_id: "14363797-e80a0657-5775-4669-942c-c399d05ddef1"
+postman_workspace: "Clickup"
+fork_count: 246
+category: business
+description: "Official ClickUp API V2 collection for managing tasks, spaces, lists, folders, members, and automations."
+postman_url: "https://www.postman.com/clickup/workspace/clickup/collection/14363797-e80a0657-5775-4669-942c-c399d05ddef1"
+auth_type: api_key
+base_url_var: "{{clickup_base_url}}"
+token_var: "{{clickup_api_key}}"
+notes: "Use a Personal API Token from ClickUp Settings > Apps. Pass as Authorization header (no 'Bearer' prefix needed). NOTE: ClickUp collections may already exist in your SEFTEC workspace — check before forking to avoid duplication. Base URL: https://api.clickup.com/api/v2"

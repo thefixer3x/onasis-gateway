@@ -1,0 +1,24 @@
+$kind: http-request
+description: This endpoint updates the metadata of a catalog collection.
+url: "{{baseUrl}}/v2/catalog/collections/:collection_id"
+method: PATCH
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+pathVariables:
+  - key: collection_id
+    value: <string>
+    description: (Required) ID of collection that needs to be modified
+body:
+  type: text
+  content: |-
+    {
+        "name": "<string>",
+        "visibility": "<string>",
+        "cover_asset": {
+            "id": "<string>"
+        }
+    }
+auth:
+  type: oauth2
+examples: ./.resources/Update collection metadata.resources/examples
+order: 3000

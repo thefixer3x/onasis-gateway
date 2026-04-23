@@ -1,0 +1,41 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/sfx?id=1110335168&id=465011609&view=minimal&language=cs&library=shutterstock&search_id=00000000-0000-0000-0000-000000000000"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: id
+      value: "1110335168"
+    - key: id
+      value: "465011609"
+    - key: view
+      value: minimal
+    - key: language
+      value: cs
+    - key: library
+      value: shutterstock
+    - key: search_id
+      value: 00000000-0000-0000-0000-000000000000
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "123",
+         "media_type": "sfx",
+         "contributor": {
+          "id": "1234"
+         }
+        }
+       ]
+      }
+order: 1000

@@ -1,0 +1,3 @@
+$kind: collection
+description: Get details about users.
+order: 10000

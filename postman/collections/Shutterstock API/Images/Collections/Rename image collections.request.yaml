@@ -1,0 +1,20 @@
+$kind: http-request
+description: This endpoint sets a new name for an image collection.
+url: "{{baseUrl}}/v2/images/collections/:id"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) Collection ID
+body:
+  type: text
+  content: |-
+    {
+        "name": "<string>"
+    }
+auth:
+  type: oauth2
+examples: ./.resources/Rename image collections.resources/examples
+order: 4000

@@ -1,0 +1,31 @@
+$kind: http-request
+description: This endpoint lists the IDs of tracks in a collection and the date that each was added.
+url: "{{baseUrl}}/v2/audio/collections/:id/items"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "100"
+    disabled: true
+    description: Number of results per page
+  - key: share_code
+    value: <string>
+    disabled: true
+    description: Code to retrieve the contents of a shared collection
+  - key: sort
+    value: oldest
+    disabled: true
+    description: Sort order
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) Collection ID
+auth:
+  type: oauth2
+examples: ./.resources/Get the contents of audio collections.resources/examples
+order: 7000

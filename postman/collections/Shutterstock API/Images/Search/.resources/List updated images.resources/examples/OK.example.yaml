@@ -1,0 +1,49 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/updated?type=<string>&type=<string>&start_date=2021-03-29T00:00:00Z OR 2021-03-29&end_date=2021-03-29T23:59:59Z OR 2021-03-30&interval=1 HOUR&page=1&per_page=100&sort=newest"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: type
+      value: <string>
+    - key: type
+      value: <string>
+    - key: start_date
+      value: 2021-03-29T00:00:00Z OR 2021-03-29
+    - key: end_date
+      value: 2021-03-29T23:59:59Z OR 2021-03-30
+    - key: interval
+      value: 1 HOUR
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "100"
+    - key: sort
+      value: newest
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "123456789",
+         "updated_time": "2020-05-29T12:10:22-05:00",
+         "updates": [
+          "addition",
+          "edit"
+         ]
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "total_count": 13
+      }
+order: 1000

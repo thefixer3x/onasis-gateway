@@ -1,0 +1,25 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/cv/similar/images?asset_id=U6ba16262e3bc2db470b8e3cfa8aaab25&license=commercial&safe=true&language=es&page=1&per_page=20&view=minimal"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    asset_id: U6ba16262e3bc2db470b8e3cfa8aaab25
+    license: commercial
+    safe: "true"
+    language: es
+    page: "1"
+    per_page: "20"
+    view: minimal
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

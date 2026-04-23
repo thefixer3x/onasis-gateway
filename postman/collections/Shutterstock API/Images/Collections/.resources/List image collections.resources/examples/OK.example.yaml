@@ -1,0 +1,42 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/collections?embed=<string>&embed=<string>&page=1&per_page=2"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    - key: embed
+      value: <string>
+    - key: embed
+      value: <string>
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "2"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "293542904",
+         "name": "My collection",
+         "total_item_count": 85,
+         "items_updated_time": "2021-05-20T16:15:22-04:00",
+         "cover_item": {
+          "id": "297886754"
+         }
+        }
+       ],
+       "page": 1,
+       "per_page": 100,
+       "total_count": 1
+      }
+order: 1000

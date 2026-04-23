@@ -1,0 +1,19 @@
+$kind: http-request
+description: This endpoint returns up to 10 important keywords from a block of plain text.
+url: "{{baseUrl}}/v2/images/search/suggestions"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+body:
+  type: text
+  content: |-
+    {
+        "text": "<string>"
+    }
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/Get keywords from text.resources/examples
+order: 4000

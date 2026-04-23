@@ -1,0 +1,43 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/videos/licenses"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  body:
+    type: text
+    content: |-
+      {
+          "country": "USA",
+          "editorial": [
+              {
+                  "editorial_id": "10679854a",
+                  "license": "premier_editorial_video_digital_only",
+                  "metadata": {
+                      "purchase_order": "12345"
+                  },
+                  "size": "original"
+              }
+          ]
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "editorial_id": "69656358",
+         "download": {
+          "url": "https://s3-eu-west-1.amazonaws.com/api-downloads.rexfeatures.com/[random-characters].mov?Expires=1524717323"
+         }
+        }
+       ]
+      }
+order: 1000

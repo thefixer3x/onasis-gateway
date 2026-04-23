@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/catalog/search?sort=newest&page=1&per_page=50&query=dogs on the beach&collection_id=123456&collection_id=456789&collection_id=13579&asset_type=image&asset_type=editorial-image"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    - key: sort
+      value: newest
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "50"
+    - key: query
+      value: dogs on the beach
+    - key: collection_id
+      value: "123456"
+    - key: collection_id
+      value: "456789"
+    - key: collection_id
+      value: "13579"
+    - key: asset_type
+      value: image
+    - key: asset_type
+      value: editorial-image
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

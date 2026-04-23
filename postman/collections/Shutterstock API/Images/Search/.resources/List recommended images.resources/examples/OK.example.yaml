@@ -1,0 +1,42 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/recommendations?id=<string>&id=<string>&max_items=20&safe=true"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: id
+      value: <string>
+    - key: id
+      value: <string>
+    - key: max_items
+      value: "20"
+    - key: safe
+      value: "true"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "123456789"
+        },
+        {
+         "id": "99379946"
+        },
+        {
+         "id": "133918412"
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "total_count": 12
+      }
+order: 1000

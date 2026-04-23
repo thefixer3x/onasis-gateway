@@ -1,0 +1,19 @@
+$kind: http-request
+description: This endpoint lists collections based on contributor ID.
+url: "{{baseUrl}}/v2/contributors/:contributor_id/collections"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: sort
+    value: <string>
+    disabled: true
+    description: Sort order
+pathVariables:
+  - key: contributor_id
+    value: <string>
+    description: (Required) Contributor ID
+auth:
+  type: oauth2
+examples: ./.resources/List contributors' collections.resources/examples
+order: 3000

@@ -1,0 +1,3 @@
+$kind: collection
+description: Send test requests to the Shutterstock API.
+order: 11000

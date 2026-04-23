@@ -1,0 +1,19 @@
+$kind: collection
+description: |-
+  Video endpoints work with non-editorial videos, including these tasks:
+
+  - Search
+      - Search for videos in Shutterstock's library.
+
+  - Details
+      - Get additional information for a particular set of videos.
+
+  - Licenses and downloads
+      - License videos for use, view your licensed videos, and download licensed videos.
+
+  - Collections
+      - Group videos in a single place, such as storing videos for a specific project.
+
+  - Featured Collections
+      - Access Shutterstock-created collections of trending content.
+order: 2000

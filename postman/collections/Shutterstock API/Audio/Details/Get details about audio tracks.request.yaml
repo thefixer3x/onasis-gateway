@@ -1,0 +1,26 @@
+$kind: http-request
+description: This endpoint shows information about a track, including its genres, instruments, and other attributes.
+url: "{{baseUrl}}/v2/audio/:id"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: view
+    value: full
+    disabled: true
+    description: Amount of detail to render in the response
+  - key: search_id
+    value: <string>
+    disabled: true
+    description: The ID of the search that is related to this request
+pathVariables:
+  - key: id
+    value: <integer>
+    description: (Required) Audio track ID
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/Get details about audio tracks.resources/examples
+order: 2000

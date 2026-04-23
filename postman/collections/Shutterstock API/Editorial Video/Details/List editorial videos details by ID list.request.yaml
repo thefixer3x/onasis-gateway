@@ -1,0 +1,24 @@
+$kind: http-request
+description: This endpoint lists the details of editorial videos by ID list.
+url: "{{baseUrl}}/v2/editorial/videos?id=<string>&country=<country-code-3>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: id
+    value: <string>
+    description: (Required) ID of the editorial video to list details for
+  - key: country
+    value: <country-code-3>
+    description: (Required) Show only editorial video content that is available for distribution in a certain country
+  - key: search_id
+    value: <string>
+    disabled: true
+    description: The ID of the search that is related to this request
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List editorial videos details by ID list.resources/examples
+order: 2000

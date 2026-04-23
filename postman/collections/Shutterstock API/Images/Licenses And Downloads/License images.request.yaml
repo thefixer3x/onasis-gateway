@@ -1,0 +1,74 @@
+$kind: http-request
+description: This endpoint gets licenses for one or more images. You must specify the image IDs in the body parameter and other details like the format, size, and subscription ID either in the query parameter or with each image ID in the body parameter. Values in the body parameter override values in the query parameters. The download links in the response are valid for 8 hours.
+url: "{{baseUrl}}/v2/images/licenses"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: subscription_id
+    value: <string>
+    disabled: true
+    description: Subscription ID to use to license the image
+  - key: format
+    value: <string>
+    disabled: true
+    description: (Deprecated) Image format
+  - key: size
+    value: huge
+    disabled: true
+    description: Image size
+  - key: search_id
+    value: <string>
+    disabled: true
+    description: Search ID that was provided in the results of an image search
+body:
+  type: text
+  content: |-
+    {
+        "images": [
+            {
+                "image_id": "<string>",
+                "auth_cookie": {
+                    "name": "<string>",
+                    "value": "<string>"
+                },
+                "editorial_acknowledgement": "<boolean>",
+                "format": "jpg",
+                "metadata": {},
+                "price": "<number>",
+                "search_id": "<string>",
+                "show_modal": "<boolean>",
+                "size": "<string>",
+                "custom_dimensions": {
+                    "height": "<integer>",
+                    "width": "<integer>"
+                },
+                "subscription_id": "<string>",
+                "verification_code": "<string>"
+            },
+            {
+                "image_id": "<string>",
+                "auth_cookie": {
+                    "name": "<string>",
+                    "value": "<string>"
+                },
+                "editorial_acknowledgement": "<boolean>",
+                "format": "jpg",
+                "metadata": {},
+                "price": "<number>",
+                "search_id": "<string>",
+                "show_modal": "<boolean>",
+                "size": "<string>",
+                "custom_dimensions": {
+                    "height": "<integer>",
+                    "width": "<integer>"
+                },
+                "subscription_id": "<string>",
+                "verification_code": "<string>"
+            }
+        ]
+    }
+auth:
+  type: oauth2
+examples: ./.resources/License images.resources/examples
+order: 1000

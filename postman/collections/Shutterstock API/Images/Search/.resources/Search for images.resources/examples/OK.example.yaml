@@ -1,0 +1,161 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/search?library=shutterstock&library=offset&added_date=2021-03-29&added_date_start=2021-03-29&aspect_ratio_min=<number>&aspect_ratio_max=<number>&aspect_ratio=<number>&added_date_end=2021-03-29&category=<string>&color=4F21EA&contributor=123456&contributor_country=<country-code-2>&contributor_country=<country-code-2>&fields=<string>&height=<integer>&height_from=1080&height_to=1080&image_type=<string>&image_type=<string>&keyword_safe_search=true&language=fr&license=commercial&license=commercial&model=12345&model=67890&orientation=vertical&page=1&per_page=50&people_model_released=true&people_age=20s&people_ethnicity=<string>&people_ethnicity=<string>&people_gender=both&people_number=2&query=dogs on the beach&region=<country-code-2>&safe=true&sort=popular&spellcheck_query=true&view=minimal&width=<integer>&width_from=1920&width_to=1920"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: library
+      value: shutterstock
+    - key: library
+      value: offset
+    - key: added_date
+      value: 2021-03-29
+    - key: added_date_start
+      value: 2021-03-29
+    - key: aspect_ratio_min
+      value: <number>
+    - key: aspect_ratio_max
+      value: <number>
+    - key: aspect_ratio
+      value: <number>
+    - key: added_date_end
+      value: 2021-03-29
+    - key: category
+      value: <string>
+    - key: color
+      value: 4F21EA
+    - key: contributor
+      value: "123456"
+    - key: contributor_country
+      value: <country-code-2>
+    - key: contributor_country
+      value: <country-code-2>
+    - key: fields
+      value: <string>
+    - key: height
+      value: <integer>
+    - key: height_from
+      value: "1080"
+    - key: height_to
+      value: "1080"
+    - key: image_type
+      value: <string>
+    - key: image_type
+      value: <string>
+    - key: keyword_safe_search
+      value: "true"
+    - key: language
+      value: fr
+    - key: license
+      value: commercial
+    - key: license
+      value: commercial
+    - key: model
+      value: "12345"
+    - key: model
+      value: "67890"
+    - key: orientation
+      value: vertical
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "50"
+    - key: people_model_released
+      value: "true"
+    - key: people_age
+      value: 20s
+    - key: people_ethnicity
+      value: <string>
+    - key: people_ethnicity
+      value: <string>
+    - key: people_gender
+      value: both
+    - key: people_number
+      value: "2"
+    - key: query
+      value: dogs on the beach
+    - key: region
+      value: <country-code-2>
+    - key: safe
+      value: "true"
+    - key: sort
+      value: popular
+    - key: spellcheck_query
+      value: "true"
+    - key: view
+      value: minimal
+    - key: width
+      value: <integer>
+    - key: width_from
+      value: "1920"
+    - key: width_to
+      value: "1920"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "1572478477",
+         "aspect": 1.5,
+         "assets": {
+          "preview": {
+           "height": 300,
+           "url": "https://image.shutterstock.com/display_pic_with_logo/250738318/1572478477/stock-photo-cropped-image-of-woman-gardening-1572478477.jpg",
+           "width": 450
+          },
+          "small_thumb": {
+           "height": 67,
+           "url": "https://thumb7.shutterstock.com/thumb_small/250738318/1572478477/stock-photo-cropped-image-of-woman-gardening-1572478477.jpg",
+           "width": 100
+          },
+          "large_thumb": {
+           "height": 100,
+           "url": "https://thumb7.shutterstock.com/thumb_large/250738318/1572478477/stock-photo-cropped-image-of-woman-gardening-1572478477.jpg",
+           "width": 150
+          },
+          "mosaic": {
+           "height": 167,
+           "url": "https://image.shutterstock.com/image-photo/stock-photo-cropped-image-of-woman-gardening-250nw-1572478477.jpg",
+           "width": 250
+          },
+          "huge_thumb": {
+           "height": 260,
+           "url": "https://image.shutterstock.com/image-photo/cropped-image-woman-gardening-260nw-1572478477.jpg",
+           "width": 390
+          },
+          "preview_1000": {
+           "url": "https://ak.picdn.net/shutterstock/photos/1572478477/watermark_1000/1706028c641ea2f443057287c67d9b91/preview_1000-1572478477.jpg",
+           "width": 1000,
+           "height": 667
+          },
+          "preview_1500": {
+           "url": "https://image.shutterstock.com/z/stock-photo-cropped-image-of-woman-gardening-1572478477.jpg",
+           "width": 1500,
+           "height": 1000
+          }
+         },
+         "contributor": {
+          "id": "250738318"
+         },
+         "description": "cropped image of woman gardening",
+         "image_type": "photo",
+         "has_model_release": true,
+         "media_type": "image"
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "search_id": "749090bb-2967-4a20-b22e-c800dc845e10",
+       "spellcheck_info": {},
+       "total_count": 45
+      }
+order: 1000

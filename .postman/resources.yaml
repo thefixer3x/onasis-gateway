@@ -1,0 +1,25 @@
+# Use this workspace to collaborate
+workspace:
+  id: 16a0fc75-b35d-48ac-b44b-b9480aa27a1a
+
+localResources:
+  collections:
+    - ../services/edoc-external-app-integration---for-clients-postman-collection/edoc-external-app-integration---for-clients-postman-collection.json
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/Intro to Writing Tests: 43116137-0aa75849-f3b0-4f88-91a6-b7226796a06b
+    ../postman/collections/Performance Testing: 43116137-1c951908-d36a-4fd1-87fb-985b8200464b
+    ../postman/collections/Contract Testing: 43116137-548bdff0-97b2-4ae2-a719-438f95b2191a
+    ../postman/collections/Shutterstock API: 43116137-61a2f1ca-c79e-4cb0-8c47-64f967833d09
+    ../postman/collections/Integration Testing: 43116137-993c55bb-5ca7-49bd-be68-faa47f53c235
+    ../postman/collections/Regression Testing: 43116137-ac0e38c5-f7ce-44d3-8ca0-00b2f305e742
+    ../postman/collections/Mock Data Generation: 43116137-ff511a64-0085-49b4-b3aa-495fefda7fc6
+    ../postman/collections/business: 43116137-f74dc46d-8d79-4018-bdae-7181bbccf369
+    ../postman/collections/input: 43116137-fff0ada2-bd2a-4d65-aace-280b4cc3e266
+    ../postman/collections/knowledge: 43116137-8ce332f6-01f1-44fa-93ae-b0487af8b92c
+    ../postman/collections/messaging: 43116137-38697155-7d24-4554-be8d-5b27ce0a0cc4
+  environments:
+    ../postman/environments/third-party-apis.env.yaml: 4cf44bbf-8195-53c8-a3c1-4436ec37487e

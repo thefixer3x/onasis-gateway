@@ -1,0 +1,11 @@
+name: "Typeform API Reference"
+postman_collection_id: "7335949-8e3131a9-3313-4dee-a76c-5cf11fc1d713"
+postman_workspace: "Typeform public workspace"
+fork_count: 141
+category: input
+description: "Official Typeform API collection for creating forms, retrieving responses, managing webhooks, and working with workspaces."
+postman_url: "https://www.postman.com/typeform/workspace/typeform-public-workspace/collection/7335949-8e3131a9-3313-4dee-a76c-5cf11fc1d713"
+auth_type: bearer
+base_url_var: "{{typeform_base_url}}"
+token_var: "{{typeform_token}}"
+notes: "Generate a Personal Access Token from your Typeform account settings. Base URL is https://api.typeform.com."

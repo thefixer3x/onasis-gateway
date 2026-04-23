@@ -1,0 +1,50 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/images/licenses"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  body:
+    type: text
+    content: |-
+      {
+          "country": "USA",
+          "editorial": [
+              {
+                  "editorial_id": "10687730b",
+                  "license": "premier_editorial_comp",
+                  "metadata": {
+                      "customer_id": "12345",
+                      "geo_location": "US",
+                      "number_viewed": "15",
+                      "search_term": "dog"
+                  },
+                  "size": "original"
+              }
+          ]
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "allotment_charge": 1,
+         "editorial_id": "69656358",
+         "download": {
+          "url": "https://s3-eu-west-1.amazonaws.com/api-downloads.rexfeatures.com/[random-characters].jpg?Expires=1524717323"
+         }
+        }
+       ],
+       "page": 1,
+       "per_page": 1,
+       "total_count": 12
+      }
+order: 1000

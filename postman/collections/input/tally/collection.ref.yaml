@@ -1,0 +1,12 @@
+name: "Tally Forms API"
+postman_collection_id: null
+postman_workspace: null
+fork_count: null
+category: input
+description: "Tally is a webhook-based form tool. No dedicated Postman collection — use webhooks and the REST API directly."
+postman_url: null
+rest_api_docs: "https://tally.so/help/api"
+auth_type: api_key
+base_url_var: "{{tally_base_url}}"
+token_var: "{{tally_api_key}}"
+notes: "Tally primarily uses webhooks for form submission events. Configure webhook endpoints in your Tally form settings. REST API access requires a Tally Pro account. Base URL: https://api.tally.so"

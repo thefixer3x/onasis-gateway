@@ -1,0 +1,14 @@
+$kind: http-request
+description: This endpoint redownloads sound effects that you have already received a license for. The download links in the response are valid for 8 hours.
+url: "{{baseUrl}}/v2/sfx/licenses/:id/downloads"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) License ID
+auth:
+  type: oauth2
+examples: ./.resources/Download sound effects.resources/examples
+order: 3000

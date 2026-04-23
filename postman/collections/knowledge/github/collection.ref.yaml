@@ -1,0 +1,11 @@
+name: "GitHub Web API Reference"
+postman_collection_id: "35240-c446a4c9-8dd6-45c4-99f2-688a96fe76ae"
+postman_workspace: "GitHub"
+fork_count: 466
+category: knowledge
+description: "GitHub REST API reference collection covering repos, issues, pull requests, actions, users, and more."
+postman_url: "https://www.postman.com/github/workspace/github/collection/35240-c446a4c9-8dd6-45c4-99f2-688a96fe76ae"
+auth_type: bearer
+base_url_var: "{{github_base_url}}"
+token_var: "{{github_token}}"
+notes: "Use a GitHub Personal Access Token (classic or fine-grained). Set Authorization header to 'Bearer {token}' or 'token {token}'. Fine-grained tokens are recommended for production."

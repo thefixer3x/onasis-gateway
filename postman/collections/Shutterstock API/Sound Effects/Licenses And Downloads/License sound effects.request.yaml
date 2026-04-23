@@ -1,0 +1,34 @@
+$kind: http-request
+description: This endpoint licenses sounds effect assets.
+url: "{{baseUrl}}/v2/sfx/licenses"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+body:
+  type: text
+  content: |-
+    {
+        "sound_effects": [
+            {
+                "sfx_id": "<string>",
+                "subscription_id": "<string>",
+                "audio_layout": "<string>",
+                "format": "<string>",
+                "search_id": "<string>"
+            },
+            {
+                "sfx_id": "<string>",
+                "subscription_id": "<string>",
+                "audio_layout": "<string>",
+                "format": "<string>",
+                "search_id": "<string>"
+            }
+        ]
+    }
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/License sound effects.resources/examples
+order: 2000

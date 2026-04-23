@@ -1,0 +1,182 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos?id=639703&id=993721&view=minimal&search_id=00000000-0000-0000-0000-000000000000"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: id
+      value: "639703"
+    - key: id
+      value: "993721"
+    - key: view
+      value: minimal
+    - key: search_id
+      value: 00000000-0000-0000-0000-000000000000
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "1033184651",
+         "added_date": "2019-07-13",
+         "aspect": 1.778,
+         "aspect_ratio": "16:9",
+         "assets": {
+          "thumb_webm": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/stock-footage-camera-follows-hipster-millennial-young-woman-in-orange-jacket-running-up-on-top-of-mountain-summit.webm"
+          },
+          "thumb_mp4": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/stock-footage-camera-follows-hipster-millennial-young-woman-in-orange-jacket-running-up-on-top-of-mountain-summit.mp4"
+          },
+          "preview_webm": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/preview/stock-footage-camera-follows-hipster-millennial-young-woman-in-orange-jacket-running-up-on-top-of-mountain-summit.webm"
+          },
+          "preview_mp4": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/preview/stock-footage-camera-follows-hipster-millennial-young-woman-in-orange-jacket-running-up-on-top-of-mountain-summit.mp4"
+          },
+          "thumb_jpgs": {
+           "urls": [
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/1.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/2.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/3.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/4.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/5.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/6.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/7.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/8.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/9.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/10.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/11.jpg",
+            "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/12.jpg"
+           ]
+          },
+          "thumb_jpg": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/12.jpg"
+          },
+          "preview_jpg": {
+           "url": "https://ak.picdn.net/shutterstock/videos/1033184651/thumb/12.jpg"
+          },
+          "sd": {
+           "height": 480,
+           "width": 852,
+           "fps": 29.97,
+           "format": "mov",
+           "file_size": 4577280,
+           "display_name": "Standard Definition MPEG",
+           "is_licensable": true
+          },
+          "web": {
+           "height": 240,
+           "width": 426,
+           "fps": 29.97,
+           "format": "mov",
+           "file_size": 1291264,
+           "display_name": "Low Resolution MPEG",
+           "is_licensable": true
+          },
+          "hd": {
+           "height": 1080,
+           "width": 1920,
+           "fps": 29.97,
+           "format": "avc1",
+           "file_size": 110359552,
+           "display_name": "Original HD",
+           "is_licensable": true
+          }
+         },
+         "categories": [
+          {
+           "name": "Nature",
+           "id": "12"
+          },
+          {
+           "name": "People",
+           "id": "13"
+          }
+         ],
+         "contributor": {
+          "id": "4411978"
+         },
+         "description": "Camera follows hipster millennial young woman in orange jacket running up on top of mountain summit at sunset, jumps on top of rocks, raises arms into air, happy and drunk on life, youth and happiness",
+         "duration": 14.081,
+         "has_model_release": true,
+         "has_property_release": false,
+         "is_adult": false,
+         "is_editorial": false,
+         "keywords": [
+          "active",
+          "activity",
+          "adventure",
+          "arms",
+          "backpacker",
+          "carefree",
+          "celebrating",
+          "cliff",
+          "climate",
+          "cloud",
+          "discovery",
+          "escape",
+          "explore",
+          "extreme",
+          "free",
+          "freedom",
+          "girl",
+          "happy",
+          "high",
+          "hiker",
+          "hiking",
+          "hill",
+          "independent",
+          "inspiration",
+          "landscape",
+          "leisure",
+          "lifestyle",
+          "mountain",
+          "mountains",
+          "nature",
+          "outdoor",
+          "peak",
+          "person",
+          "rock",
+          "scenic",
+          "sky",
+          "sport",
+          "success",
+          "summer",
+          "summit",
+          "sun",
+          "sunset",
+          "top",
+          "tourism",
+          "travel",
+          "trekking",
+          "vacation",
+          "view",
+          "winning",
+          "woman"
+         ],
+         "media_type": "video",
+         "models": [
+          {
+           "id": "33233810"
+          },
+          {
+           "id": "25487168"
+          }
+         ]
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "total_count": 25
+      }
+order: 1000

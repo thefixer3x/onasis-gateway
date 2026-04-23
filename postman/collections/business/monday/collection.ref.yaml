@@ -1,0 +1,11 @@
+name: "Monday.com GraphQL API"
+postman_collection_id: "22954425-fb7e3907-b0cb-4786-941f-f7d5efac52ea"
+postman_workspace: "Public testing space"
+fork_count: 20
+category: business
+description: "Monday.com GraphQL API collection for managing boards, items, columns, groups, and automations via GraphQL queries and mutations."
+postman_url: "https://www.postman.com/monday-com/workspace/public-testing-space/collection/22954425-fb7e3907-b0cb-4786-941f-f7d5efac52ea"
+auth_type: bearer
+base_url_var: "{{monday_base_url}}"
+token_var: "{{monday_api_key}}"
+notes: "Use a Monday.com API token from your profile settings. All requests are POST to a single GraphQL endpoint. Base URL: https://api.monday.com/v2. Include 'API-Version' header for versioned access."

@@ -1,0 +1,26 @@
+$kind: http-request
+description: This endpoint redownloads videos that you have already received a license for.
+url: "{{baseUrl}}/v2/videos/licenses/:id/downloads"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) The license ID of the item to (re)download. The download links in the response are valid for 8 hours.
+body:
+  type: text
+  content: |-
+    {
+        "auth_cookie": {
+            "name": "<string>",
+            "value": "<string>"
+        },
+        "show_modal": "<boolean>",
+        "size": "<string>",
+        "verification_code": "<string>"
+    }
+auth:
+  type: oauth2
+examples: ./.resources/Download videos.resources/examples
+order: 3000

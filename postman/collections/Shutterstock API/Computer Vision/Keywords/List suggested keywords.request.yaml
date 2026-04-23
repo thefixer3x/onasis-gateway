@@ -1,0 +1,17 @@
+$kind: http-request
+description: This endpoint returns a list of suggested keywords for a media item that you specify or upload.
+url: "{{baseUrl}}/v2/cv/keywords?asset_id=<asset-upload-id>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: asset_id
+    value: <asset-upload-id>
+    description: (Required) The asset ID or upload ID to suggest keywords for
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List suggested keywords.resources/examples
+order: 1000

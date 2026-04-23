@@ -1,0 +1,78 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/videos/licenses?video_id=12345678&license=premier_editorial_all_media&page=1&per_page=20&sort=newest&username=aUniqueUsername&start_date=2021-03-29T13:25:13.521Z&end_date=2021-03-29T13:25:13.521Z&download_availability=all&team_history=false"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    video_id: "12345678"
+    license: premier_editorial_all_media
+    page: "1"
+    per_page: "20"
+    sort: newest
+    username: aUniqueUsername
+    start_date: 2021-03-29T13:25:13.521Z
+    end_date: 2021-03-29T13:25:13.521Z
+    download_availability: all
+    team_history: "false"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "e1dbb15d5384725d292cf64f793ac45062",
+         "user": {
+          "username": "username1"
+         },
+         "license": "premier_editorial_all_digital",
+         "download_time": "2020-12-18T02:22:56.000Z",
+         "is_downloadable": false,
+         "video": {
+          "id": "11231389im",
+          "format": {
+           "size": "original"
+          }
+         },
+         "subscription_id": "s12345678",
+         "metadata": {
+          "client": "Company A",
+          "other": "Important media",
+          "purchase_order": "457234",
+          "job": "Important project"
+         }
+        },
+        {
+         "id": "e1dbb15d5384725d292cf64f793ac45114",
+         "user": {
+          "username": "username2"
+         },
+         "license": "premier_editorial_all_digital",
+         "download_time": "2020-12-11T01:24:22.000Z",
+         "is_downloadable": false,
+         "video": {
+          "id": "11231442aa",
+          "format": {
+           "size": "original"
+          }
+         },
+         "subscription_id": "s12345678",
+         "metadata": {
+          "client": "Company B",
+          "other": "Important image",
+          "purchase_order": "5583831",
+          "job": "Important project"
+         }
+        }
+       ],
+       "page": 1,
+       "per_page": 2
+      }
+order: 1000

@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{baseUrl}}/v2/user/subscriptions"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+auth:
+  type: oauth2
+examples: ./.resources/List user subscriptions.resources/examples
+order: 3000

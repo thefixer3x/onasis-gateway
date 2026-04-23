@@ -1,0 +1,11 @@
+name: "HubSpot CRM API Collections"
+postman_collection_id: "26126890-fa75a62c-7a82-4c9e-ad99-edb189d8a73e"
+postman_workspace: "HubSpot Public API Workspace"
+fork_count: 4533
+category: business
+description: "Official HubSpot CRM API collection covering contacts, companies, deals, tickets, pipelines, and marketing automation."
+postman_url: "https://www.postman.com/hubspot/workspace/hubspot-public-api-workspace/collection/26126890-fa75a62c-7a82-4c9e-ad99-edb189d8a73e"
+auth_type: bearer
+base_url_var: "{{hubspot_base_url}}"
+token_var: "{{hubspot_token}}"
+notes: "Use a Private App access token (recommended over API keys). Create a Private App in your HubSpot account under Settings > Integrations. Base URL: https://api.hubapi.com"

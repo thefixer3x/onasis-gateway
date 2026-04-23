@@ -1,0 +1,30 @@
+$kind: http-request
+description: This endpoint shows information about an image, including a URL to a preview image and the sizes that it is available in.
+url: "{{baseUrl}}/v2/images/:id"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: language
+    value: <string>
+    disabled: true
+    description: Language for the keywords and categories in the response
+  - key: view
+    value: full
+    disabled: true
+    description: Amount of detail to render in the response
+  - key: search_id
+    value: <string>
+    disabled: true
+    description: The ID of the search that is related to this request
+pathVariables:
+  - key: id
+    value: <asset-id>
+    description: (Required) Image ID
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/Get details about images.resources/examples
+order: 2000

@@ -1,0 +1,41 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/collections/:id/items?page=1&per_page=100&share_code=<string>&sort=oldest"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    page: "1"
+    per_page: "100"
+    share_code: <string>
+    sort: oldest
+  pathVariables:
+    id: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "1690105108",
+         "added_time": "2021-07-08T12:33:37.000Z",
+         "media_type": "image"
+        },
+        {
+         "id": "1468703072",
+         "added_time": "2021-07-08T12:31:43.000Z",
+         "media_type": "image"
+        }
+       ],
+       "page": 1,
+       "per_page": 2,
+       "total_count": 82
+      }
+order: 1000

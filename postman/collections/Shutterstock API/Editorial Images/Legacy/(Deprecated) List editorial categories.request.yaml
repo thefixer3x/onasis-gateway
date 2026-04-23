@@ -1,0 +1,13 @@
+$kind: http-request
+description: Deprecated; use `GET /v2/editorial/images/categories` instead. This endpoint lists the categories that editorial images can belong to, which are separate from the categories that other types of assets can belong to.
+url: "{{baseUrl}}/v2/editorial/categories"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/(Deprecated) List editorial categories.resources/examples
+order: 7000

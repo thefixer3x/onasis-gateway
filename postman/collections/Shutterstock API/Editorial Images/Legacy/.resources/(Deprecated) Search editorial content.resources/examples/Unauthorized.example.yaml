@@ -1,0 +1,38 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/search?query=<string>&sort=relevant&category=<string>&country=USA&supplier_code=<string>&supplier_code=<string>&date_start=<date>&date_end=<date>&per_page=20&cursor=<string>"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: query
+      value: <string>
+    - key: sort
+      value: relevant
+    - key: category
+      value: <string>
+    - key: country
+      value: USA
+    - key: supplier_code
+      value: <string>
+    - key: supplier_code
+      value: <string>
+    - key: date_start
+      value: <date>
+    - key: date_end
+      value: <date>
+    - key: per_page
+      value: "20"
+    - key: cursor
+      value: <string>
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

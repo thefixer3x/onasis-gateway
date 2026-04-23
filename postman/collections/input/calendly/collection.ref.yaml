@@ -1,0 +1,11 @@
+name: "Calendly API"
+postman_collection_id: "32889764-b48f686b-915d-43d5-bf99-c29cf6846e52"
+postman_workspace: "Calendly's API Collection"
+fork_count: 419
+category: input
+description: "Official Calendly API collection for managing scheduling links, event types, invitees, and webhook subscriptions."
+postman_url: "https://www.postman.com/calendly/workspace/calendly-s-api-collection/collection/32889764-b48f686b-915d-43d5-bf99-c29cf6846e52"
+auth_type: bearer
+base_url_var: "{{calendly_base_url}}"
+token_var: "{{calendly_token}}"
+notes: "Use a Personal Access Token from your Calendly account integrations page. OAuth2 is also supported for multi-user apps. Base URL: https://api.calendly.com"

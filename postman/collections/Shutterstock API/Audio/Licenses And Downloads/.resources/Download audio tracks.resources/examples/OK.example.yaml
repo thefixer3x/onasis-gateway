@@ -1,0 +1,23 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/audio/licenses/:id/downloads"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  pathVariables:
+    id: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "url": "http://download2.dev.shutterstock.com/gatekeeper/abc/original.wav",
+       "shorts_loops_stems": "http://download2.dev.shutterstock.com/gatekeeper/abc/original.zip"
+      }
+order: 1000

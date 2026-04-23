@@ -1,0 +1,36 @@
+$kind: http-request
+description: This endpoint gets licenses for one or more tracks. The download links in the response are valid for 8 hours.
+url: "{{baseUrl}}/v2/audio/licenses"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: license
+    value: <string>
+    disabled: true
+    description: License type
+  - key: search_id
+    value: <string>
+    disabled: true
+    description: The ID of the search that led to licensing this track
+body:
+  type: text
+  content: |-
+    {
+        "audio": [
+            {
+                "audio_id": "<string>",
+                "license": "<string>",
+                "search_id": "<string>"
+            },
+            {
+                "audio_id": "<string>",
+                "license": "<string>",
+                "search_id": "<string>"
+            }
+        ]
+    }
+auth:
+  type: oauth2
+examples: ./.resources/License audio tracks.resources/examples
+order: 1000
