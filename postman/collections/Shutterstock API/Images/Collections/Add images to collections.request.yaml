@@ -1,0 +1,31 @@
+$kind: http-request
+description: This endpoint adds one or more images to a collection by image IDs.
+url: "{{baseUrl}}/v2/images/collections/:id/items"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) Collection ID
+body:
+  type: text
+  content: |-
+    {
+        "items": [
+            {
+                "id": "<string>",
+                "added_time": "<dateTime>",
+                "media_type": "<string>"
+            },
+            {
+                "id": "<string>",
+                "added_time": "<dateTime>",
+                "media_type": "<string>"
+            }
+        ]
+    }
+auth:
+  type: oauth2
+examples: ./.resources/Add images to collections.resources/examples
+order: 6000

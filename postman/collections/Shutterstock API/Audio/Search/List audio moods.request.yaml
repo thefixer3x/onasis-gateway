@@ -1,0 +1,18 @@
+$kind: http-request
+description: This endpoint returns a list of all audio moods.
+url: "{{baseUrl}}/v2/audio/moods"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: language
+    value: <string>
+    disabled: true
+    description: Which language the moods will be returned in
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List audio moods.resources/examples
+order: 4000

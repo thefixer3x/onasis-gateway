@@ -1,0 +1,11 @@
+name: "Confluence Cloud REST API v2"
+postman_collection_id: "42654973-3182be8e-99e9-4dec-8b51-e7ec0d6ca3f8"
+postman_workspace: "Atlassian (Cloud)"
+fork_count: 136
+category: knowledge
+description: "Official Atlassian Confluence Cloud REST API v2 collection for managing spaces, pages, attachments, and content."
+postman_url: "https://www.postman.com/atlassian-cloud/workspace/atlassian-cloud/collection/42654973-3182be8e-99e9-4dec-8b51-e7ec0d6ca3f8"
+auth_type: basic
+base_url_var: "{{confluence_base_url}}"
+token_var: "{{confluence_api_token}}"
+notes: "Use Basic Auth with your Atlassian account email and an API token (not your password). Generate tokens at https://id.atlassian.com/manage-profile/security/api-tokens. Base URL format: https://{your-domain}.atlassian.net/wiki"

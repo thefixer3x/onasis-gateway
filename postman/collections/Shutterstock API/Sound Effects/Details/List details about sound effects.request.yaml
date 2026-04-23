@@ -1,0 +1,33 @@
+$kind: http-request
+description: This endpoint shows information about sound effects.
+url: "{{baseUrl}}/v2/sfx?id=<asset-id>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: id
+    value: <asset-id>
+    description: (Required) One or more sound effect IDs
+  - key: view
+    value: minimal
+    disabled: true
+    description: Amount of detail to render in the response
+  - key: language
+    value: <string>
+    disabled: true
+    description: Language for the keywords and categories in the response
+  - key: library
+    value: <string>
+    disabled: true
+    description: Which library to fetch from
+  - key: search_id
+    value: <string>
+    disabled: true
+    description: The ID of the search that is related to this request
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List details about sound effects.resources/examples
+order: 2000

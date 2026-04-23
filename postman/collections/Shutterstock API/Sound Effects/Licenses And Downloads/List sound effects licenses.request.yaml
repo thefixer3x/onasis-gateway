@@ -1,0 +1,55 @@
+$kind: http-request
+description: This endpoint lists existing licenses.
+url: "{{baseUrl}}/v2/sfx/licenses"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: sfx_id
+    value: <string>
+    disabled: true
+    description: Show licenses for the specified sound effects ID
+  - key: license
+    value: <string>
+    disabled: true
+    description: Show sound effects that are available with the specified license, such as `standard` or `enhanced`
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: sort
+    value: newest
+    disabled: true
+    description: Sort order
+  - key: username
+    value: <string>
+    disabled: true
+    description: Filter licenses by username of licensee
+  - key: start_date
+    value: <dateTime>
+    disabled: true
+    description: Show licenses created on or after the specified date
+  - key: end_date
+    value: <dateTime>
+    disabled: true
+    description: Show licenses created before the specified date
+  - key: license_id
+    value: <string>
+    disabled: true
+    description: Filter by the license ID
+  - key: download_availability
+    value: all
+    disabled: true
+    description: Filter licenses by download availability
+  - key: team_history
+    value: "false"
+    disabled: true
+    description: Set to true to see license history for all members of your team.
+auth:
+  type: oauth2
+examples: ./.resources/List sound effects licenses.resources/examples
+order: 1000

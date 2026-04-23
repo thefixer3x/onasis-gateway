@@ -1,0 +1,58 @@
+$kind: http-request
+description: This endpoint gets licenses for one or more videos. You must specify the video IDs in the body parameter and the size and subscription ID either in the query parameter or with each video ID in the body parameter. Values in the body parameter override values in the query parameters. The download links in the response are valid for 8 hours.
+url: "{{baseUrl}}/v2/videos/licenses"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: subscription_id
+    value: <string>
+    disabled: true
+    description: The subscription ID to use for licensing
+  - key: size
+    value: web
+    disabled: true
+    description: The size of the video to license
+  - key: search_id
+    value: <string>
+    disabled: true
+    description: The Search ID that led to this licensing event
+body:
+  type: text
+  content: |-
+    {
+        "videos": [
+            {
+                "video_id": "<string>",
+                "auth_cookie": {
+                    "name": "<string>",
+                    "value": "<string>"
+                },
+                "editorial_acknowledgement": "<boolean>",
+                "metadata": {},
+                "price": "<number>",
+                "search_id": "<string>",
+                "show_modal": "<boolean>",
+                "size": "<string>",
+                "subscription_id": "<string>"
+            },
+            {
+                "video_id": "<string>",
+                "auth_cookie": {
+                    "name": "<string>",
+                    "value": "<string>"
+                },
+                "editorial_acknowledgement": "<boolean>",
+                "metadata": {},
+                "price": "<number>",
+                "search_id": "<string>",
+                "show_modal": "<boolean>",
+                "size": "<string>",
+                "subscription_id": "<string>"
+            }
+        ]
+    }
+auth:
+  type: oauth2
+examples: ./.resources/License videos.resources/examples
+order: 1000

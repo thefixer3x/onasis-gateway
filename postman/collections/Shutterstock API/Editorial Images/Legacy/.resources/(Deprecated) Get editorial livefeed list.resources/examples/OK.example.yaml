@@ -1,0 +1,40 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/livefeeds?country=USA&page=1&per_page=20"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    country: USA
+    page: "1"
+    per_page: "20"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "2018%2F07%2F17%2FPrince%20Charles%20and%20Camilla%20Duchess%20of%20Cornwall%20visit%20to%20Cornwall%2C%20Day%202",
+         "name": "Prince Charles and Camilla Duchess of Cornwall visit to Cornwall, Day 2",
+         "total_item_count": 38,
+         "created_time": "2018-07-17T12:42:03+00:00",
+         "cover_item": {
+          "height": 117,
+          "width": 170,
+          "url": "https://editorial01.shuttercorp.net/thumb/9763363q/51e28f39/Shutterstock_9763363q.jpg",
+          "id": "9763363q"
+         }
+        }
+       ],
+       "page": 1,
+       "per_page": 1,
+       "total_count": 56
+      }
+order: 1000

@@ -1,0 +1,19 @@
+$kind: http-request
+description: This endpoint removes one or more images from a collection.
+url: "{{baseUrl}}/v2/images/collections/:id/items"
+method: DELETE
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: item_id
+    value: <string>
+    disabled: true
+    description: One or more image IDs to remove from the collection
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) Collection ID
+auth:
+  type: oauth2
+examples: ./.resources/Remove images from collections.resources/examples
+order: 8000

@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{baseUrl}}/v2/user/access_token"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+auth:
+  type: oauth2
+examples: ./.resources/Get access token details.resources/examples
+order: 2000

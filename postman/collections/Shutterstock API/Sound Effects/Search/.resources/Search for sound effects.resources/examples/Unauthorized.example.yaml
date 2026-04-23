@@ -1,0 +1,31 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/sfx/search?added_date=2022-09-23&added_date_start=2021-03-29&added_date_end=2021-03-29&duration=180&duration_from=30&duration_to=180&page=1&per_page=1&query=drum&safe=true&sort=popular&view=full&language=cs"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    added_date: 2022-09-23
+    added_date_start: 2021-03-29
+    added_date_end: 2021-03-29
+    duration: "180"
+    duration_from: "30"
+    duration_to: "180"
+    page: "1"
+    per_page: "1"
+    query: drum
+    safe: "true"
+    sort: popular
+    view: full
+    language: cs
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

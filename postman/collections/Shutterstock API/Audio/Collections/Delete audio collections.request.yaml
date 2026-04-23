@@ -1,0 +1,14 @@
+$kind: http-request
+description: This endpoint deletes a collection.
+url: "{{baseUrl}}/v2/audio/collections/:id"
+method: DELETE
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) Collection ID
+auth:
+  type: oauth2
+examples: ./.resources/Delete audio collections.resources/examples
+order: 5000

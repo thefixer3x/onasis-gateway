@@ -1,0 +1,156 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/audio/search?artists=<string>&artists=<string>&bpm=<integer>&bpm_from=80&bpm_to=120&duration=180&duration_from=30&duration_to=180&genre=Classical&genre=Holiday&is_instrumental=true&instruments=Trumpet&instruments=Percussion&moods=Confident&moods=Playful&page=1&per_page=1&query=drum&sort=score&sort_order=desc&vocal_description=female&view=full&fields=<string>&library=premier&language=<string>"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: artists
+      value: <string>
+    - key: artists
+      value: <string>
+    - key: bpm
+      value: <integer>
+    - key: bpm_from
+      value: "80"
+    - key: bpm_to
+      value: "120"
+    - key: duration
+      value: "180"
+    - key: duration_from
+      value: "30"
+    - key: duration_to
+      value: "180"
+    - key: genre
+      value: Classical
+    - key: genre
+      value: Holiday
+    - key: is_instrumental
+      value: "true"
+    - key: instruments
+      value: Trumpet
+    - key: instruments
+      value: Percussion
+    - key: moods
+      value: Confident
+    - key: moods
+      value: Playful
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "1"
+    - key: query
+      value: drum
+    - key: sort
+      value: score
+    - key: sort_order
+      value: desc
+    - key: vocal_description
+      value: female
+    - key: view
+      value: full
+    - key: fields
+      value: <string>
+    - key: library
+      value: premier
+    - key: language
+      value: <string>
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "added_date": "2016-08-16",
+         "artists": [
+          {
+           "name": "Klimenko Music"
+          }
+         ],
+         "assets": {
+          "clean_audio": {
+           "file_size": 35188408
+          },
+          "preview_mp3": {
+           "file_size": 4400203,
+           "url": "https://ak.picdn.net/shutterstock/audio/442583/preview/preview.mp3"
+          },
+          "preview_ogg": {
+           "file_size": 4453197,
+           "url": "https://ak.picdn.net/shutterstock/audio/442583/preview/preview.ogg"
+          },
+          "waveform": {
+           "file_size": 18778,
+           "url": "https://ak.picdn.net/shutterstock/audio/442583/waveform/waveform.png"
+          }
+         },
+         "bpm": 110,
+         "contributor": {
+          "id": "2847971"
+         },
+         "description": "Pulsing and feel-good, featuring soaring synthesizer, groovy synth bass drums and synth drums that create a euphoric, upbeat mood.",
+         "duration": 183,
+         "genres": [
+          "Dance/Electronic",
+          "Electro Pop",
+          "Pop/Rock"
+         ],
+         "id": "442583",
+         "instruments": [
+          "Piano",
+          "Synth bass",
+          "Synth drums",
+          "Synthesizer"
+         ],
+         "is_adult": false,
+         "is_instrumental": true,
+         "isrc": "",
+         "keywords": [
+          "celebratory",
+          "chic",
+          "euphoric",
+          "good times",
+          "hip",
+          "optimistic",
+          "party",
+          "soaring",
+          "upbeat"
+         ],
+         "language": "en",
+         "lyrics": "",
+         "media_type": "audio",
+         "moods": [
+          "Bright",
+          "Confident",
+          "Fun",
+          "Happy",
+          "Inspiring",
+          "Optimistic",
+          "Playful",
+          "Sophisticated",
+          "Stylish",
+          "Uplifting"
+         ],
+         "published_time": "2016-08-16T14:30:03-04:00",
+         "recording_version": "",
+         "releases": [],
+         "similar_artists": [],
+         "title": "Another Tomorrow",
+         "updated_time": "2016-08-18T17:59:33-04:00",
+         "vocal_description": "",
+         "url": ""
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "total_count": 123455,
+       "search_id": "749090bb-2967-4a20-b22e-c800dc845e10"
+      }
+order: 1000

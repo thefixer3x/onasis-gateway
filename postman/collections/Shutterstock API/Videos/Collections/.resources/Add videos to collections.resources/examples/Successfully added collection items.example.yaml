@@ -1,0 +1,32 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos/collections/:id/items"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  pathVariables:
+    id: ""
+  body:
+    type: text
+    content: |-
+      {
+          "items": [
+              {
+                  "id": "10120264"
+              },
+              {
+                  "id": "24419024"
+              }
+          ]
+      }
+response:
+  statusCode: 204
+  statusText: No Content
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 1000

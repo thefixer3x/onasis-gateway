@@ -1,0 +1,68 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/audio/search?artists=<string>&artists=<string>&bpm=<integer>&bpm_from=80&bpm_to=120&duration=180&duration_from=30&duration_to=180&genre=Classical&genre=Holiday&is_instrumental=true&instruments=Trumpet&instruments=Percussion&moods=Confident&moods=Playful&page=1&per_page=1&query=drum&sort=score&sort_order=desc&vocal_description=female&view=full&fields=<string>&library=premier&language=<string>"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: artists
+      value: <string>
+    - key: artists
+      value: <string>
+    - key: bpm
+      value: <integer>
+    - key: bpm_from
+      value: "80"
+    - key: bpm_to
+      value: "120"
+    - key: duration
+      value: "180"
+    - key: duration_from
+      value: "30"
+    - key: duration_to
+      value: "180"
+    - key: genre
+      value: Classical
+    - key: genre
+      value: Holiday
+    - key: is_instrumental
+      value: "true"
+    - key: instruments
+      value: Trumpet
+    - key: instruments
+      value: Percussion
+    - key: moods
+      value: Confident
+    - key: moods
+      value: Playful
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "1"
+    - key: query
+      value: drum
+    - key: sort
+      value: score
+    - key: sort_order
+      value: desc
+    - key: vocal_description
+      value: female
+    - key: view
+      value: full
+    - key: fields
+      value: <string>
+    - key: library
+      value: premier
+    - key: language
+      value: <string>
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 4000

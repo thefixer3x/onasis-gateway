@@ -1,0 +1,104 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/search?library=shutterstock&library=offset&added_date=2021-03-29&added_date_start=2021-03-29&aspect_ratio_min=<number>&aspect_ratio_max=<number>&aspect_ratio=<number>&added_date_end=2021-03-29&category=<string>&color=4F21EA&contributor=123456&contributor_country=<country-code-2>&contributor_country=<country-code-2>&fields=<string>&height=<integer>&height_from=1080&height_to=1080&image_type=<string>&image_type=<string>&keyword_safe_search=true&language=fr&license=commercial&license=commercial&model=12345&model=67890&orientation=vertical&page=1&per_page=50&people_model_released=true&people_age=20s&people_ethnicity=<string>&people_ethnicity=<string>&people_gender=both&people_number=2&query=dogs on the beach&region=<country-code-2>&safe=true&sort=popular&spellcheck_query=true&view=minimal&width=<integer>&width_from=1920&width_to=1920"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: library
+      value: shutterstock
+    - key: library
+      value: offset
+    - key: added_date
+      value: 2021-03-29
+    - key: added_date_start
+      value: 2021-03-29
+    - key: aspect_ratio_min
+      value: <number>
+    - key: aspect_ratio_max
+      value: <number>
+    - key: aspect_ratio
+      value: <number>
+    - key: added_date_end
+      value: 2021-03-29
+    - key: category
+      value: <string>
+    - key: color
+      value: 4F21EA
+    - key: contributor
+      value: "123456"
+    - key: contributor_country
+      value: <country-code-2>
+    - key: contributor_country
+      value: <country-code-2>
+    - key: fields
+      value: <string>
+    - key: height
+      value: <integer>
+    - key: height_from
+      value: "1080"
+    - key: height_to
+      value: "1080"
+    - key: image_type
+      value: <string>
+    - key: image_type
+      value: <string>
+    - key: keyword_safe_search
+      value: "true"
+    - key: language
+      value: fr
+    - key: license
+      value: commercial
+    - key: license
+      value: commercial
+    - key: model
+      value: "12345"
+    - key: model
+      value: "67890"
+    - key: orientation
+      value: vertical
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "50"
+    - key: people_model_released
+      value: "true"
+    - key: people_age
+      value: 20s
+    - key: people_ethnicity
+      value: <string>
+    - key: people_ethnicity
+      value: <string>
+    - key: people_gender
+      value: both
+    - key: people_number
+      value: "2"
+    - key: query
+      value: dogs on the beach
+    - key: region
+      value: <country-code-2>
+    - key: safe
+      value: "true"
+    - key: sort
+      value: popular
+    - key: spellcheck_query
+      value: "true"
+    - key: view
+      value: minimal
+    - key: width
+      value: <integer>
+    - key: width_from
+      value: "1920"
+    - key: width_to
+      value: "1920"
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 4000

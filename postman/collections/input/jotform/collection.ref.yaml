@@ -1,0 +1,12 @@
+name: "Jotform REST API"
+postman_collection_id: null
+postman_workspace: null
+fork_count: null
+category: input
+description: "Jotform REST API for managing forms, submissions, and reports. No dedicated Postman collection — use the REST API directly."
+postman_url: null
+rest_api_docs: "https://api.jotform.com/docs"
+auth_type: api_key
+base_url_var: "{{jotform_base_url}}"
+token_var: "{{jotform_api_key}}"
+notes: "Pass the API key as a query parameter (?apiKey={key}) or as the APIKEY header. Generate your key at https://www.jotform.com/myaccount/api. Base URL: https://api.jotform.com"

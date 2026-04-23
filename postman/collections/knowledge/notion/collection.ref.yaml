@@ -1,0 +1,11 @@
+name: "Notion API"
+postman_collection_id: "15568543-d990f9b7-98d3-47d3-9131-4866ab9c6df2"
+postman_workspace: "Notion's API Workspace"
+fork_count: 65160
+category: knowledge
+description: "Official Notion API collection for reading and writing pages, databases, blocks, and users in Notion workspaces."
+postman_url: "https://www.postman.com/notionhq/workspace/notion-s-api-workspace/collection/15568543-d990f9b7-98d3-47d3-9131-4866ab9c6df2"
+auth_type: bearer
+base_url_var: "{{notion_base_url}}"
+token_var: "{{notion_token}}"
+notes: "Use an Internal Integration Token for server-side access. Set the Notion-Version header to the latest API version (e.g. 2022-06-28)."

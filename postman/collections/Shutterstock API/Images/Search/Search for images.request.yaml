@@ -1,0 +1,187 @@
+$kind: http-request
+description: This endpoint searches for images. If you specify more than one search parameter, the API uses an AND condition. Array parameters can be specified multiple times; in this case, the API uses an AND or an OR condition with those values, depending on the parameter. You can also filter search terms out in the `query` parameter by prefixing the term with NOT. Free API accounts show results only from a limited library of media, not the full Shutterstock media library. Also, the number of search fields they can use in a request is limited.
+url: "{{baseUrl}}/v2/images/search"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: library
+    value: shutterstock
+    disabled: true
+    description: Search within different Shutterstock owned libraries
+  - key: added_date
+    value: <date>
+    disabled: true
+    description: Show images added on the specified date
+  - key: added_date_start
+    value: <date>
+    disabled: true
+    description: Show images added on or after the specified date
+  - key: aspect_ratio_min
+    value: <number>
+    disabled: true
+    description: Show images with the specified aspect ratio or higher, using a positive decimal of the width divided by the height, such as 1.7778 for a 16:9 image
+  - key: aspect_ratio_max
+    value: <number>
+    disabled: true
+    description: Show images with the specified aspect ratio or lower, using a positive decimal of the width divided by the height, such as 1.7778 for a 16:9 image
+  - key: aspect_ratio
+    value: <number>
+    disabled: true
+    description: Show images with the specified aspect ratio, using a positive decimal of the width divided by the height, such as 1.7778 for a 16:9 image
+  - key: added_date_end
+    value: <date>
+    disabled: true
+    description: Show images added before the specified date
+  - key: category
+    value: <string>
+    disabled: true
+    description: Show images with the specified Shutterstock-defined category; specify a category name or ID
+  - key: color
+    value: <string>
+    disabled: true
+    description: Specify either a hexadecimal color in the format '4F21EA' or 'grayscale'; the API returns images that use similar colors
+  - key: contributor
+    value: <string>
+    disabled: true
+    description: Show images with the specified contributor names or IDs, allows multiple
+  - key: contributor_country
+    value: <country-code-2>
+    disabled: true
+    description: Show images from contributors in one or more specified countries, or start with NOT to exclude a country from the search
+  - key: fields
+    value: <string>
+    disabled: true
+    description: Fields to display in the response; see the documentation for the fields parameter in the overview section
+  - key: height
+    value: <integer>
+    disabled: true
+    description: (Deprecated; use height_from and height_to instead) Show images with the specified height
+  - key: height_from
+    value: <integer>
+    disabled: true
+    description: Show images with the specified height or larger, in pixels
+  - key: height_to
+    value: <integer>
+    disabled: true
+    description: Show images with the specified height or smaller, in pixels
+  - key: image_type
+    value: <string>
+    disabled: true
+    description: Show images of the specified type
+  - key: keyword_safe_search
+    value: "true"
+    disabled: true
+    description: Hide results with potentially unsafe keywords
+  - key: language
+    value: <string>
+    disabled: true
+    description: Set query and result language (uses Accept-Language header if not set)
+  - key: license
+    value: commercial
+    disabled: true
+    description: Show only images with the specified license
+  - key: model
+    value: <string>
+    disabled: true
+    description: Show image results with the specified model IDs
+  - key: orientation
+    value: <string>
+    disabled: true
+    description: Show image results with horizontal or vertical orientation
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: people_model_released
+    value: <boolean>
+    disabled: true
+    description: Show images of people with a signed model release
+  - key: people_age
+    value: <string>
+    disabled: true
+    description: Show images that feature people of the specified age category
+  - key: people_ethnicity
+    value: <string>
+    disabled: true
+    description: Show images with people of the specified ethnicities, or start with NOT to show images without those ethnicities
+  - key: people_gender
+    value: <string>
+    disabled: true
+    description: Show images with people of the specified gender
+  - key: people_number
+    value: <integer>
+    disabled: true
+    description: Show images with the specified number of people
+  - key: query
+    value: <string>
+    disabled: true
+    description: One or more search terms separated by spaces; you can use NOT to filter out images that match a term
+  - key: region
+    value: <country-code-2>
+    disabled: true
+    description: Raise or lower search result rankings based on the result's relevance to a specified region; you can provide a country code or an IP address from which the API infers a country
+  - key: safe
+    value: "true"
+    disabled: true
+    description: Enable or disable safe search
+  - key: sort
+    value: popular
+    disabled: true
+    description: Sort by
+  - key: spellcheck_query
+    value: "true"
+    disabled: true
+    description: Spellcheck the search query and return results on suggested spellings
+  - key: view
+    value: minimal
+    disabled: true
+    description: Amount of detail to render in the response
+  - key: width
+    value: <integer>
+    disabled: true
+    description: (Deprecated; use width_from and width_to instead) Show images with the specified width
+  - key: width_from
+    value: <integer>
+    disabled: true
+    description: Show images with the specified width or larger, in pixels
+  - key: width_to
+    value: <integer>
+    disabled: true
+    description: Show images with the specified width or smaller, in pixels
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+scripts:
+  - type: afterResponse
+    code: |-
+      let images = pm.response.json().data
+
+      var template = `
+          <table bgcolor="#FFFFFF">
+              <tr>
+                  <th>id</th>
+                  <th>image</th>
+              </tr>
+
+              {{#each image}}
+                  <tr>
+                      <td>{{id}}</td>
+                      <td><img src="{{assets.preview.url}}" /></td>
+                  </tr>
+              {{/each}}
+          </table>
+      `;
+
+      pm.visualizer.set(template, {
+          image: pm.response.json().data
+      })
+    language: text/javascript
+examples: ./.resources/Search for images.resources/examples
+order: 1000

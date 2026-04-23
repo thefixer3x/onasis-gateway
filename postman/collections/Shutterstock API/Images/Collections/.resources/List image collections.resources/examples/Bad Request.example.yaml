@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/collections?embed=<string>&embed=<string>&page=1&per_page=2"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    - key: embed
+      value: <string>
+    - key: embed
+      value: <string>
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "2"
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 2000

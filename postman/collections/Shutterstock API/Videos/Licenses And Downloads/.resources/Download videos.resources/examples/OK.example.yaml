@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos/licenses/:id/downloads"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  pathVariables:
+    id: ""
+  body:
+    type: text
+    content: |-
+      {
+          "size": "web"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "url": "https://download1.shutterstock.com/gatekeeper/W3siZSI6MTUzMzMzMzUzMCwiayI6InZpZGVvLzM5NjU4ODEvaGQubW92IiwibSI6MSwiZCI6InNodXR0ZXJzdG9jay1tZWRpYSJ9LCJjZ2lvRU14T09hNWZGTHZsN21iTWVPRVQ3MFEiXQ/shutterstock_v3965881.mov"
+      }
+order: 1000

@@ -1,0 +1,66 @@
+$kind: http-request
+description: This endpoint searches for sound effects. If you specify more than one search parameter, the API uses an AND condition.
+url: "{{baseUrl}}/v2/sfx/search"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: added_date
+    value: <date>
+    disabled: true
+    description: Show sound effects added on the specified date
+  - key: added_date_start
+    value: <date>
+    disabled: true
+    description: Show sound effects added on or after the specified date
+  - key: added_date_end
+    value: <date>
+    disabled: true
+    description: Show sound effects added before the specified date
+  - key: duration
+    value: <integer>
+    disabled: true
+    description: Show sound effects with the specified duration in seconds
+  - key: duration_from
+    value: <integer>
+    disabled: true
+    description: Show sound effects with the specified duration or longer in seconds
+  - key: duration_to
+    value: <integer>
+    disabled: true
+    description: Show sound effects with the specified duration or shorter in seconds
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: query
+    value: <string>
+    disabled: true
+    description: One or more search terms separated by spaces
+  - key: safe
+    value: "true"
+    disabled: true
+    description: Enable or disable safe search
+  - key: sort
+    value: popular
+    disabled: true
+    description: Sort by
+  - key: view
+    value: minimal
+    disabled: true
+    description: Amount of detail to render in the response
+  - key: language
+    value: <string>
+    disabled: true
+    description: Set query and result language (uses Accept-Language header if not set)
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/Search for sound effects.resources/examples
+order: 1000
