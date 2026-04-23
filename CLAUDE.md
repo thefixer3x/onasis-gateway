@@ -120,6 +120,33 @@ Required variables in `.env`:
 - Standardized error responses with codes
 - Circuit breaker pattern for external APIs
 
+## Postman & Provider Intelligence Defaults
+
+Agents working on Postman, API discovery, or provider intake must follow:
+
+- `/Users/seyederick/onasis-gateway/docs/plans/2026-04-21-integration-intelligence-provider-eligibility-framework.md`
+- `/Users/seyederick/onasis-gateway/docs/plans/2026-04-23-postman-operating-playbook.md`
+
+Default rules:
+
+1. Treat Postman as the discovery and intake layer, not the sole source of truth.
+2. For owned Onasis APIs, prefer repo contracts and actual gateway/service behavior first, then curate canonical Postman collections from that truth.
+3. For third-party APIs, treat imported collections as reference-only until reconciled with official docs, specs, and sandbox behavior.
+4. Never mix canonical owned collections with provider-intake collections.
+5. Never store or commit real secrets in Postman collections, environments, exports, scripts, or repo files.
+
+Workspace intent:
+
+- Canonical Onasis APIs: owned, stable collections
+- Provider Intake: imported public/vendor references
+- Sandbox/MVP: temporary experiments only
+- Archive: frozen snapshots and historical references
+
+Special caution:
+
+- Auth Gateway, Gateway REST APIs, and Memory REST operations should live in canonical collections, not scratch MVP collections, to reduce contract drift.
+- Do not bulk-import directly into canonical collections using AI-assisted Postman workflows. Import into Provider Intake or Sandbox first, verify, then promote intentionally.
+
 ## Important Notes
 
 1. **Multi-Runtime**: Project supports both Bun and Node.js runtimes
