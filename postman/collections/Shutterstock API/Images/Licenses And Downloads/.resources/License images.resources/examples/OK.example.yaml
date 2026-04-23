@@ -1,0 +1,58 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/licenses?subscription_id=<string>&format=<string>&size=huge&search_id=<string>"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    subscription_id: <string>
+    format: <string>
+    size: huge
+    search_id: <string>
+  body:
+    type: text
+    content: |-
+      {
+          "images": [
+              {
+                  "editorial_acknowledgement": true,
+                  "format": "jpg",
+                  "image_id": "123456789",
+                  "metadata": {
+                      "customer_id": "12345",
+                      "geo_location": "US",
+                      "number_viewed": "15",
+                      "search_term": "dog"
+                  },
+                  "price": 12.34,
+                  "show_modal": true,
+                  "size": "small",
+                  "subscription_id": "s12345678"
+              }
+          ]
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "image_id": "59656357",
+         "download": {
+          "url": "https://download.shutterstock.com/gatekeeper/[random-characters]/shutterstock_59656357.jpg"
+         },
+         "allotment_charge": 1
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "total_count": 23
+      }
+order: 1000

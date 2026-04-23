@@ -1,0 +1,35 @@
+$kind: http-request
+description: This endpoint searches for assets in the account's catalog. If you specify more than one search parameter, the API uses an AND condition. Array parameters can be specified multiple times; in this case, the API uses an AND or an OR condition with those values, depending on the parameter. You can also filter search terms out in the `query` parameter by prefixing the term with NOT.
+url: "{{baseUrl}}/v2/catalog/search"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: sort
+    value: newest
+    disabled: true
+    description: Sort by
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: query
+    value: <string>
+    disabled: true
+    description: One or more search terms separated by spaces
+  - key: collection_id
+    value: <string>
+    disabled: true
+    description: Filter by collection id
+  - key: asset_type
+    value: <string>
+    disabled: true
+    description: Filter by asset type
+auth:
+  type: oauth2
+examples: ./.resources/Search catalogs for assets.resources/examples
+order: 1000

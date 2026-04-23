@@ -1,0 +1,20 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/oauth/authorize?client_id=6d097450b209c6dcd859&realm=customer&redirect_uri=localhost&response_type=code&scope=user.view&state=1540290465000"
+  method: GET
+  queryParams:
+    client_id: 6d097450b209c6dcd859
+    realm: customer
+    redirect_uri: localhost
+    response_type: code
+    scope: user.view
+    state: "1540290465000"
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 4000

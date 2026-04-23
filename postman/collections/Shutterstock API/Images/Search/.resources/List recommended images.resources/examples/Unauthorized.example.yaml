@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/recommendations?id=<string>&id=<string>&max_items=20&safe=true"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: id
+      value: <string>
+    - key: id
+      value: <string>
+    - key: max_items
+      value: "20"
+    - key: safe
+      value: "true"
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

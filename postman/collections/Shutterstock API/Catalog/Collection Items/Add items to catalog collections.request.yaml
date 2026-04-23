@@ -1,0 +1,27 @@
+$kind: http-request
+description: This endpoint adds assets to a catalog collection. It also automatically adds the assets to the user's account's catalog.
+url: "{{baseUrl}}/v2/catalog/collections/:collection_id/items"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+pathVariables:
+  - key: collection_id
+    value: <string>
+    description: (Required) The ID of the collection to add assets to
+body:
+  type: text
+  content: |-
+    {
+        "items": [
+            {
+                "asset": {
+                    "type": "<string>",
+                    "id": "<string>"
+                }
+            }
+        ]
+    }
+auth:
+  type: oauth2
+examples: ./.resources/Add items to catalog collections.resources/examples
+order: 1000

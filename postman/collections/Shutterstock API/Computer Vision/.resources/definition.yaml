@@ -1,0 +1,13 @@
+$kind: collection
+description: |-
+  Computer vision endpoints access Shutterstock's reverse image search and other AI-powered image and video tools:
+
+  - Upload
+      - Run reverse image or video search by uploading an image.
+
+  - Similar
+      - Retrieve visually similar images to an image you specify.
+
+  - Keywords
+      - Get suggested keywords from a specified image.
+order: 7000

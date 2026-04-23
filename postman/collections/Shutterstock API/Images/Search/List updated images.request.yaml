@@ -1,0 +1,42 @@
+$kind: http-request
+description: This endpoint lists images that have been updated in the specified time period to update content management systems (CMS) or digital asset management (DAM) systems. In most cases, use the `interval` parameter to show images that were updated recently, but you can also use the `start_date` and `end_date` parameters to specify a range of no more than three days. Do not use the `interval` parameter with either `start_date` or `end_date`.
+url: "{{baseUrl}}/v2/images/updated"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: type
+    value: <string>
+    disabled: true
+    description: Show images that were added, deleted, or edited; by default, the endpoint returns images that were updated in any of these ways
+  - key: start_date
+    value: <date-or-date-time>
+    disabled: true
+    description: Show images updated on or after the specified date. The API will default to UTC (00:00:00) if no specific time is provided, ensuring consistency.
+  - key: end_date
+    value: <date-or-date-time>
+    disabled: true
+    description: Show images updated before the specified date. The API will default to UTC (00:00:00) if no specific time is provided, ensuring consistency. Please note that the end date must be at least 5 minutes after the start date.
+  - key: interval
+    value: 1 HOUR
+    disabled: true
+    description: Show images updated in the specified time period, where the time period is an interval (like SQL INTERVAL) such as 1 DAY, 6 HOUR, or 30 MINUTE; the default is 1 HOUR, which shows images that were updated in the hour preceding the request
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "100"
+    disabled: true
+    description: Number of results per page
+  - key: sort
+    value: newest
+    disabled: true
+    description: Sort order
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List updated images.resources/examples
+order: 8000

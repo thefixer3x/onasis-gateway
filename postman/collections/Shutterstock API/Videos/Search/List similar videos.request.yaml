@@ -1,0 +1,34 @@
+$kind: http-request
+description: This endpoint searches for videos that are similar to a video that you specify.
+url: "{{baseUrl}}/v2/videos/:id/similar"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: language
+    value: <string>
+    disabled: true
+    description: Language for the keywords and categories in the response
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: view
+    value: minimal
+    disabled: true
+    description: Amount of detail to render in the response
+pathVariables:
+  - key: id
+    value: <asset-id>
+    description: (Required) The ID of a video for which similar videos should be returned
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List similar videos.resources/examples
+order: 3000

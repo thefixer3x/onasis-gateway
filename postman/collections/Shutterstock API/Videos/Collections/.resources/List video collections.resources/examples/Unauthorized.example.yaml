@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos/collections?page=1&per_page=100&embed=<string>&embed=<string>"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    - key: page
+      value: "1"
+    - key: per_page
+      value: "100"
+    - key: embed
+      value: <string>
+    - key: embed
+      value: <string>
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

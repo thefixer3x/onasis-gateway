@@ -1,0 +1,11 @@
+name: "Google Drive API"
+postman_collection_id: "25426789-d3687c0c-577e-4558-87b7-1b4a105f74a5"
+postman_workspace: "Google API Workspace"
+fork_count: 373
+category: knowledge
+description: "Google Drive REST API collection for listing, uploading, downloading, and managing files and folders in Google Drive."
+postman_url: "https://www.postman.com/google-api-workspace/workspace/google-api-workspace/collection/25426789-d3687c0c-577e-4558-87b7-1b4a105f74a5"
+auth_type: oauth2
+base_url_var: "{{google_drive_base_url}}"
+token_var: "{{google_drive_oauth_token}}"
+notes: "Requires OAuth2 with Drive scopes (e.g. drive.readonly, drive.file). Service account credentials can be used for server-to-server access."

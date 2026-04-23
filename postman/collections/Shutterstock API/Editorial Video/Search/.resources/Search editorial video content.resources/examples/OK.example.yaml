@@ -1,0 +1,114 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/videos/search?query=The Academy Awards&sort=relevant&category=Alone,Performing&country=USA&supplier_code=<string>&supplier_code=<string>&date_start=2020-05-29&date_end=2021-05-29&resolution=4k&fps=24&per_page=20&cursor=eyJ2IjoxLCJzIjoxfQ=="
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: query
+      value: The Academy Awards
+    - key: sort
+      value: relevant
+    - key: category
+      value: Alone,Performing
+    - key: country
+      value: USA
+    - key: supplier_code
+      value: <string>
+    - key: supplier_code
+      value: <string>
+    - key: date_start
+      value: 2020-05-29
+    - key: date_end
+      value: 2021-05-29
+    - key: resolution
+      value: 4k
+    - key: fps
+      value: "24"
+    - key: per_page
+      value: "20"
+    - key: cursor
+      value: eyJ2IjoxLCJzIjoxfQ==
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "10679854a",
+         "title": "Peeps the Goose Has a Blast on a Jet Ski, Prior Lake, Minnesota, USA - 13 Nov 2020",
+         "caption": "",
+         "description": "Info from Licensor: \"Peeps the Canadian Goose has been raised with our family since a gosling. Peeps has made appearances on our local news channels, TV shows, and local newspapers. He has been trained to fly next to four wheelers, jet ski's, and boats. He has brought joy to many people during the pandemic including those with cancer.\"",
+         "byline": "ViralHog/Shutterstock",
+         "keywords": [
+          "2020",
+          "adorable",
+          "birds",
+          "bizarre",
+          "canadian goose",
+          "cute",
+          "domesticated animals",
+          "entertainment",
+          "feel good",
+          "flew",
+          "flies",
+          "fly",
+          "flying",
+          "fun",
+          "goose",
+          "jet skis",
+          "nature",
+          "odd",
+          "pets",
+          "played",
+          "playing",
+          "plays",
+          "prior lake",
+          "sports",
+          "strange",
+          "sweet",
+          "usa",
+          "viralhog",
+          "virals",
+          "water sports",
+          "weird"
+         ],
+         "date_taken": "2020-11-13",
+         "categories": [],
+         "aspect": 1,
+         "assets": {
+          "preview_mp4": {
+           "url": "https://editorial-cdn.shuttercorp.net/wm-preview-mp4/10679854a/M0T7A13aNej2g82bMTI4NjY=/Shutterstock_10679854a.mp4"
+          },
+          "preview_webm": {
+           "url": "https://editorial-cdn.shuttercorp.net/wm-preview-webm/10679854a/M4T6A63fN2j5g929MTI4NjY=/Shutterstock_10679854a.webm"
+          },
+          "thumb_jpg": {
+           "url": "https://editorial-cdn.shuttercorp.net/thumb-1/10679854a/M5TcAf30Ncjcge2eMTI4NjY=/Shutterstock_10679854a.jpg"
+          },
+          "original": {
+           "height": 1080,
+           "width": 1080,
+           "fps": 30,
+           "format": "avc1",
+           "file_size": 82233387,
+           "display_name": "HD",
+           "is_licensable": true
+          }
+         }
+        }
+       ],
+       "per_page": 1,
+       "total_count": 331,
+       "search_id": "zhmz9zLmpQehdTPvg8cacQ",
+       "next": "eyJ2IjoyLCJzIjoyMCwicCI6WzBdfQ==",
+       "prev": ""
+      }
+order: 1000

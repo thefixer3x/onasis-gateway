@@ -1,0 +1,165 @@
+$kind: http-request
+description: This endpoint searches for videos. If you specify more than one search parameter, the API uses an AND condition. Array parameters can be specified multiple times; in this case, the API uses an AND or an OR condition with those values, depending on the parameter. You can also filter search terms out in the `query` parameter by prefixing the term with NOT.
+url: "{{baseUrl}}/v2/videos/search"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: added_date
+    value: <date>
+    disabled: true
+    description: Show videos added on the specified date
+  - key: added_date_start
+    value: <date>
+    disabled: true
+    description: Show videos added on or after the specified date
+  - key: added_date_end
+    value: <date>
+    disabled: true
+    description: Show videos added before the specified date
+  - key: aspect_ratio
+    value: <string>
+    disabled: true
+    description: Show videos with the specified aspect ratio
+  - key: category
+    value: <string>
+    disabled: true
+    description: Show videos with the specified Shutterstock-defined category; specify a category name or ID
+  - key: contributor
+    value: <string>
+    disabled: true
+    description: Show videos with the specified artist names or IDs
+  - key: contributor_country
+    value: <country-code-2>
+    disabled: true
+    description: Show videos from contributors in one or more specified countries
+  - key: duration
+    value: <integer>
+    disabled: true
+    description: (Deprecated; use duration_from and duration_to instead) Show videos with the specified duration in seconds
+  - key: duration_from
+    value: <integer>
+    disabled: true
+    description: Show videos with the specified duration or longer in seconds
+  - key: duration_to
+    value: <integer>
+    disabled: true
+    description: Show videos with the specified duration or shorter in seconds
+  - key: fps
+    value: <number>
+    disabled: true
+    description: (Deprecated; use fps_from and fps_to instead) Show videos with the specified frames per second
+  - key: fps_from
+    value: <number>
+    disabled: true
+    description: Show videos with the specified frames per second or more
+  - key: fps_to
+    value: <number>
+    disabled: true
+    description: Show videos with the specified frames per second or fewer
+  - key: keyword_safe_search
+    value: "true"
+    disabled: true
+    description: Hide results with potentially unsafe keywords
+  - key: language
+    value: <string>
+    disabled: true
+    description: Set query and result language (uses Accept-Language header if not set)
+  - key: license
+    value: commercial
+    disabled: true
+    description: Show only videos with the specified license or licenses
+  - key: model
+    value: <string>
+    disabled: true
+    description: Show videos with each of the specified models
+  - key: orientation
+    value: <string>
+    disabled: true
+    description: Search for videos in a specific orientation
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: people_age
+    value: <string>
+    disabled: true
+    description: Show videos that feature people of the specified age range
+  - key: people_ethnicity
+    value: <string>
+    disabled: true
+    description: Show videos with people of the specified ethnicities
+  - key: people_gender
+    value: <string>
+    disabled: true
+    description: Show videos with people with the specified gender
+  - key: people_number
+    value: <integer>
+    disabled: true
+    description: Show videos with the specified number of people
+  - key: people_model_released
+    value: <boolean>
+    disabled: true
+    description: Show only videos of people with a signed model release
+  - key: query
+    value: <string>
+    disabled: true
+    description: One or more search terms separated by spaces; you can use NOT to filter out videos that match a term
+  - key: resolution
+    value: <string>
+    disabled: true
+    description: Show videos with the specified resolution
+  - key: safe
+    value: "true"
+    disabled: true
+    description: Enable or disable safe search
+  - key: sort
+    value: popular
+    disabled: true
+    description: Sort by one of these categories
+  - key: view
+    value: minimal
+    disabled: true
+    description: Amount of detail to render in the response
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+scripts:
+  - type: afterResponse
+    code: |-
+      let videos = pm.response.json().data
+
+      var template = `
+          <table bgcolor="#FFFFFF">
+              <tr>
+                  <th>id</th>
+                  <th>video</th>
+                  <th>description</th>
+              </tr>
+
+              {{#each video}}
+                  <tr>
+                      <td>{{id}}</td>
+                      <td>
+                          <video width="320" height="240" controls>
+                              <source src="{{assets.preview_mp4.url}}" type="video/mp4">
+                          </video>
+                      </td>
+                      <td>{{description}}</td>
+                  </tr>
+              {{/each}}
+          </table>
+      `;
+
+      pm.visualizer.set(template, {
+          video: pm.response.json().data
+      })
+    language: text/javascript
+examples: ./.resources/Search for videos.resources/examples
+order: 1000

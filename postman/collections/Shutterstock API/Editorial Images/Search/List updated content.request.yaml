@@ -1,0 +1,50 @@
+$kind: http-request
+description: This endpoint lists editorial images that have been updated in the specified time period to update content management systems (CMS) or digital asset management (DAM) systems. In most cases, use the date_updated_start and date_updated_end parameters to specify a range updates based on when the updates happened. You can also use the date_taken_start and date_taken_end parameters to specify a range of updates based on when the image was taken.
+url: "{{baseUrl}}/v2/editorial/images/updated?type=<string>&date_updated_start=<dateTime>&date_updated_end=<dateTime>&country=<country-code-3>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: type
+    value: <string>
+    description: (Required) Specify `addition` to return only images that were added or `edit` to return only images that were edited or deleted
+  - key: date_updated_start
+    value: <dateTime>
+    description: (Required) Show images images added, edited, or deleted after the specified date. Acceptable range is 1970-01-01T00:00:01 to 2038-01-19T00:00:00.
+  - key: date_updated_end
+    value: <dateTime>
+    description: (Required) Show images images added, edited, or deleted before the specified date. Acceptable range is 1970-01-01T00:00:01 to 2038-01-19T00:00:00.
+  - key: date_taken_start
+    value: <date>
+    disabled: true
+    description: Show images that were taken on or after the specified date; use this parameter if you want recently created images from the collection instead of updated older assets
+  - key: date_taken_end
+    value: <date>
+    disabled: true
+    description: Show images that were taken before the specified date
+  - key: cursor
+    value: <string>
+    disabled: true
+    description: The cursor of the page with which to start fetching results; this cursor is returned from previous requests
+  - key: sort
+    value: newest
+    disabled: true
+    description: Sort by
+  - key: supplier_code
+    value: <string>
+    disabled: true
+    description: Show only editorial content from certain suppliers
+  - key: country
+    value: <country-code-3>
+    description: (Required) Show only editorial content that is available for distribution in a certain country
+  - key: per_page
+    value: "500"
+    disabled: true
+    description: Number of results per page
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/List updated content.resources/examples
+order: 2000

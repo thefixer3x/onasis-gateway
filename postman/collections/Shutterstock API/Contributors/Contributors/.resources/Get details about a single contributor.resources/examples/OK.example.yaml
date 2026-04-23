@@ -1,0 +1,54 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/contributors/:contributor_id"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  pathVariables:
+    contributor_id: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "about": "John Doe's photographs",
+       "contributor_type": [
+        "photographer"
+       ],
+       "display_name": "John Doe",
+       "equipment": [
+        "Nikon",
+        "Fuji"
+       ],
+       "id": "12345678",
+       "location": "US",
+       "portfolio_url": "https://www.shutterstock.com/g/jdoe",
+       "social_media": {
+        "facebook": "http://example.com/jdoe",
+        "google_plus": "http://example.com/jdoe",
+        "linkedin": "http://example.com/jdoe",
+        "pinterest": "http://example.com/jdoe",
+        "tumblr": "http://example.com/jdoe",
+        "twitter": "http://example.com/jdoe"
+       },
+       "styles": [
+        "landscape",
+        "nature",
+        "footage_travel"
+       ],
+       "subjects": [
+        "animals",
+        "landmarks",
+        "nature",
+        "objects",
+        "recreation"
+       ],
+       "website": "http://example.com/profiles/jdoe"
+      }
+order: 1000

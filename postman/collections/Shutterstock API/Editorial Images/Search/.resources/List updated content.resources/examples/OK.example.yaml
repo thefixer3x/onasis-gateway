@@ -1,0 +1,109 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/images/updated?type=edit&date_updated_start=2021-03-29T13:25:13.521Z&date_updated_end=2021-03-29T13:25:13.521Z&date_taken_start=2020-02-04&date_taken_end=2020-02-05&cursor=eyJ2IjoxLCJzIjoyfQ==&sort=newest&supplier_code=<string>&supplier_code=<string>&country=USA&per_page=200"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: type
+      value: edit
+    - key: date_updated_start
+      value: 2021-03-29T13:25:13.521Z
+    - key: date_updated_end
+      value: 2021-03-29T13:25:13.521Z
+    - key: date_taken_start
+      value: 2020-02-04
+    - key: date_taken_end
+      value: 2020-02-05
+    - key: cursor
+      value: eyJ2IjoxLCJzIjoyfQ==
+    - key: sort
+      value: newest
+    - key: supplier_code
+      value: <string>
+    - key: supplier_code
+      value: <string>
+    - key: country
+      value: USA
+    - key: per_page
+      value: "200"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "per_page": 1,
+       "next": "eyJ2IjoxLCJzIjoxfQ==",
+       "prev": "",
+       "data": [
+        {
+         "id": "9804979n",
+         "title": "Hong Kong kicks off international e-Sports competition, China - 24 Aug 2018",
+         "caption": "",
+         "description": "Members of the TyLoo e-Sports team from China prepare to face off against the Kinguin e-Sports team from Poland at the ICBC (Asia) e-Sports and Music Festival Hong Kong 2018, Hong Kong, China, 24 August 2018. The festival runs from 24 to 26 August with professional gamers from around the world competing in international e-sports tournaments.",
+         "byline": "ALEX HOFFORD/EPA-EFE/Shutterstock",
+         "supplier_code": "EPA",
+         "keywords": [],
+         "date_taken": "2018-08-24",
+         "categories": [],
+         "aspect": 1.481,
+         "assets": {
+          "thumb_170": {
+           "height": 115,
+           "width": 170,
+           "url": "https://editorial01.shutterstock.com/thumb/9804979n/c4377a53/Shutterstock_9804979n.jpg"
+          },
+          "thumb_220": {
+           "height": 149,
+           "width": 220,
+           "url": "https://editorial01.shutterstock.com/thumb-220/9804979n/c57a68c7/Shutterstock_9804979n.jpg"
+          },
+          "watermark_450": {
+           "height": 304,
+           "width": 450,
+           "url": "https://editorial01.shutterstock.com/wm-preview-450/9804979n/37d19dce/Shutterstock_9804979n.jpg"
+          },
+          "watermark_1500": {
+           "height": 1500,
+           "width": 1040,
+           "url": "https://editorial01.shutterstock.com/wm-preview-1500/9933285a/ab82fea4/Shutterstock_9933285a.jpg"
+          },
+          "original": {
+           "display_name": "Original",
+           "height": 3263,
+           "width": 4831,
+           "is_licensable": true
+          },
+          "small_jpg": {
+           "display_name": "Small",
+           "height": 337,
+           "width": 500,
+           "is_licensable": true
+          },
+          "medium_jpg": {
+           "display_name": "Med",
+           "height": 675,
+           "width": 1000,
+           "is_licensable": true
+          }
+         },
+         "updated_time": "2019-07-15T20:04:44-04:00",
+         "updates": [
+          "addition"
+         ],
+         "commercial_status": {
+          "status": "available"
+         },
+         "rights": {
+          "countries": "CAN,+DEU,+GBR,+USA,-*"
+         }
+        }
+       ]
+      }
+order: 1000

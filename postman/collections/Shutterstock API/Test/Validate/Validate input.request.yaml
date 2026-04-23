@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/v2/test/validate?id=<integer>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: id
+    value: <integer>
+    description: (Required) Integer ID
+  - key: tag
+    value: <string>
+    disabled: true
+    description: List of tags
+examples: ./.resources/Validate input.resources/examples
+order: 1000

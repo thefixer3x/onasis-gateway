@@ -1,0 +1,131 @@
+$kind: http-request
+description: This endpoint searches for tracks. If you specify more than one search parameter, the API uses an AND condition. Array parameters can be specified multiple times; in this case, the API uses an AND or an OR condition with those values, depending on the parameter.
+url: "{{baseUrl}}/v2/audio/search"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: artists
+    value: <string>
+    disabled: true
+    description: Show tracks with one of the specified artist names or IDs
+  - key: bpm
+    value: <integer>
+    disabled: true
+    description: (Deprecated; use bpm_from and bpm_to instead) Show tracks with the specified beats per minute
+  - key: bpm_from
+    value: <integer>
+    disabled: true
+    description: Show tracks with the specified beats per minute or faster
+  - key: bpm_to
+    value: <integer>
+    disabled: true
+    description: Show tracks with the specified beats per minute or slower
+  - key: duration
+    value: <integer>
+    disabled: true
+    description: Show tracks with the specified duration in seconds
+  - key: duration_from
+    value: <integer>
+    disabled: true
+    description: Show tracks with the specified duration or longer in seconds
+  - key: duration_to
+    value: <integer>
+    disabled: true
+    description: Show tracks with the specified duration or shorter in seconds
+  - key: genre
+    value: <string>
+    disabled: true
+    description: Show tracks with each of the specified genres; to get the list of genres, use `GET /v2/audio/genres`
+  - key: is_instrumental
+    value: <boolean>
+    disabled: true
+    description: Show instrumental music only
+  - key: instruments
+    value: <string>
+    disabled: true
+    description: Show tracks with each of the specified instruments; to get the list of instruments, use `GET /v2/audio/instruments`
+  - key: moods
+    value: <string>
+    disabled: true
+    description: Show tracks with each of the specified moods; to get the list of moods, use `GET /v2/audio/moods`
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: query
+    value: <string>
+    disabled: true
+    description: One or more search terms separated by spaces
+  - key: sort
+    value: <string>
+    disabled: true
+    description: Sort by
+  - key: sort_order
+    value: desc
+    disabled: true
+    description: Sort order
+  - key: vocal_description
+    value: <string>
+    disabled: true
+    description: Show tracks with the specified vocal description (male, female)
+  - key: view
+    value: minimal
+    disabled: true
+    description: Amount of detail to render in the response
+  - key: fields
+    value: <string>
+    disabled: true
+    description: Fields to display in the response; see the documentation for the fields parameter in the overview section
+  - key: library
+    value: premier
+    disabled: true
+    description: Which library to search
+  - key: language
+    value: <string>
+    disabled: true
+    description: Which language to search in
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+scripts:
+  - type: afterResponse
+    code: |-
+      let tracks = pm.response.json().data
+
+      var template = `
+          <table bgcolor="#FFFFFF">
+              <tr>
+                  <th>id</th>
+                  <th>title</th>
+                  <th>description</th>
+                  <th>track</th>
+              </tr>
+
+              {{#each track}}
+                  <tr>
+                      <td>{{id}}</td>
+                      <td>{{title}}</td>
+                      <td>{{description}}</td>
+                      <td>
+                          <audio controls>
+                              <source src="{{assets.preview_mp3.url}}" type="audio/mp3">
+                          </audio>
+                      </td>
+                  </tr>
+              {{/each}}
+          </table>
+      `;
+
+      pm.visualizer.set(template, {
+          track: pm.response.json().data
+      })
+    language: text/javascript
+examples: ./.resources/Search for tracks.resources/examples
+order: 1000

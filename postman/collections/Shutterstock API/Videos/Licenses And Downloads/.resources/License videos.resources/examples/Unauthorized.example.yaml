@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos/licenses?subscription_id=s12345678&size=web&search_id=<string>"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    subscription_id: s12345678
+    size: web
+    search_id: <string>
+  body:
+    type: text
+    content: |-
+      {
+          "videos": [
+              {
+                  "size": "hd",
+                  "subscription_id": "s12345678",
+                  "video_id": "2140697"
+              }
+          ]
+      }
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

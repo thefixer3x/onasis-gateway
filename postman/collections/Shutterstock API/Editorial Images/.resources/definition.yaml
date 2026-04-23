@@ -1,0 +1,19 @@
+$kind: collection
+description: |-
+  Editorial image endpoints work with images from news media, sports, entertainment, and archives, including these tasks:
+
+  - Search
+      - Search for images in Shutterstock's Editorial library.
+
+  - Categories
+      - Retrieve all the categories of editorial image content from Shutterstock's library.
+
+  - Details
+      - Get additional information for a particular set of editorial images.
+
+  - Licenses and downloads
+      - License editorial images for use, view your licensed editorial images, and download licensed editorial images.
+
+  - Livefeeds
+      - Get actively-updated streams of editorial images.
+order: 5000

@@ -1,0 +1,16 @@
+$kind: collection
+description: |-
+  Audio endpoints work with music tracks, including these tasks:
+
+  - Search
+      - Search for audio in Shutterstock's library.
+
+  - Details
+      - Get additional information for a particular set of audio content.
+
+  - Licenses and downloads
+      - License audio for use, view your licensed audio content, and download licensed audio content.
+
+  - Collections
+      - Group audio assets in a single place, such as storing tracks for a specific project.
+order: 3000

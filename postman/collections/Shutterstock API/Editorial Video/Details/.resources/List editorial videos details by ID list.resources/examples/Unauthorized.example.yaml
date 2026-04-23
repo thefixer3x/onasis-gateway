@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/videos?id=<string>&id=<string>&country=USA&search_id=00000000-0000-0000-0000-000000000000"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    - key: id
+      value: <string>
+    - key: id
+      value: <string>
+    - key: country
+      value: USA
+    - key: search_id
+      value: 00000000-0000-0000-0000-000000000000
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

@@ -1,0 +1,49 @@
+$kind: http-request
+description: Deprecated; use `GET /v2/editorial/images/search` instead to search for editorial images.
+url: "{{baseUrl}}/v2/editorial/search?country=<country-code-3>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: query
+    value: <string>
+    disabled: true
+    description: One or more search terms separated by spaces
+  - key: sort
+    value: relevant
+    disabled: true
+    description: Sort by
+  - key: category
+    value: <string>
+    disabled: true
+    description: Show editorial content within a certain editorial category; specify by category name
+  - key: country
+    value: <country-code-3>
+    description: (Required) Show only editorial content that is available for distribution in a certain country
+  - key: supplier_code
+    value: <string>
+    disabled: true
+    description: Show only editorial content from certain suppliers
+  - key: date_start
+    value: <date>
+    disabled: true
+    description: Show only editorial content generated on or after a specific date
+  - key: date_end
+    value: <date>
+    disabled: true
+    description: Show only editorial content generated on or before a specific date
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: cursor
+    value: <string>
+    disabled: true
+    description: The cursor of the page with which to start fetching results; this cursor is returned from previous requests
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/(Deprecated) Search editorial content.resources/examples
+order: 6000
