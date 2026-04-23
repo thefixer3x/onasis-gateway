@@ -1,0 +1,60 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/user/subscriptions"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "allotment": {
+          "downloads_left": 5,
+          "downloads_limit": 10,
+          "end_time": "2020-05-29T12:10:22-05:00",
+          "start_time": "2020-05-29T12:10:22-05:00"
+         },
+         "description": "Annual Subscription",
+         "expiration_time": "2020-05-29T12:10:22-05:00",
+         "formats": [
+          {
+           "media_type": "image",
+           "description": "Small",
+           "format": "jpg",
+           "min_resolution": 500,
+           "size": "small"
+          },
+          {
+           "media_type": "image",
+           "description": "Med",
+           "format": "jpg",
+           "min_resolution": 1000,
+           "size": "medium"
+          },
+          {
+           "media_type": "image",
+           "description": "Vector",
+           "format": "eps",
+           "size": "vector"
+          }
+         ],
+         "id": "s8906043",
+         "license": "standard",
+         "asset_type": "images",
+         "metadata": {}
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "total_count": 123455
+      }
+order: 1000

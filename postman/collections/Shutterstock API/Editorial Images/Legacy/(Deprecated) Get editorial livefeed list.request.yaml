@@ -1,0 +1,25 @@
+$kind: http-request
+description: Deprecated; use `GET /v2/editorial/images/livefeeds` instead to get a list of editorial livefeeds.
+url: "{{baseUrl}}/v2/editorial/livefeeds?country=<country-code-3>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: country
+    value: <country-code-3>
+    description: (Required) Returns only livefeeds that are available for distribution in a certain country
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/(Deprecated) Get editorial livefeed list.resources/examples
+order: 3000

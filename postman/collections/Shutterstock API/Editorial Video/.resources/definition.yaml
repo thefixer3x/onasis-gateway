@@ -1,0 +1,16 @@
+$kind: collection
+description: |-
+  Editorial video endpoints work with videos from news media, sports, entertainment, and archives, including these tasks:
+
+  - Search
+      - Search for videos in Shutterstock's editorial library.
+
+  - Categories
+      - Retrieve all the categories of editorial video content from Shutterstock's library.
+
+  - Details
+      - Get additional information for a particular set of editorial videos.
+
+  - Licenses and downloads
+      - License editorial videos for use, view your licensed editorial videos, and download licensed editorial videos.
+order: 6000

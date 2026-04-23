@@ -1,0 +1,271 @@
+$kind: http-request
+description: This endpoint runs up to 5 image searches in a single request and returns up to 20 results per search. You can provide global search parameters in the query parameters and override them for each search in the body parameter. The query and body parameters are the same as in the `GET /v2/images/search` endpoint.
+url: "{{baseUrl}}/v2/bulk_search/images"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: added_date
+    value: <date>
+    disabled: true
+    description: Show images added on the specified date
+  - key: added_date_start
+    value: <date>
+    disabled: true
+    description: Show images added on or after the specified date
+  - key: aspect_ratio_min
+    value: <number>
+    disabled: true
+    description: Show images with the specified aspect ratio or higher, using a positive decimal of the width divided by the height, such as 1.7778 for a 16:9 image
+  - key: aspect_ratio_max
+    value: <number>
+    disabled: true
+    description: Show images with the specified aspect ratio or lower, using a positive decimal of the width divided by the height, such as 1.7778 for a 16:9 image
+  - key: aspect_ratio
+    value: <number>
+    disabled: true
+    description: Show images with the specified aspect ratio, using a positive decimal of the width divided by the height, such as 1.7778 for a 16:9 image
+  - key: added_date_end
+    value: <date>
+    disabled: true
+    description: Show images added before the specified date
+  - key: category
+    value: <string>
+    disabled: true
+    description: Show images with the specified Shutterstock-defined category; specify a category name or ID
+  - key: color
+    value: <string>
+    disabled: true
+    description: Specify either a hexadecimal color in the format '4F21EA' or 'grayscale'; the API returns images that use similar colors
+  - key: contributor
+    value: <string>
+    disabled: true
+    description: Show images with the specified contributor names or IDs, allows multiple
+  - key: contributor_country
+    value: <country-code-2>
+    disabled: true
+    description: Show images from contributors in one or more specified countries, or start with NOT to exclude a country from the search
+  - key: fields
+    value: <string>
+    disabled: true
+    description: Fields to display in the response; see the documentation for the fields parameter in the overview section
+  - key: height
+    value: <integer>
+    disabled: true
+    description: (Deprecated; use height_from and height_to instead) Show images with the specified height
+  - key: height_from
+    value: <integer>
+    disabled: true
+    description: Show images with the specified height or larger, in pixels
+  - key: height_to
+    value: <integer>
+    disabled: true
+    description: Show images with the specified height or smaller, in pixels
+  - key: image_type
+    value: <string>
+    disabled: true
+    description: Show images of the specified type
+  - key: keyword_safe_search
+    value: "true"
+    disabled: true
+    description: Hide results with potentially unsafe keywords
+  - key: language
+    value: <string>
+    disabled: true
+    description: Set query and result language (uses Accept-Language header if not set)
+  - key: license
+    value: commercial
+    disabled: true
+    description: Show only images with the specified license
+  - key: model
+    value: <string>
+    disabled: true
+    description: Show image results with the specified model IDs
+  - key: orientation
+    value: <string>
+    disabled: true
+    description: Show image results with horizontal or vertical orientation
+  - key: page
+    value: "1"
+    disabled: true
+    description: Page number
+  - key: per_page
+    value: "20"
+    disabled: true
+    description: Number of results per page
+  - key: people_model_released
+    value: <boolean>
+    disabled: true
+    description: Show images of people with a signed model release
+  - key: people_age
+    value: <string>
+    disabled: true
+    description: Show images that feature people of the specified age category
+  - key: people_ethnicity
+    value: <string>
+    disabled: true
+    description: Show images with people of the specified ethnicities, or start with NOT to show images without those ethnicities
+  - key: people_gender
+    value: <string>
+    disabled: true
+    description: Show images with people of the specified gender
+  - key: people_number
+    value: <integer>
+    disabled: true
+    description: Show images with the specified number of people
+  - key: region
+    value: <country-code-2>
+    disabled: true
+    description: Raise or lower search result rankings based on the result's relevance to a specified region; you can provide a country code or an IP address from which the API infers a country
+  - key: safe
+    value: "true"
+    disabled: true
+    description: Enable or disable safe search
+  - key: sort
+    value: popular
+    disabled: true
+    description: Sort by
+  - key: spellcheck_query
+    value: "true"
+    disabled: true
+    description: Spellcheck the search query and return results on suggested spellings
+  - key: view
+    value: minimal
+    disabled: true
+    description: Amount of detail to render in the response
+  - key: width
+    value: <integer>
+    disabled: true
+    description: (Deprecated; use width_from and width_to instead) Show images with the specified width
+  - key: width_from
+    value: <integer>
+    disabled: true
+    description: Show images with the specified width or larger, in pixels
+  - key: width_to
+    value: <integer>
+    disabled: true
+    description: Show images with the specified width or smaller, in pixels
+body:
+  type: text
+  content: |-
+    [
+        {
+            "added_date": "<date>",
+            "added_date_start": "<date>",
+            "aspect_ratio_min": "<number>",
+            "aspect_ratio_max": "<number>",
+            "aspect_ratio": "<number>",
+            "added_date_end": "<date>",
+            "authentic": "<boolean>",
+            "category": "<string>",
+            "color": "<string>",
+            "contributor": [
+                "<string>",
+                "<string>"
+            ],
+            "contributor_country": [
+                "<country-code-2>",
+                "<country-code-2>"
+            ],
+            "fields": "<string>",
+            "height": "<integer>",
+            "height_from": "<integer>",
+            "height_to": "<integer>",
+            "image_type": [
+                "<string>",
+                "<string>"
+            ],
+            "keyword_safe_search": true,
+            "language": "<string>",
+            "license": [
+                "commercial"
+            ],
+            "model": [
+                "<string>",
+                "<string>"
+            ],
+            "orientation": "<string>",
+            "page": 1,
+            "per_page": 20,
+            "people_model_released": "<boolean>",
+            "people_age": "<string>",
+            "people_ethnicity": [
+                "<string>",
+                "<string>"
+            ],
+            "people_gender": "<string>",
+            "people_number": "<integer>",
+            "query": "<string>",
+            "region": "<country-code-2>",
+            "safe": true,
+            "sort": "popular",
+            "spellcheck_query": true,
+            "view": "minimal",
+            "width": "<integer>",
+            "width_from": "<integer>",
+            "width_to": "<integer>"
+        },
+        {
+            "added_date": "<date>",
+            "added_date_start": "<date>",
+            "aspect_ratio_min": "<number>",
+            "aspect_ratio_max": "<number>",
+            "aspect_ratio": "<number>",
+            "added_date_end": "<date>",
+            "authentic": "<boolean>",
+            "category": "<string>",
+            "color": "<string>",
+            "contributor": [
+                "<string>",
+                "<string>"
+            ],
+            "contributor_country": [
+                "<country-code-2>",
+                "<country-code-2>"
+            ],
+            "fields": "<string>",
+            "height": "<integer>",
+            "height_from": "<integer>",
+            "height_to": "<integer>",
+            "image_type": [
+                "<string>",
+                "<string>"
+            ],
+            "keyword_safe_search": true,
+            "language": "<string>",
+            "license": [
+                "commercial"
+            ],
+            "model": [
+                "<string>",
+                "<string>"
+            ],
+            "orientation": "<string>",
+            "page": 1,
+            "per_page": 20,
+            "people_model_released": "<boolean>",
+            "people_age": "<string>",
+            "people_ethnicity": [
+                "<string>",
+                "<string>"
+            ],
+            "people_gender": "<string>",
+            "people_number": "<integer>",
+            "query": "<string>",
+            "region": "<country-code-2>",
+            "safe": true,
+            "sort": "popular",
+            "spellcheck_query": true,
+            "view": "minimal",
+            "width": "<integer>",
+            "width_from": "<integer>",
+            "width_to": "<integer>"
+        }
+    ]
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/Run multiple image searches.resources/examples
+order: 2000

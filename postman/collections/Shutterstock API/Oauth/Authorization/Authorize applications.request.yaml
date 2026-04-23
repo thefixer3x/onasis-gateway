@@ -1,0 +1,29 @@
+$kind: http-request
+description: This endpoint returns a redirect URI (in the 'Location' header) that the customer uses to authorize your application and, together with POST /v2/oauth/access_token, generate an access token that represents that authorization.
+url: "{{baseUrl}}/v2/oauth/authorize?client_id=<string>&redirect_uri=<string>&response_type=<string>&state=<string>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: client_id
+    value: <string>
+    description: (Required) Client ID (Consumer Key) of your application
+  - key: realm
+    value: customer
+    disabled: true
+    description: User type to be authorized (usually 'customer')
+  - key: redirect_uri
+    value: <string>
+    description: (Required) The callback URI to send the request to after authorization; must use a host name that is registered with your application
+  - key: response_type
+    value: <string>
+    description: (Required) Type of temporary authorization code that will be used to generate an access code; the only valid value is 'code'
+  - key: scope
+    value: user.view
+    disabled: true
+    description: Space-separated list of scopes to be authorized
+  - key: state
+    value: <string>
+    description: (Required) Unique value used by the calling app to verify the request
+examples: ./.resources/Authorize applications.resources/examples
+order: 1000

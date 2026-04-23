@@ -1,0 +1,39 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos/updated?start_date=2021-03-29T00:00:00Z OR 2021-03-29&end_date=2021-03-29T23:59:59Z OR 2021-03-29&interval=1 HOUR&page=1&per_page=100&sort=newest"
+  method: GET
+  headers:
+    - key: Authorization
+      value: Basic <credentials>
+      description: "Added as a part of security scheme: basic"
+  queryParams:
+    start_date: 2021-03-29T00:00:00Z OR 2021-03-29
+    end_date: 2021-03-29T23:59:59Z OR 2021-03-29
+    interval: 1 HOUR
+    page: "1"
+    per_page: "100"
+    sort: newest
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "123456789",
+         "updated_time": "2020-05-29T12:10:22-05:00",
+         "updates": [
+          "addition",
+          "edit"
+         ]
+        }
+       ],
+       "page": 1,
+       "per_page": 5,
+       "total_count": 13
+      }
+order: 1000

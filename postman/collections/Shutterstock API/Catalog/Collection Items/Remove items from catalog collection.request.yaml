@@ -1,0 +1,24 @@
+$kind: http-request
+description: This endpoint removes assets from a catalog collection. It does not remove the assets from the user's account's catalog.
+url: "{{baseUrl}}/v2/catalog/collections/:collection_id/items"
+method: DELETE
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+pathVariables:
+  - key: collection_id
+    value: <string>
+    description: (Required) The ID of the collection to remove assets from
+body:
+  type: text
+  content: |-
+    {
+        "items": [
+            {
+                "id": "<string>"
+            }
+        ]
+    }
+auth:
+  type: oauth2
+examples: ./.resources/Remove items from catalog collection.resources/examples
+order: 2000

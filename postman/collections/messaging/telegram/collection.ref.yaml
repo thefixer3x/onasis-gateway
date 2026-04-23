@@ -1,0 +1,11 @@
+name: "Telegram Bot API"
+postman_collection_id: "32050230-fbecbfa5-8ad2-4fa3-a98d-096e41d48d1e"
+postman_workspace: "TON Master"
+fork_count: 294
+category: messaging
+description: "Telegram Bot API collection for sending messages, managing bots, handling updates, and interacting with Telegram chats."
+postman_url: "https://www.postman.com/ton-master/workspace/ton-master/collection/32050230-fbecbfa5-8ad2-4fa3-a98d-096e41d48d1e"
+auth_type: bot_token
+base_url_var: "{{telegram_base_url}}"
+token_var: "{{telegram_bot_token}}"
+notes: "Bot token is passed in the URL path: https://api.telegram.org/bot{token}/method. Obtain a token from @BotFather on Telegram."

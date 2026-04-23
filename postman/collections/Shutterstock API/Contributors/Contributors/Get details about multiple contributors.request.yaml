@@ -1,0 +1,14 @@
+$kind: http-request
+description: This endpoint lists information about one or more contributors, including contributor type, equipment they use and other attributes.
+url: "{{baseUrl}}/v2/contributors?id=<string>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: id
+    value: <string>
+    description: (Required) One or more contributor IDs
+auth:
+  type: oauth2
+examples: ./.resources/Get details about multiple contributors.resources/examples
+order: 1000

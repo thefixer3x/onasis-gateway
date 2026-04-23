@@ -1,0 +1,25 @@
+$kind: http-request
+description: This endpoint shows information about an editorial image, including a URL to a preview image and the sizes that it is available in.
+url: "{{baseUrl}}/v2/editorial/videos/:id?country=<country-code-3>"
+method: GET
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: country
+    value: <country-code-3>
+    description: (Required) Returns only if the content is available for distribution in a certain country
+  - key: search_id
+    value: <string>
+    disabled: true
+    description: The ID of the search that is related to this request
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) Editorial ID
+auth:
+  type: basic
+  credentials:
+    username: <Basic Auth Username>
+    password: <Basic Auth Password>
+examples: ./.resources/Get editorial video content details.resources/examples
+order: 1000

@@ -1,0 +1,56 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/videos/licenses?video_id=12345678&license=standard&page=1&per_page=20&sort=newest&username=aUniqueUsername&start_date=2021-03-29T13:25:13.521Z&end_date=2021-03-29T13:25:13.521Z&download_availability=all&team_history=false"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    video_id: "12345678"
+    license: standard
+    page: "1"
+    per_page: "20"
+    sort: newest
+    username: aUniqueUsername
+    start_date: 2021-03-29T13:25:13.521Z
+    end_date: 2021-03-29T13:25:13.521Z
+    download_availability: all
+    team_history: "false"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "data": [
+        {
+         "id": "e121",
+         "user": {
+          "username": "myusername"
+         },
+         "license": "footage_premier",
+         "subscription_id": "s12345678",
+         "download_time": "2018-05-24T14:26:25-04:00",
+         "is_downloadable": true,
+         "metadata": {
+          "customer_id": "12345",
+          "geo_location": "US",
+          "number_viewed": "15",
+          "search_term": "dog"
+         },
+         "video": {
+          "id": "2140697",
+          "format": {
+           "size": "sd"
+          }
+         }
+        }
+       ],
+       "page": 1,
+       "per_page": 20
+      }
+order: 1000

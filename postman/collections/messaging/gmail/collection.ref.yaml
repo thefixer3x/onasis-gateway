@@ -1,0 +1,12 @@
+name: "Gmail REST API"
+postman_collection_id: null
+postman_workspace: null
+fork_count: null
+category: messaging
+description: "Google Gmail REST API for reading, sending, and managing emails. No official Postman collection — use Google's REST API directly."
+postman_url: null
+rest_api_docs: "https://developers.google.com/gmail/api/reference/rest"
+auth_type: oauth2
+base_url_var: "{{gmail_base_url}}"
+token_var: "{{gmail_oauth_token}}"
+notes: "Requires OAuth2 with appropriate Gmail scopes (e.g. gmail.send, gmail.readonly). Use Google OAuth2 playground to obtain tokens for testing: https://developers.google.com/oauthplayground"

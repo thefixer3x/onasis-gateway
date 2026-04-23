@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/images/licenses"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  body:
+    type: text
+    content: |-
+      {
+          "country": "USA",
+          "editorial": [
+              {
+                  "editorial_id": "10687730b",
+                  "license": "premier_editorial_comp",
+                  "metadata": {
+                      "customer_id": "12345",
+                      "geo_location": "US",
+                      "number_viewed": "15",
+                      "search_term": "dog"
+                  },
+                  "size": "original"
+              }
+          ]
+      }
+response:
+  statusCode: 406
+  statusText: Not Acceptable
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 5000

@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/collections/:id?embed=<string>&embed=<string>&share_code=<string>"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    - key: embed
+      value: <string>
+    - key: embed
+      value: <string>
+    - key: share_code
+      value: <string>
+  pathVariables:
+    id: ""
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 2000

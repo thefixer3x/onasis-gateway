@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/audio/collections/:id/items?page=1&per_page=100&share_code=<string>&sort=oldest"
+  method: GET
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    page: "1"
+    per_page: "100"
+    share_code: <string>
+    sort: oldest
+  pathVariables:
+    id: ""
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 5000

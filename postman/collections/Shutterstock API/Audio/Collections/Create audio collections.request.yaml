@@ -1,0 +1,16 @@
+$kind: http-request
+description: This endpoint creates one or more collections (soundboxes). To add tracks, use `POST /v2/audio/collections/{id}/items`.
+url: "{{baseUrl}}/v2/audio/collections"
+method: POST
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+body:
+  type: text
+  content: |-
+    {
+        "name": "<string>"
+    }
+auth:
+  type: oauth2
+examples: ./.resources/Create audio collections.resources/examples
+order: 1000

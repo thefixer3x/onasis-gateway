@@ -1,0 +1,3 @@
+$kind: collection
+description: Get details about contributors, about their collections, or about items in their collections.
+order: 9000

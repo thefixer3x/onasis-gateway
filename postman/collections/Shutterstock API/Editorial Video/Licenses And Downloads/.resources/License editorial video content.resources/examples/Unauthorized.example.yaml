@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/editorial/videos/licenses"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  body:
+    type: text
+    content: |-
+      {
+          "country": "USA",
+          "editorial": [
+              {
+                  "editorial_id": "10679854a",
+                  "license": "premier_editorial_video_digital_only",
+                  "metadata": {
+                      "purchase_order": "12345"
+                  },
+                  "size": "original"
+              }
+          ]
+      }
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 3000

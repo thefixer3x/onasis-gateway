@@ -1,0 +1,22 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/user"
+  method: GET
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+       "id": "101782699",
+       "username": "jdoe",
+       "full_name": "John Doe",
+       "first_name": "John",
+       "last_name": "Doe",
+       "language": "es",
+       "contributor_id": "212"
+      }
+order: 1000

@@ -1,0 +1,44 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/v2/images/licenses?subscription_id=<string>&format=<string>&size=huge&search_id=<string>"
+  method: POST
+  headers:
+    - key: Authorization
+      value: <token>
+      description: "Added as a part of security scheme: oauth2"
+  queryParams:
+    subscription_id: <string>
+    format: <string>
+    size: huge
+    search_id: <string>
+  body:
+    type: text
+    content: |-
+      {
+          "images": [
+              {
+                  "editorial_acknowledgement": true,
+                  "format": "jpg",
+                  "image_id": "123456789",
+                  "metadata": {
+                      "customer_id": "12345",
+                      "geo_location": "US",
+                      "number_viewed": "15",
+                      "search_term": "dog"
+                  },
+                  "price": 12.34,
+                  "show_modal": true,
+                  "size": "small",
+                  "subscription_id": "s12345678"
+              }
+          ]
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 2000

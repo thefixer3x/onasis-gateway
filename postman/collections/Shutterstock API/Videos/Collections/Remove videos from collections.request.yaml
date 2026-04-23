@@ -1,0 +1,19 @@
+$kind: http-request
+description: This endpoint removes one or more videos from a collection.
+url: "{{baseUrl}}/v2/videos/collections/:id/items"
+method: DELETE
+headers:
+  User-Agent: ShutterstockWorkspace/1.2.0
+queryParams:
+  - key: item_id
+    value: <string>
+    disabled: true
+    description: One or more video IDs to remove from the collection
+pathVariables:
+  - key: id
+    value: <string>
+    description: (Required) The ID of the Collection from which items will be deleted
+auth:
+  type: oauth2
+examples: ./.resources/Remove videos from collections.resources/examples
+order: 8000
