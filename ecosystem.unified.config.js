@@ -17,9 +17,9 @@ module.exports = {
                 SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 
                 // Health check targets
-                HEALTH_AUTH_URL: 'https://auth.lanonasis.com/health',
-                HEALTH_MCP_CORE_URL: 'http://mcp.lanonasis.com/health',
-                HEALTH_ENTERPRISE_MCP_URL: 'http://mcp.lanonasis.com/health',
+                HEALTH_AUTH_URL: 'http://127.0.0.1:4000/health',
+                HEALTH_MCP_CORE_URL: 'http://127.0.0.1:3001/health',
+                HEALTH_ENTERPRISE_MCP_URL: 'http://127.0.0.1:3001/health',
                 HEALTH_TIMEOUT_MS: 4000
             },
             // PM2 configuration
