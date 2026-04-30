@@ -1,0 +1,436 @@
+# ADR-003: Centralized CORS & Rate Limiting Strategy
+
+**Status:** Accepted | **Date:** 2026-01-24 | **Authors:** thefixer3x
+
+## Context
+
+The current architecture has **CORS and rate limiting implemented inconsistently** across 5+ different backends with 6+ different strategies, creating security gaps and confusing behavior for clients.
+
+### Current State
+
+| Backend | CORS Implementation | Rate Limiting |
+|---------|---------------------|---------------|
+| Central Gateway | Multiple versions | 6+ strategies |
+| Auth Gateway | Version A | Strategy A |
+| MCP Server | Version B | Strategy B |
+| Supabase Edge Functions | Version C | Strategy C |
+| Netlify | Native config | Native config |
+| Nginx configs | Scattered | Scattered |
+
+### Problems This Causes
+
+1. **Inconsistent CORS Behavior**: Some endpoints work, others don't, no pattern
+2. **Rate Limiting Gaps**: Some routes protected, others wide open
+3. **Security Risk**: CSRF attacks possible with `$http_origin` reflection
+4. **Confusing Client Experience**: Different behavior for different endpoints
+5. **No Central Visibility**: Can't audit which origins are allowed
+6. **Maintenance Overhead**: Update CORS in 5+ places for each change
+
+## Decision
+
+**Implement Centralized CORS & Rate Limiting at Nginx Gateway Layer**
+
+### Architecture
+
+```
+┌─────────────────────────────────────────┐
+│  gateway.lanonasis.com                  │
+│  (Nginx API Gateway)                    │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │ CENTRALIZED CORS                │   │
+│  │ (Origin Whitelist + No Reflection) │
+│  │ CENTRALIZED RATE LIMITING       │   │
+│  │ (Zone-based, per-endpoint)      │   │
+│  └─────────────────────────────────┘   │
+└──────────────┬──────────────────────────┘
+               │
+     ┌─────────┼──────────┬────────────┐
+     ▼         ▼          ▼            ▼
+┌────────┐ ┌────────┐ ┌────────┐ ┌─────────┐
+│ Auth GW│ │ Central│ │ MCP Http│ │MCP WS/SSE│
+│ :4000  │ │ :3000  │ │:3001   │ │ :3002-3 │
+└────────┘ └────────┘ └────────┘ └─────────┘
+```
+
+### CORS Strategy: Whitelist-Based, No Reflection
+
+**Instead of** (❌ INSECURE):
+```nginx
+# ❌ Dangerous: Reflects ANY origin
+add_header 'Access-Control-Allow-Origin' $http_origin always;
+```
+
+**Use** (✅ SECURE):
+```nginx
+# ✅ Secure: Only reflect whitelisted origins
+map $http_origin $cors_origin {
+    default "";
+    "https://app.lanonasis.com" $http_origin;
+    "https://dashboard.lanonasis.com" $http_origin;
+    "https://admin.lanonasis.com" $http_origin;
+    # Development (remove in production)
+    "http://localhost:3000" $http_origin;
+    "http://localhost:5173" $http_origin;
+}
+
+# Only set CORS header if origin is in whitelist
+add_header 'Access-Control-Allow-Origin' '$cors_origin' always;
+```
+
+### Rate Limiting Strategy: Zone-Based
+
+Define rate limit zones in `http` context (NOT `server` context):
+
+```nginx
+# === RATE LIMITING ZONES (place in http context) ===
+# General rate limit per IP - 20 r/s is reasonable for most APIs
+limit_req_zone $binary_remote_addr zone=general:10m rate=20r/s;
+
+# Stricter rate limit for auth endpoints
+limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/s;
+
+# API rate limit per IP
+limit_req_zone $binary_remote_addr zone=api:10m rate=50r/s;
+
+# Anonymous requests (no Authorization header) - separate bucket
+limit_req_zone $binary_remote_addr zone=anon:10m rate=10r/s;
+```
+
+### Apply Rate Limits per Location
+
+```nginx
+# Auth endpoints - stricter limits
+location /api/v1/auth/login {
+    limit_req zone=auth burst=5 nodelay;
+    proxy_pass http://auth_service;
+}
+
+# General API endpoints - moderate limits
+location /api/v1/memory/ {
+    limit_req zone=api burst=50 nodelay;
+    proxy_pass http://api_gateway;
+}
+
+# MCP endpoints - more permissive
+location /mcp/ {
+    limit_req zone=general burst=100 nodelay;
+    proxy_pass http://mcp_server;
+}
+```
+
+## Why Centralized at Nginx?
+
+### 1. Single Source of Truth
+
+**Before:**
+- CORS config in 5+ different files
+- Rate limits in 6+ different strategies
+- Hard to audit what's allowed
+
+**After:**
+- Single `gateway.conf` with ALL CORS and rate limits
+- Easy to audit and modify
+- All changes go through one file
+
+### 2. Security Benefits
+
+**Prevents CSRF Attacks:**
+- No origin reflection ($http_origin)
+- Only whitelisted origins can access
+- CSRF cookies protected
+
+**Example of vulnerability:**
+```nginx
+# ❌ VULNERABLE: Reflects any origin
+add_header 'Access-Control-Allow-Origin' $http_origin always;
+
+# Attack: evil.com
+#   - Sets malicious origin header
+#   - Gateway reflects it back
+#   - Browser sends request with credentials
+#   - Attacker exfiltrates data
+```
+
+### 3. Performance Benefits
+
+**Connection Pooling:**
+```nginx
+upstream api_gateway {
+    server 127.0.0.1:3000;
+    keepalive 64;  # Reuse 64 connections
+}
+```
+
+**Request ID Tracking:**
+```nginx
+# $request_id is auto-generated by nginx 1.11.0+
+add_header 'X-Request-ID' $request_id always;
+```
+
+### 4. Observability Benefits
+
+**Structured JSON Logging:**
+```nginx
+log_format gateway_json escape=json '{'
+    '"timestamp":"$time_iso8601",'
+    '"request_id":"$request_id",'
+    '"client_ip":"$remote_addr",'
+    '"method":"$request_method",'
+    '"uri":"$uri",'
+    '"status":$status,'
+    '"bytes":$body_bytes_sent,'
+    '"response_time":$request_time,'
+    '"upstream":"$upstream_addr",'
+    '"user_agent":"$http_user_agent"'
+'}';
+```
+
+## Implementation Template
+
+### `/etc/nginx/snippets/proxy-headers.conf`
+
+```nginx
+proxy_http_version 1.1;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Request-ID $request_id;
+proxy_set_header Connection "";
+proxy_connect_timeout 10s;
+proxy_send_timeout 60s;
+proxy_read_timeout 60s;
+```
+
+### `/etc/nginx/sites-available/gateway.conf` (CORS Section)
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name gateway.lanonasis.com;
+
+    # === SSL CONFIGURATION (HARDENED) ===
+    ssl_certificate /etc/letsencrypt/live/gateway.lanonasis.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/gateway.lanonasis.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305';
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    # === SECURITY HEADERS ===
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # === CORS ORIGIN WHITELIST (defined in http context) ===
+    add_header 'Access-Control-Allow-Origin' '$cors_origin' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+    add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, X-Request-ID, X-API-Key' always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+    # === CORS PREFLIGHT HANDLING ===
+    if ($cors_preflight) {
+        add_header 'Access-Control-Allow-Origin' '$cors_origin';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, X-Request-ID, X-API-Key';
+        add_header 'Access-Control-Allow-Credentials' 'true';
+        add_header 'Access-Control-Max-Age' 86400;
+        add_header 'Content-Length' 0;
+        return 204;
+    }
+
+    # === LOGGING ===
+    access_log /var/log/nginx/gateway_access.json gateway_json;
+    error_log /var/log/nginx/gateway_error.log warn;
+}
+```
+
+## Rate Limiting Zones: Configuration Details
+
+### Zone Definitions
+
+```nginx
+# General rate limit per IP - 20 r/s is reasonable for most APIs
+limit_req_zone $binary_remote_addr zone=general:10m rate=20r/s;
+
+# Stricter rate limit for auth endpoints (prevents brute-force)
+limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/s;
+
+# API rate limit per IP
+limit_req_zone $binary_remote_addr zone=api:10m rate=50r/s;
+
+# Anonymous requests (no Authorization header) - separate bucket
+limit_req_zone $binary_remote_addr zone=anon:10m rate=10r/s;
+```
+
+### Zone Parameters Explained
+
+| Parameter | Meaning |
+|-----------|---------|
+| `$binary_remote_addr` | Key for rate limiting (client IP) |
+| `zone=general:10m` | Zone name (general) + memory size (10MB = ~160k keys) |
+| `rate=20r/s` | Rate limit (20 requests per second) |
+
+### Burst Parameters
+
+```nginx
+# Apply rate limit with burst allowance
+limit_req zone=api burst=50 nodelay;
+```
+
+| Parameter | Meaning |
+|-----------|---------|
+| `zone=api` | Which rate limit zone to apply |
+| `burst=50` | Allow up to 50 requests to queue |
+| `nodelay` | Don't delay requests (reject if queue full) |
+
+## Whitelist Management
+
+### Adding New Origins
+
+**Step 1:** Add to map in `http` context:
+```nginx
+map $http_origin $cors_origin {
+    default "";
+    # Existing origins
+    "https://app.lanonasis.com" $http_origin;
+    # New origin
+    "https://new-app.example.com" $http_origin;
+}
+```
+
+**Step 2:** Test locally:
+```bash
+curl -H "Origin: https://new-app.example.com" \
+     https://gateway.lanonasis.com/health
+```
+
+**Step 3:** Check response has correct CORS header:
+```
+Access-Control-Allow-Origin: https://new-app.example.com
+```
+
+### Removing Origins
+
+**Step 1:** Remove from map in `http` context
+**Step 2:** Test that requests from that origin no longer get CORS headers
+**Step 3:** Reload Nginx: `sudo nginx -t && sudo systemctl reload nginx`
+
+## Security Checklist
+
+- [ ] CORS origin whitelist configured (no `$http_origin` reflection)
+- [ ] Rate limiting zones in `http` context (not `server`)
+- [ ] Auth endpoints use stricter rate limits (10 r/s)
+- [ ] Anonymous requests have separate bucket (10 r/s)
+- [ ] Security headers present (HSTS, X-Frame-Options, etc.)
+- [ ] SSL hardening applied (TLS 1.2+, strong ciphers)
+- [ ] No CORS credentials allowed for non-whitelisted origins
+
+## Monitoring & Observability
+
+### Check Rate Limit Hits
+
+```bash
+# Find rate-limited requests (status 503)
+grep '"status":503' /var/log/nginx/gateway_access.json | jq -R 'fromjson?'
+
+# Count rate-limited requests by endpoint
+grep '"status":503' /var/log/nginx/gateway_access.json | jq -R 'fromjson? | .uri' | sort | uniq -c | sort -rn
+```
+
+### Check CORS Violations
+
+```bash
+# Find OPTIONS requests that failed
+grep '"method":"OPTIONS"' /var/log/nginx/gateway_access.json | jq -R 'fromjson?'
+
+# Check for rate-limited auth endpoints
+grep '"status":429' /var/log/nginx/gateway_access.json | jq -R 'fromjson? | select(.uri | contains("/auth"))'
+```
+
+## Alternatives Considered
+
+### Alternative 1: CORS in Each Backend
+
+**Approach:** Implement CORS in each Express.js backend.
+
+**Pros:**
+- Each service controls its own CORS
+- No centralized dependency
+
+**Cons:**
+- 5+ different implementations
+- Easy to misconfigure
+- Hard to audit
+- No centralized rate limiting
+
+**Why Rejected:** Inconsistent implementations cause confusion and security gaps.
+
+### Alternative 2: Rate Limiting in Express Middleware
+
+**Approach:** Use `express-rate-limit` in each backend.
+
+**Pros:**
+- Can implement business logic in rate limits
+- More granular control per endpoint
+
+**Cons:**
+- Same config in multiple places
+- Hard to change globally
+- No unified visibility
+
+**Why Rejected:** Centralized rate limiting at Nginx is simpler and more consistent.
+
+### Alternative 3: API Gateway (Kong/Traefik)
+
+**Approach:** Use dedicated API gateway platform.
+
+**Pros:**
+- Built-in CORS and rate limiting
+- Plugin ecosystem
+- Admin dashboard
+
+**Cons:**
+- Additional dependency
+- More complex to configure
+- Overkill for current scale
+
+**Why Rejected:** Nginx is simpler and sufficient for current needs.
+
+## Related Documents
+
+- [API Gateway Consolidation Plan](../../API-GATEWAY-CONSOLIDATION-PLAN.md) - Full migration plan
+- [ADR-002](./adr-002-api-gateway-consolidation.md) - Gateway consolidation strategy
+- [centralisation-tasks.md](../../centralisation-tasks.md) - Implementation tasks
+
+## Open Questions
+
+1. **Should we support wildcard origins for development?**
+   - Option: `https://*.lanonasis.com` (convenient)
+   - Option: Explicit whitelist only (secure)
+   - Decision: Explicit whitelist even for dev (easier to manage)
+
+2. **Should we add per-client rate limits (by API key)?**
+   - Option: Track rate limits by API key, not just IP
+   - Option: Keep IP-based (simpler)
+   - Decision: IP-based for now, can add API key-based later
+
+3. **Should we implement request throttling (not just rate limiting)?**
+   - Option: Cap total requests per minute (throttle)
+   - Option: Cap requests per second (rate limit)
+   - Decision: Rate limiting is more appropriate for burst traffic
+
+---
+
+**Superseded By:** None  
+**Last Reviewed:** 2026-01-24  
+**Next Review:** 2026-04-24 (quarterly)
