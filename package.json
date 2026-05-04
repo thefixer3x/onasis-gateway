@@ -19,7 +19,7 @@
     "health-check": "bun run scripts/health-check.js",
     "deploy": "./scripts/deploy.sh",
     "db:setup": "bun run scripts/setup-neon-db.ts",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/**/*.ts",
+    "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -84,8 +84,7 @@
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18",
-    "@dotenvx/dotenvx": "^1.55.1"
+    "vitest": "^4.0.18"
   },
   "overrides": {
     "ts-node": {
@@ -130,32 +129,5 @@
       "lcov",
       "html"
     ]
-  },
-  "eslintConfig": {
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "env": {
-      "node": true,
-      "jest": true
-    },
-    "rules": {
-      "no-console": "warn",
-      "prefer-const": "error",
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_",
-          "caughtErrorsIgnorePattern": "^_"
-        }
-      ]
-    }
   }
 }
