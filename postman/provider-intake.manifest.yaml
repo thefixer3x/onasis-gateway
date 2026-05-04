@@ -1,0 +1,159 @@
+version: 1
+generated_at: "2026-04-23"
+description: >
+  Curated provider-intake manifest for third-party API collections relevant to
+  Onasis Gateway partner research, standards benchmarking, and future adapter investment.
+
+recommended_workspaces:
+  canonical: "Onasis Canonical APIs"
+  provider_intake: "Onasis Provider Intake"
+  sandbox: "Onasis Sandbox"
+  archive: "Onasis Archive"
+  legacy_operational:
+    - "SEFTEC APIs"
+    - "mvp tests"
+
+naming_scheme:
+  canonical_collection: "Onasis <Domain> API"
+  provider_intake_collection: "Provider Intake - <Lane> - <Provider>"
+  sandbox_collection: "Sandbox - <Topic> - <DateOrOwner>"
+  archive_collection: "Archive - <Provider> - <VersionOrDate>"
+
+lanes:
+  payments:
+    display_name: "Payments"
+    local_sync_dir: "references/postman/provider-intake/payments"
+  work-productivity:
+    display_name: "Work & Productivity"
+    local_sync_dir: "references/postman/provider-intake/work-productivity"
+  crm-forms-scheduling:
+    display_name: "CRM, Forms & Scheduling"
+    local_sync_dir: "references/postman/provider-intake/crm-forms-scheduling"
+  developer-collaboration:
+    display_name: "Developer & Collaboration"
+    local_sync_dir: "references/postman/provider-intake/developer-collaboration"
+  messaging:
+    display_name: "Messaging"
+    local_sync_dir: "references/postman/provider-intake/messaging"
+
+providers:
+  - slug: clickup
+    provider: "ClickUp"
+    lane: "work-productivity"
+    target_name: "Provider Intake - Work & Productivity - ClickUp API"
+    import_strategy: "postman_public_copy"
+    state: "already_present"
+    ref_path: "postman/collections/business/clickup/collection.ref.yaml"
+
+  - slug: hubspot
+    provider: "HubSpot CRM"
+    lane: "crm-forms-scheduling"
+    target_name: "Provider Intake - CRM, Forms & Scheduling - HubSpot CRM API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/business/hubspot/collection.ref.yaml"
+
+  - slug: stripe
+    provider: "Stripe"
+    lane: "payments"
+    target_name: "Provider Intake - Payments - Stripe API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/business/stripe/collection.ref.yaml"
+
+  - slug: monday
+    provider: "Monday.com"
+    lane: "work-productivity"
+    target_name: "Provider Intake - Work & Productivity - Monday.com API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/business/monday/collection.ref.yaml"
+
+  - slug: google-drive
+    provider: "Google Drive"
+    lane: "work-productivity"
+    target_name: "Provider Intake - Work & Productivity - Google Drive API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/knowledge/google-drive/collection.ref.yaml"
+
+  - slug: notion
+    provider: "Notion"
+    lane: "work-productivity"
+    target_name: "Provider Intake - Work & Productivity - Notion API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/knowledge/notion/collection.ref.yaml"
+
+  - slug: github
+    provider: "GitHub"
+    lane: "developer-collaboration"
+    target_name: "Provider Intake - Developer & Collaboration - GitHub API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/knowledge/github/collection.ref.yaml"
+
+  - slug: confluence
+    provider: "Confluence Atlassian REST"
+    lane: "work-productivity"
+    target_name: "Provider Intake - Work & Productivity - Confluence API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/knowledge/confluence/collection.ref.yaml"
+
+  - slug: typeform
+    provider: "Typeform"
+    lane: "crm-forms-scheduling"
+    target_name: "Provider Intake - CRM, Forms & Scheduling - Typeform API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/input/typeform/collection.ref.yaml"
+
+  - slug: jotform
+    provider: "Jotform"
+    lane: "crm-forms-scheduling"
+    target_name: "Provider Intake - CRM, Forms & Scheduling - Jotform API"
+    import_strategy: "docs_only"
+    state: "missing"
+    ref_path: "postman/collections/input/jotform/collection.ref.yaml"
+
+  - slug: calendly
+    provider: "Calendly"
+    lane: "crm-forms-scheduling"
+    target_name: "Provider Intake - CRM, Forms & Scheduling - Calendly API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/input/calendly/collection.ref.yaml"
+
+  - slug: slack
+    provider: "Slack"
+    lane: "developer-collaboration"
+    target_name: "Provider Intake - Developer & Collaboration - Slack Web API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/messaging/slack/collection.ref.yaml"
+
+  - slug: whatsapp
+    provider: "WhatsApp Cloud"
+    lane: "messaging"
+    target_name: "Provider Intake - Messaging - WhatsApp Cloud API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/messaging/whatsapp/collection.ref.yaml"
+
+  - slug: gmail
+    provider: "Gmail"
+    lane: "work-productivity"
+    target_name: "Provider Intake - Work & Productivity - Gmail API"
+    import_strategy: "docs_only"
+    state: "missing"
+    ref_path: "postman/collections/messaging/gmail/collection.ref.yaml"
+
+  - slug: telegram
+    provider: "Telegram Bot"
+    lane: "messaging"
+    target_name: "Provider Intake - Messaging - Telegram Bot API"
+    import_strategy: "postman_public_copy"
+    state: "missing"
+    ref_path: "postman/collections/messaging/telegram/collection.ref.yaml"
+

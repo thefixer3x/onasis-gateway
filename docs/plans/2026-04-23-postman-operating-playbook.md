@@ -206,6 +206,10 @@ Use this workspace for:
 
 Do **not** call this workspace canonical.
 
+Recommended exact workspace name:
+
+- `Onasis Provider Intake`
+
 ### Workspace C: Sandbox / MVP Tests
 
 This workspace is scratch space.
@@ -218,6 +222,10 @@ Use it for:
 - temporary flows
 
 Do **not** treat this workspace as long-term truth.
+
+Recommended exact workspace name:
+
+- `Onasis Sandbox`
 
 If a flow matters after experimentation, promote it into either:
 
@@ -233,6 +241,17 @@ Use it for:
 - vendor version snapshots
 - retired collections
 - historical evidence for drift analysis
+
+Recommended exact workspace name:
+
+- `Onasis Archive`
+
+### Legacy Workspace Note
+
+The following existing workspaces can continue temporarily, but should not be treated as the long-term naming standard:
+
+- `SEFTEC APIs`
+- `mvp tests`
 
 ---
 
@@ -252,9 +271,10 @@ references/
       memory-service/
     provider-intake/
       payments/
-      identity/
+      work-productivity/
+      crm-forms-scheduling/
+      developer-collaboration/
       messaging/
-      banking/
     archive/
 ```
 
@@ -272,6 +292,11 @@ Scaffolded paths now exist in the repo:
 - `/Users/seyederick/onasis-gateway/references/postman/canonical/`
 - `/Users/seyederick/onasis-gateway/references/postman/provider-intake/`
 - `/Users/seyederick/onasis-gateway/references/postman/archive/`
+
+For curated provider references already tracked in-repo, also use:
+
+- `/Users/seyederick/onasis-gateway/postman/provider-intake.manifest.yaml`
+- `/Users/seyederick/onasis-gateway/postman/collections/**/collection.ref.yaml`
 
 ---
 
@@ -353,6 +378,62 @@ This gives us:
 - less contract drift
 - cleaner adapter and runbook mapping
 - safer promotion from experiment to standard
+
+### Exact Naming Scheme
+
+Use these collection names by default.
+
+Canonical collections:
+
+- `Onasis Gateway REST API`
+- `Onasis Auth Gateway API`
+- `Onasis Memory Service REST API`
+- `Onasis Internal Services`
+- `Onasis Provider-Abstraction Test Flows`
+
+Provider-intake collections:
+
+- `Provider Intake - Payments - <Provider>`
+- `Provider Intake - Work & Productivity - <Provider>`
+- `Provider Intake - CRM, Forms & Scheduling - <Provider>`
+- `Provider Intake - Developer & Collaboration - <Provider>`
+- `Provider Intake - Messaging - <Provider>`
+
+Archive collections:
+
+- `Archive - <Provider> - <VersionOrDate>`
+
+Sandbox collections:
+
+- `Sandbox - <Topic> - <DateOrOwner>`
+
+### Current Curated Intake Targets
+
+The current provider-intake manifest covers these 15 listed targets:
+
+- ClickUp API
+- HubSpot CRM API
+- Stripe API
+- Monday.com API
+- Google Drive API
+- Notion API
+- GitHub API
+- Confluence Atlassian REST API
+- Typeform API
+- Jotform API
+- Calendly API
+- Slack Web API
+- WhatsApp Cloud API
+- Gmail API
+- Telegram Bot API
+
+Manifest path:
+
+- `/Users/seyederick/onasis-gateway/postman/provider-intake.manifest.yaml`
+
+Import helper:
+
+- `/Users/seyederick/onasis-gateway/scripts/import-provider-intake.js`
 
 ---
 

@@ -12,9 +12,10 @@ references/postman/
     memory-service/
   provider-intake/
     payments/
-    identity/
+    work-productivity/
+    crm-forms-scheduling/
+    developer-collaboration/
     messaging/
-    banking/
   archive/
 ```
 
@@ -26,4 +27,3 @@ references/postman/
 - Do not commit plaintext secrets in collections or environment exports.
 - Prefer placeholders and approved secret-loading workflows.
 - Follow `/Users/seyederick/onasis-gateway/docs/plans/2026-04-23-postman-operating-playbook.md`.
-
