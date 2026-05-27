@@ -1,5 +1,5 @@
-version: 1
-updated: 2026-01-29
+version: 2
+updated: 2026-05-27
 owner: onasis-gateway
 
 domains:
@@ -97,6 +97,9 @@ route_groups:
       - path: /api/v1/memory/:id
         target: /memory-get
         methods: [GET, DELETE]
+      - path: /api/v1/memories/:id
+        target: /memory-get
+        methods: [GET, DELETE]
       - path: /api/v1/memory/list
         target: /memory-list
         methods: [GET, POST]
@@ -133,10 +136,12 @@ route_groups:
         target: /intelligence-health-check
         upstream: supabase_intel_edge
         methods: [GET]
+        auth_required: false
       - path: /api/v1/intelligence/health
         target: /intelligence-health-check
         upstream: supabase_intel_edge
         methods: [GET]
+        auth_required: false
       - path: /api/v1/intelligence/suggest-tags
         target: /intelligence-suggest-tags
         upstream: supabase_intel_edge
@@ -157,6 +162,30 @@ route_groups:
         target: /intelligence-analyze-patterns
         upstream: supabase_intel_edge
         methods: [POST]
+      - path: /api/v1/intelligence/memories
+        target: /intelligence-memories
+        upstream: supabase_intel_edge
+        methods: [GET, POST]
+      - path: /api/v1/intelligence/predictive-recall
+        target: /intelligence-predictive-recall
+        upstream: supabase_intel_edge
+        methods: [POST]
+      - path: /api/v1/intelligence/prediction-feedback
+        target: /intelligence-prediction-feedback
+        upstream: supabase_intel_edge
+        methods: [POST]
+      - path: /api/v1/intelligence/behavior-record
+        target: /intelligence-behavior-record
+        upstream: supabase_intel_edge
+        methods: [POST]
+      - path: /api/v1/intelligence/behavior-recall
+        target: /intelligence-behavior-recall
+        upstream: supabase_intel_edge
+        methods: [POST]
+      - path: /api/v1/intelligence/behavior-suggest
+        target: /intelligence-behavior-suggest
+        upstream: supabase_intel_edge
+        methods: [POST]
 
       # API keys
       - path: /api/v1/keys
@@ -168,12 +197,21 @@ route_groups:
       - path: /api/v1/keys/list
         target: /api-key-list
         methods: [GET]
+      - path: /api/v1/keys/:id/rotate
+        target: /api-key-rotate
+        methods: [POST]
       - path: /api/v1/keys/rotate
         target: /api-key-rotate
+        methods: [POST]
+      - path: /api/v1/keys/:id/revoke
+        target: /api-key-revoke
         methods: [POST]
       - path: /api/v1/keys/revoke
         target: /api-key-revoke
         methods: [POST]
+      - path: /api/v1/keys/:id
+        target: /api-key-get
+        methods: [GET, DELETE]
       - path: /api/v1/keys/delete
         target: /api-key-delete
         methods: [DELETE, POST]
@@ -210,6 +248,64 @@ route_groups:
         target: /auth-status
         methods: [GET]
 
+      # Docs search
+      - path: /api/v1/docs/search
+        target: /docs-search
+        upstream: supabase_intel_edge
+        methods: [POST]
+
+cors_policy:
+  description: >
+    CORS is enforced via suffix-match on the origin header.
+    The authoritative env var is ALLOWED_ORIGIN_SUFFIXES in unified_gateway.js.
+    Default value: lanonasis.com,connectionpoint.tech
+    This grants all *.lanonasis.com and *.connectionpoint.tech subdomains.
+  allowed_origin_suffixes:
+    - lanonasis.com
+    - connectionpoint.tech
+  origin_status:
+    - origin: https://dashboard.lanonasis.com
+      status: allowed
+    - origin: https://mcp.lanonasis.com
+      status: allowed
+    - origin: https://api.lanonasis.com
+      status: allowed
+    - origin: https://docs.lanonasis.com
+      status: allowed
+    - origin: https://lanonasis.com
+      status: allowed
+    - origin: https://app.lanonasis.com
+      status: allowed
+    - origin: https://admin.lanonasis.com
+      status: allowed
+    - origin: https://gateway.lanonasis.com
+      status: allowed
+    - origin: https://mcp1.lanonasis.com
+      status: allowed
+    - origin: https://auth.connectionpoint.tech
+      status: allowed
+    - origin: https://*.connectionpoint.tech
+      status: allowed
+    - origin: http://localhost:3000
+      status: allowed_dev
+    - origin: http://localhost:3001
+      status: allowed_dev
+    - origin: http://localhost:5173
+      status: allowed_dev
+  allowed_headers:
+    - Authorization
+    - X-API-Key
+    - X-Request-ID
+    - Content-Type
+  auth_header_policy:
+    pass_through: [Authorization, X-API-Key, X-Request-ID]
+    strip_on_proxy: [host, content-length]
+    never_log: [Authorization, X-API-Key]
+
 notes:
   - The MaaS route list is derived from SUPABASE_REST_API_OPENAPI.yaml and DIRECT_API_ROUTES.md.
-  - Additional edge functions exist but are not exposed in this plan until explicitly added.
+  - "Version 2 (2026-05-27): added intelligence/memories, predictive-recall, prediction-feedback,\
+    \ behavior-record, behavior-recall, behavior-suggest, memories/:id alias, keys/:id, CORS policy."
+  - CORS uses suffix-match on lanonasis.com and connectionpoint.tech covering all subdomains.
+  - Additional edge functions exist but are not exposed in this map until explicitly promoted.
+  - intelligence-health-check and system-health are public (auth_required: false).
