@@ -1157,6 +1157,86 @@ class UnifiedGateway {
         this.app.all('/functions/v1/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
         this.app.all('/api/v1/functions/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
 
+        // ==================== MEMORY API ROUTES ====================
+        // Memory as a Service - proxies to Supabase Edge functions
+        // See: docs/architecture/ROUTE_MAP.yaml
+        
+        // Create memory (POST /api/v1/memory or /api/v1/memories)
+        this.app.all('/api/v1/memory', async (req, res) => {
+            req.params.functionName = 'memory-create';
+            return this.proxySupabaseFunction(req, res);
+        });
+        this.app.all('/api/v1/memories', async (req, res) => {
+            req.params.functionName = 'memory-create';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // Get/Delete memory by ID
+        this.app.all('/api/v1/memory/:id', async (req, res) => {
+            req.params.functionName = 'memory-get';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // List memories
+        this.app.all('/api/v1/memory/list', async (req, res) => {
+            req.params.functionName = 'memory-list';
+            return this.proxySupabaseFunction(req, res);
+        });
+        this.app.all('/api/v1/memories/list', async (req, res) => {
+            req.params.functionName = 'memory-list';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // Search memories
+        this.app.all('/api/v1/memory/search', async (req, res) => {
+            req.params.functionName = 'memory-search';
+            return this.proxySupabaseFunction(req, res);
+        });
+        this.app.all('/api/v1/memories/search', async (req, res) => {
+            req.params.functionName = 'memory-search';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // Memory stats
+        this.app.all('/api/v1/memory/stats', async (req, res) => {
+            req.params.functionName = 'memory-stats';
+            return this.proxySupabaseFunction(req, res);
+        });
+        this.app.all('/api/v1/memories/stats', async (req, res) => {
+            req.params.functionName = 'memory-stats';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // Update memory
+        this.app.all('/api/v1/memory/update', async (req, res) => {
+            req.params.functionName = 'memory-update';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // Delete memory
+        this.app.all('/api/v1/memory/delete', async (req, res) => {
+            req.params.functionName = 'memory-delete';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // Bulk delete
+        this.app.all('/api/v1/memory/bulk/delete', async (req, res) => {
+            req.params.functionName = 'memory-bulk-delete';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // Memory health
+        this.app.all('/api/v1/memory/health', async (req, res) => {
+            req.params.functionName = 'system-health';
+            return this.proxySupabaseFunction(req, res);
+        });
+        
+        // Topics
+        this.app.all('/api/v1/topics', async (req, res) => {
+            req.params.functionName = 'topics';
+            return this.proxySupabaseFunction(req, res);
+        });
+
         // ==================== API GATEWAY ROUTES ====================
 
         // AI chat (canonical external route).
