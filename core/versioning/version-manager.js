@@ -11,6 +11,27 @@ class VersionManager extends EventEmitter {
     this.versionMappings = new Map();
     this.compatibilityMatrix = new Map();
     this.migrationHandlers = new Map();
+    this.rollbackHandlers = new Map();
+  }
+
+  /**
+   * Deep clone migration input so a failed/partial migration can be rolled back
+   * to the exact pre-migration state, even if the handler mutated the input.
+   */
+  _snapshot(data) {
+    if (data === undefined || data === null) return data;
+    if (typeof structuredClone === 'function') {
+      try {
+        return structuredClone(data);
+      } catch {
+        /* fall through to JSON clone for non-structured-cloneable values */
+      }
+    }
+    try {
+      return JSON.parse(JSON.stringify(data));
+    } catch {
+      return data; // unclonable (e.g. functions) — best effort, return as-is
+    }
   }
 
   /**
@@ -147,7 +168,7 @@ class VersionManager extends EventEmitter {
     // Check base URL changes
     if (newConfig.baseUrl !== oldConfig.baseUrl) {
       compatibility.breakingChanges.push({
-        type: 'baseUrl',
+        type: 'baseUrl_changed',
         message: `Base URL changed from ${oldConfig.baseUrl} to ${newConfig.baseUrl}`
       });
     }
@@ -345,15 +366,28 @@ class VersionManager extends EventEmitter {
   }
 
   /**
-   * Register migration handler for version transitions
+   * Register migration handler for version transitions.
+   *
+   * @param {Function} handler          (data) => migratedData
+   * @param {Function} [rollbackHandler] (snapshot, error) => restoredData. Optional;
+   *   when omitted, executeMigration falls back to restoring a deep snapshot of the
+   *   pre-migration input. Either way a rollback path always exists.
    */
-  registerMigrationHandler(serviceId, fromVersion, toVersion, handler) {
+  registerMigrationHandler(serviceId, fromVersion, toVersion, handler, rollbackHandler) {
     const key = `${serviceId}:${fromVersion}->${toVersion}`;
     this.migrationHandlers.set(key, handler);
+    if (typeof rollbackHandler === 'function') {
+      this.rollbackHandlers.set(key, rollbackHandler);
+    }
   }
 
   /**
-   * Execute migration between versions
+   * Execute migration between versions.
+   *
+   * Guardrail: migrations NEVER run without rollback capability. A deep snapshot
+   * of the input is taken before the handler runs; on failure the explicit
+   * rollback handler (if registered) is invoked, otherwise the snapshot is
+   * restored. The original error is always re-thrown so callers still fail loudly.
    */
   async executeMigration(serviceId, fromVersion, toVersion, data) {
     const key = `${serviceId}:${fromVersion}->${toVersion}`;
@@ -363,9 +397,13 @@ class VersionManager extends EventEmitter {
       throw new Error(`No migration handler found for ${key}`);
     }
 
+    // Capture pristine state BEFORE the handler can mutate it.
+    const snapshot = this._snapshot(data);
+    const rollbackHandler = this.rollbackHandlers.get(key);
+
     try {
       const migratedData = await handler(data);
-      
+
       this.emit('migration:completed', {
         serviceId,
         fromVersion,
@@ -375,12 +413,44 @@ class VersionManager extends EventEmitter {
 
       return migratedData;
     } catch (error) {
+      let restoredData = snapshot;
+
+      try {
+        if (typeof rollbackHandler === 'function') {
+          restoredData = await rollbackHandler(snapshot, error);
+        }
+      } catch (rollbackError) {
+        // Rollback failed: surface BOTH failures and do not pretend we recovered.
+        this.emit('migration:rollback_failed', {
+          serviceId,
+          fromVersion,
+          toVersion,
+          error,
+          rollbackError
+        });
+        const composite = new Error(
+          `Migration ${key} failed ("${error.message}") and rollback also failed ("${rollbackError.message}")`
+        );
+        composite.cause = error;
+        composite.rollbackError = rollbackError;
+        throw composite;
+      }
+
       this.emit('migration:failed', {
         serviceId,
         fromVersion,
         toVersion,
-        error
+        error,
+        rolledBack: true,
+        restoredData
       });
+      this.emit('migration:rolled_back', {
+        serviceId,
+        fromVersion,
+        toVersion,
+        restoredData
+      });
+
       throw error;
     }
   }
