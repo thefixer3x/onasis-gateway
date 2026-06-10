@@ -66,16 +66,28 @@ class VersionManager extends EventEmitter {
 
   /**
    * Get latest version of a service
+   * @param {string} serviceId
+   * @param {Object} [options]
+   * @param {boolean} [options.skipDeprecated=false] - Exclude deprecated versions from consideration
    */
-  getLatestVersion(serviceId) {
+  getLatestVersion(serviceId, options = {}) {
+    const { skipDeprecated = false } = options;
     const versions = this.getServiceVersions(serviceId);
     
     if (versions.length === 0) {
       throw new Error(`No versions found for service ${serviceId}`);
     }
 
+    const candidates = skipDeprecated
+      ? versions.filter(v => !v.config.deprecated)
+      : versions;
+
+    if (candidates.length === 0) {
+      throw new Error(`No non-deprecated versions found for service ${serviceId}`);
+    }
+
     // Sort versions and get latest
-    const sortedVersions = versions.sort((a, b) => semver.rcompare(a.version, b.version));
+    const sortedVersions = candidates.sort((a, b) => semver.rcompare(a.version, b.version));
     return sortedVersions[0];
   }
 
@@ -401,6 +413,69 @@ class VersionManager extends EventEmitter {
     config.deprecatedAt = new Date();
 
     this.emit('version:deprecated', { serviceId, version, reason });
+  }
+
+  /**
+   * Remove a service version after the mandatory30-day deprecation window.
+   * Emits warnings on days 1-29 after deprecatedAt.
+   * @param {string} serviceId
+   * @param {string} version
+   * @param {Object} [options]
+   * @param {boolean} [options.force=false] - Skip the "in active use" safety check (for testing)
+   * @throws {Error} If version is not found, not deprecated, still in the30-day window,
+ *                  or is in active use (unless force is true).
+   */
+  removeVersion(serviceId, version, options = {}) {
+    const key = `${serviceId}:${version}`;
+    const config = this.supportedVersions.get(key);
+
+    if (!config) {
+      throw new Error(`Version ${version} not found for service ${serviceId}`);
+    }
+
+    if (!config.deprecated) {
+      throw new Error(`Version ${version} is not deprecated and cannot be removed`);
+    }
+
+    if (!config.deprecatedAt) {
+      throw new Error(`Version ${version} has no deprecatedAt timestamp; deprecation must be done via deprecateVersion()`);
+    }
+
+    // Safety: never delete a version still in active use
+    if (!options.force && config.inActiveUse) {
+      throw new Error(`Version ${version} is still in active use and cannot be removed`);
+    }
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const daysSinceDeprecation = (Date.now() - config.deprecatedAt.getTime()) / msPerDay;
+    const daysRemaining = 30 - daysSinceDeprecation;
+
+    if (daysSinceDeprecation < 1) {
+      // Day 0 — emit informational notice
+      this.emit('version:removal_warning', {
+        serviceId,
+        version,
+        message: `Version ${version} was just deprecated; removal will be allowed after the 30-day window.`
+      });
+    } else if (daysSinceDeprecation < 30) {
+      // Day 1-29 — emit daily warning with days remaining
+      this.emit('version:removal_warning', {
+        serviceId,
+        version,
+        daysRemaining: Math.ceil(daysRemaining),
+        message: `Version ${version} is in the mandatory30-day deprecation window; ${Math.ceil(daysRemaining)} day(s) remaining before removal is allowed.`
+      });
+    }
+
+    if (daysSinceDeprecation < 30) {
+      throw new Error(
+        `Version ${version} cannot be removed yet. ${Math.ceil(daysRemaining)} day(s) remaining in the 30-day deprecation window.`
+      );
+    }
+
+    // All checks passed — remove the version
+    this.supportedVersions.delete(key);
+    this.emit('version:removed', { serviceId, version });
   }
 
   /**

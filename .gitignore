@@ -49,3 +49,5 @@ bun.lock
 .claude/settings.local.json
 .cursor/settings.local.json
 .windsurf/settings.local.json
+
+testsprite_tests/tmp/config.json
