@@ -17,7 +17,7 @@
 | Netlify redirects | 257 lines | 3 files (`_redirects`, `netlify.toml`, etc.) |
 | Nginx configs | 497 lines | 4 files (scattered across sites-available) |
 | Supabase Edge Functions | 28 functions | Supabase dashboard |
-| Express backends | 4 servers | Ports 3001, 3003, 4000-4001, 8080 |
+| Express backends | 4+ servers | Ports 3000-3003, 4000, 8080 |
 | CORS implementations | 5+ versions | Scattered across all backends |
 | Rate limiting strategies | 6+ different | Inconsistent across services |
 
@@ -162,17 +162,17 @@ sudo touch /etc/nginx/snippets/cors.conf
 
 # === UPSTREAMS ===
 upstream auth_service {
-    server 127.0.0.1:3003;
+    server 127.0.0.1:4000;
     keepalive 32;
 }
 
 upstream api_gateway {
-    server 127.0.0.1:3001;
+    server 127.0.0.1:3000;
     keepalive 64;
 }
 
 upstream mcp_server {
-    server 127.0.0.1:4000;
+    server 127.0.0.1:3001;
     keepalive 16;
 }
 
@@ -627,12 +627,21 @@ cat /var/log/nginx/gateway_access.json | jq -R 'fromjson? | select(.status >= 40
 curl https://gateway.lanonasis.com/health
 ```
 
-**Full upstream aggregation**
+**Full upstream aggregation (target state after unified gateway `/health/full` is implemented)**
 ```bash
 curl https://gateway.lanonasis.com/health/full
 ```
 
-**Local override (central-gateway)**
+**Current repo reality**
+```bash
+# Unified gateway currently exposes /health
+curl http://127.0.0.1:3000/health
+
+# mcp_server.js currently exposes /health/full
+curl http://127.0.0.1:3001/health/full
+```
+
+**Local override (planned central-gateway aggregation)**
 ```bash
 HEALTH_AUTH_URL="http://127.0.0.1:4000/health" \
 HEALTH_MCP_CORE_URL="http://127.0.0.1:3001/health" \
