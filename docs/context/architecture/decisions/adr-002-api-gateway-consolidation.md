@@ -355,12 +355,18 @@ cat /var/log/nginx/gateway_access.json | jq -R 'fromjson? | select(.status >= 40
 curl https://gateway.lanonasis.com/health
 ```
 
-**Full upstream aggregation:**
+**Full upstream aggregation (target state after unified gateway `/health/full` is implemented):**
 ```bash
 curl https://gateway.lanonasis.com/health/full
 ```
 
-**Local override (central-gateway):**
+**Current repo reality:**
+```bash
+curl http://127.0.0.1:3000/health
+curl http://127.0.0.1:3001/health/full
+```
+
+**Local override (planned central-gateway aggregation):**
 ```bash
 HEALTH_AUTH_URL="http://127.0.0.1:4000/health" \
 HEALTH_MCP_CORE_URL="http://127.0.0.1:3001/health" \

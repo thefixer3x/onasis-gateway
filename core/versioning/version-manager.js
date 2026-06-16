@@ -3,6 +3,7 @@ const EventEmitter = require('events');
 
 /**
  * Version Manager - Handles service versioning, compatibility, and migrations
+ * Includes migration rollback support with snapshots and explicit rollback handlers
  */
 class VersionManager extends EventEmitter {
   constructor() {
@@ -11,6 +12,8 @@ class VersionManager extends EventEmitter {
     this.versionMappings = new Map();
     this.compatibilityMatrix = new Map();
     this.migrationHandlers = new Map();
+    this.rollbackHandlers = new Map();
+    this.migrationSnapshots = new Map();
   }
 
   /**
@@ -157,10 +160,10 @@ class VersionManager extends EventEmitter {
     }
 
     // Check base URL changes
-    if (newConfig.baseUrl !== oldConfig.baseUrl) {
+    if (newConfig.baseUrl_changed !== oldConfig.baseUrl_changed) {
       compatibility.breakingChanges.push({
-        type: 'baseUrl',
-        message: `Base URL changed from ${oldConfig.baseUrl} to ${newConfig.baseUrl}`
+        type: 'baseUrl_changed',
+        message: `Base URL changed from ${oldConfig.baseUrl_changed} to ${newConfig.baseUrl_changed}`
       });
     }
 
@@ -365,15 +368,52 @@ class VersionManager extends EventEmitter {
   }
 
   /**
-   * Execute migration between versions
+   * Register explicit rollback handler for version transitions
+   */
+  registerRollbackHandler(serviceId, fromVersion, toVersion, handler) {
+    const key = `${serviceId}:${fromVersion}->${toVersion}`;
+    this.rollbackHandlers.set(key, handler);
+  }
+
+  /**
+   * Create a snapshot of current data state before migration
+   */
+  createMigrationSnapshot(serviceId, fromVersion, toVersion, data) {
+    const key = `${serviceId}:${fromVersion}->${toVersion}`;
+    const snapshot = {
+      serviceId,
+      fromVersion,
+      toVersion,
+      data: JSON.parse(JSON.stringify(data)),
+      timestamp: new Date(),
+      id: `${key}:${Date.now()}`
+    };
+    this.migrationSnapshots.set(key, snapshot);
+    return snapshot;
+  }
+
+  /**
+   * Get the most recent snapshot for a migration path
+   */
+  getSnapshot(serviceId, fromVersion, toVersion) {
+    const key = `${serviceId}:${fromVersion}->${toVersion}`;
+    return this.migrationSnapshots.get(key);
+  }
+
+  /**
+   * Execute migration between versions with rollback support
    */
   async executeMigration(serviceId, fromVersion, toVersion, data) {
     const key = `${serviceId}:${fromVersion}->${toVersion}`;
     const handler = this.migrationHandlers.get(key);
+    const rollbackHandler = this.rollbackHandlers.get(key);
 
     if (!handler) {
       throw new Error(`No migration handler found for ${key}`);
     }
+
+    // Create snapshot before migration
+    const snapshot = this.createMigrationSnapshot(serviceId, fromVersion, toVersion, data);
 
     try {
       const migratedData = await handler(data);
@@ -382,19 +422,83 @@ class VersionManager extends EventEmitter {
         serviceId,
         fromVersion,
         toVersion,
-        data: migratedData
+        data: migratedData,
+        snapshotId: snapshot.id
       });
 
       return migratedData;
     } catch (error) {
-      this.emit('migration:failed', {
+      // Attempt rollback on migration failure
+      await this.executeRollback(serviceId, fromVersion, toVersion, data, error, snapshot);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute rollback for a failed migration
+   */
+  async executeRollback(serviceId, fromVersion, toVersion, data, error, snapshot) {
+    const key = `${serviceId}:${fromVersion}->${toVersion}`;
+    const rollbackHandler = this.rollbackHandlers.get(key);
+
+    try {
+      let rolledBackData;
+      
+      if (rollbackHandler) {
+        // Use explicit rollback handler if available
+        rolledBackData = await rollbackHandler(data, error);
+      } else if (snapshot) {
+        // Fall back to snapshot restoration
+        rolledBackData = snapshot.data;
+      } else {
+        // No rollback mechanism available
+        this.emit('migration:rollback_failed', {
+          serviceId,
+          fromVersion,
+          toVersion,
+          error,
+          reason: 'No rollback handler or snapshot available'
+        });
+        return;
+      }
+
+      this.emit('migration:rolled_back', {
         serviceId,
         fromVersion,
         toVersion,
-        error
+        originalData: data,
+        rolledBackData,
+        originalError: error.message,
+        snapshotId: snapshot?.id
       });
-      throw error;
+    } catch (rollbackError) {
+      this.emit('migration:rollback_failed', {
+        serviceId,
+        fromVersion,
+        toVersion,
+        error,
+        rollbackError: rollbackError.message,
+        snapshotId: snapshot?.id
+      });
     }
+  }
+
+  /**
+   * Clear snapshots for a migration path
+   */
+  clearSnapshots(serviceId, fromVersion, toVersion) {
+    const key = `${serviceId}:${fromVersion}->${toVersion}`;
+    this.migrationSnapshots.delete(key);
+  }
+
+  /**
+   * Get all migration snapshots
+   */
+  getAllSnapshots() {
+    return Array.from(this.migrationSnapshots.entries()).map(([key, snapshot]) => ({
+      key,
+      ...snapshot
+    }));
   }
 
   /**

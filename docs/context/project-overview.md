@@ -54,9 +54,9 @@ onasis-gateway is a comprehensive API service warehouse with MCP (Model Context 
 
 ### Current Focus
 1. **API Gateway Consolidation:** Migrating from fragmented routing to centralized Nginx gateway
-2. **MaaS Integration:** OpenAPI-generated adapters for Memory and Intelligence APIs
-3. **Security Hardening:** OAuth2/PKCE flow, auth-bridge simplification
-4. **Testing:** Parity tests for gateway vs. direct API calls
+2. **MaaS Integration:** Supabase edge adapter plus memory/intelligence adapters are present; route cutover is still incomplete
+3. **Security Hardening:** OAuth2/PKCE flow, auth delegation, and trust-boundary cleanup
+4. **Testing:** Security/auth wiring coverage exists; gateway-vs-direct parity tests are still missing
 
 ---
 
@@ -106,7 +106,7 @@ onasis-gateway is a comprehensive API service warehouse with MCP (Model Context 
 | MCP Core SSE | 3003 | MCP Server-Sent Events |
 | Enterprise MCP | 3001 | Enterprise MCP prototype |
 
-**⚠️ Note:** Port documentation conflicts exist. Update `centralisation-tasks.md` as needed.
+**⚠️ Note:** `ROUTE_MAP.yaml`, `unified_gateway.js`, and `mcp_server.js` align on these ports. Some planning snippets were stale and should be treated as non-authoritative unless they match the route map.
 
 ---
 
@@ -115,10 +115,9 @@ onasis-gateway is a comprehensive API service warehouse with MCP (Model Context 
 ### Architecture Decision Records (ADRs)
 Located in `docs/context/architecture/decisions/`:
 
-- **ADR-001:** API Gateway Consolidation Strategy (Why Nginx, migration phases)
-- **ADR-002:** Centralized CORS & Rate Limiting (Security approach)
-- **ADR-003:** MaaS Adapter Architecture (OpenAPI-based generation)
-- **ADR-004:** Auth Gateway vs Auth Bridge (Introspection pattern)
+- **ADR-001:** Gateway Authentication Architecture
+- **ADR-002:** API Gateway Consolidation Strategy
+- **Next ADRs to add:** trust boundaries, MaaS adapter architecture, rollout/cutover decisions
 
 ### Component Documentation
 Located in `docs/context/components/`:
@@ -192,9 +191,9 @@ GET /api/execute/{service}/{id}
 
 #### Health Aggregation
 ```javascript
-// Pattern: Health check all backends
-GET /health          // Basic gateway health
-GET /health/full     // Full upstream status
+// Current repo reality
+GET /health          // Implemented on unified gateway
+GET /health/full     // Implemented on mcp_server.js, not yet on unified_gateway.js
 ```
 
 #### MCP Protocol
@@ -216,7 +215,7 @@ SSE /mcp/sse         // Server-sent events
 
 #### Authentication Rules
 - **Auth Gateway** is source of truth for identity
-- **Central Gateway** only forwards tokens, doesn't validate locally
+- **Central Gateway** delegates primary verification to auth-gateway and still has a Supabase JWT compatibility fallback
 - **X-User-* headers** only trusted when from Nginx/Central Gateway
 - **OAuth2 PKCE** flows must preserve cookies and redirects
 
@@ -225,7 +224,7 @@ SSE /mcp/sse         // Server-sent events
 - **SSL hardening** applied (TLS 1.2+, strong ciphers)
 - **Rate limiting zones** in http context (not server)
 - **No admin/reload endpoints** exposed
-- **fail2ban** configured for auth endpoints
+- **fail2ban** planned for auth endpoints, not yet documented as deployed
 
 ---
 
@@ -233,28 +232,30 @@ SSE /mcp/sse         // Server-sent events
 
 ### Migration Progress
 ```
-Overall Progress: 15% complete ████████░░░░░░░░░░░░░
+Repo Reality Snapshot
 
-✅ Phase 0: Route Inventory (COMPLETE) - ROUTE_MAP.yaml created
-⚠️ Phase 1: Nginx Foundation (0/12 tasks) - Gateway config, health checks
-⚠️ Phase 2: Auth Unification (0/8 tasks) - OAuth2 flows, rate limiting
-⚠️ Phase 3: MaaS Integration (1/7 tasks) - Memory aliases added
-⚠️ Phase 4: MCP Protocol (0/7 tasks) - WebSocket/SSE support
-⚠️ Phase 5: Cutover (0/8 tasks) - Production deployment
+✅ Phase 0: Route inventory complete (`ROUTE_MAP.yaml`, `MAAS_ADAPTERS.md`)
+⚠️ Phase 1: Partial - reference `gateway.conf` exists; unified gateway already has CORS, rate limiting, request IDs, `/health`
+⚠️ Phase 2: Partial - auth verification/delegation exists; trust-boundary docs and final cleanup are pending
+⚠️ Phase 3: Partial - Supabase edge adapter exists; memory/intelligence routing work exists; parity suite is missing
+⚠️ Phase 4: Partial - WS/SSE proxy paths exist in reference config; live deployment still needs confirmation
+⏳ Phase 5: Planned - cutover and cleanup remain outstanding
 ```
 
 ### Immediate Priorities (Next Sprint)
-1. ✅ **Confirm actual ports** - Run `pm2 list` on VPS
-2. ⏳ **Create Nginx gateway config** - `/etc/nginx/sites-available/gateway.conf`
-3. ⏳ **Implement health aggregation** - `/health` and `/health/full` endpoints
+1. ✅ **Confirm canonical repo ports** - route map and runtime code now agree
+2. ⏳ **Confirm live VPS ports and PM2 state** - still needs `pm2 list` / listener checks
+3. ⏳ **Add unified gateway `/health/full` and `/api/v1/status`** - docs expect them; runtime does not yet provide both
 4. ⏳ **Document trust boundaries** - `TRUST_BOUNDARIES.md`
-5. ⏳ **Create parity tests** - Gateway vs. direct calls
+5. ⏳ **Create parity tests** - gateway vs. direct MaaS calls
 
 ### Known Gaps
-- No ADR documentation (should be in `docs/context/architecture/decisions/`)
 - No component-level context files (should be in `docs/context/components/`)
-- Port documentation conflicts in `centralisation-tasks.md`
 - No `TRUST_BOUNDARIES.md` document
+- No `GATEWAY_ROLLOUT.md` document
+- Unified gateway lacks `/health/full` and `/api/v1/status`
+- Netlify still owns many production-facing routes
+- Dedicated gateway-vs-direct parity suite is missing
 - Missing MCP workflow documentation
 
 ---
@@ -313,7 +314,7 @@ npx dotenvx run -f .env.production -- node unified_gateway.js
 4. **Context Progress:** `docs/context/context-engineering-progress.md`
 
 ### Troubleshooting
-- **Route failures:** Check `gateway.lanonasis.com/health/full` for upstream status
+- **Route failures:** Use unified gateway `/health`; use `mcp_server.js` `/health/full` until unified aggregation lands
 - **Auth issues:** Verify OAuth2 PKCE flow, check `onasis-auth-bridge.js` logs
 - **CORS errors:** Ensure origin is in whitelist, check `gateway.conf` CORS map
 - **MCP connectivity:** Test WebSocket upgrade, verify `limit_conn_ws_conn` settings

@@ -1,11 +1,11 @@
 # Context Engineering Progress
 
 **Created:** 2026-04-30 | **Last Updated:** 2026-04-30 | **Owner:** @thefixer3x  
-**Project:** onasis-gateway | **Status:** Phase 3 - COMPLETE
+**Project:** onasis-gateway | **Status:** Phase 3 Complete + Repo Reality Patch Applied
 
 ---
 
-## 📋 Workflow Instructions for Continuation
+## Workflow Instructions for Continuation
 
 **To continue this work in a new chat:**
 
@@ -14,36 +14,36 @@ Continue context engineering - please read context-engineering-progress.md to un
 ```
 
 This file contains:
-- Complete workflow methodology
-- Documentation templates and guidelines
-- Project specifications and architecture
-- Completed phases and findings
-- Next steps and priorities
+- workflow methodology
+- project specifications
+- completed phases and deliverables
+- current repo-reality status
+- next steps and optional future work
 
 ---
 
-## 🎯 Context Engineering Methodology
+## Context Engineering Methodology
 
 ### Process (Maximum 3 Phases)
-1. **Phase 1 - Discovery & Planning:** Analyze codebase, identify components, propose documentation structure ✅ COMPLETED
-2. **Phase 2 - Core Documentation:** Create essential context files (overview, ADRs, key components) ✅ COMPLETED
-3. **Phase 3 - Integration & Workflows:** Set up maintenance processes and optimization systems ✅ COMPLETED
+1. **Phase 1 - Discovery & Planning:** analyze codebase, identify components, propose documentation structure ✅ completed
+2. **Phase 2 - Core Documentation:** create essential context files, ADRs, and master navigation ✅ completed
+3. **Phase 3 - Integration & Workflows:** add component docs and extend the context system for ongoing use ✅ completed
 
-### Streamlined Approach
-- Complete one phase, update progress, then confirm to continue
-- Prevents context overload while minimizing engagement
-- Each phase delivers significant documentation value
+### Operating Principle
+- Complete a phase, update progress, then continue intentionally.
+- Prefer living documentation tied to repo truth.
+- Keep AI-facing docs concise, technical, and directly useful during implementation.
 
 ---
 
-## 📁 Project Specifications
+## Project Specifications
 
 ### Project Overview
 - **Name:** onasis-gateway
-- **Description:** Comprehensive API service warehouse with MCP server interfaces and REST endpoints
-- **Type:** Microservices API Gateway with MCP protocol support
+- **Description:** comprehensive API service warehouse with MCP server interfaces and REST endpoints
+- **Type:** microservices API gateway with MCP protocol support
 - **Tech Stack:** Node.js, Express, Supabase, MCP, Nginx
-- **Current Status:** Active development, planning API gateway consolidation
+- **Current Status:** active development with API gateway consolidation still in progress
 
 ### Key Architecture
 ```
@@ -64,14 +64,17 @@ This file contains:
      │           │
      ▼           ▼
 ┌────────────────────────────────┐
-│    MaaS Adapters (OpenAPI)     │
-│  (Memory, Intelligence, Keys)  │
+│ MaaS adapters and edge proxies │
+│ Memory, Intelligence, Keys     │
 └────────────────────────────────┘
 ```
 
-### Current Ports (Authoritative)
+### Current Ports (Best Repo Truth)
+
+These ports align across `ROUTE_MAP.yaml`, `unified_gateway.js`, and `mcp_server.js`:
+
 | Service | Port | Purpose |
-|---------|------|---------|
+|---|---|---|
 | Central Gateway | 3000 | Primary API gateway, adapter execution |
 | Auth Gateway | 4000 | JWT, OAuth2/PKCE, sessions, API keys |
 | Enterprise MCP | 3001 | Enterprise MCP prototype |
@@ -79,153 +82,168 @@ This file contains:
 | MCP Core WS | 3002 | MCP WebSocket |
 | MCP Core SSE | 3003 | MCP Server-Sent Events |
 
----
-
-## ✅ Completed Phases
-
-### Phase 1 - Discovery & Planning ✅ COMPLETED (2026-04-30)
-
-**Objectives:**
-- Analyze codebase structure
-- Identify key components and architecture
-- Review existing documentation
-- Propose documentation structure
-
-**Discoveries:**
-1. **Architecture Complexity:** Multi-service architecture with Nginx gateway consolidation planned
-2. **Migration in Progress:** API Gateway Consolidation Plan (5-phase migration)
-3. **Key Documents:** 
-   - `API-GATEWAY-CONSOLIDATION-PLAN.md` - 5-phase migration roadmap
-   - `ROUTE_MAP.yaml` - Authoritative route mapping
-   - `MAAS_ADAPTERS.md` - MaaS adapter generation plan
-   - `centralisation-tasks.md` - Execution tasks
-
-4. **Gaps Identified:**
-   - Port documentation conflicts (central-gateway: 3000 vs 3001)
-   - No `TRUST_BOUNDARIES.md` document
-   - No `ADR` documentation
-   - No component-level context files
-
-**Generated Files:**
-- ✅ Context structure created (`docs/context/`)
-- ✅ Progress tracking file created
-
-**✅ Phase 2 - Core Documentation COMPLETED (2026-04-30)**
-
-**Objectives:**
-- Create Project Overview master navigation file
-- Set up ADR structure
-- Begin component documentation
-
-**Completed Deliverables:**
-- ✅ `docs/context/project-overview.md` - Master navigation (337 lines)
-- ✅ `docs/context/architecture/decisions/` folder structure created
-- ✅ `docs/context/components/` folder structure created
-- ✅ `docs/context/workflows/` folder structure created
-- ✅ `docs/context/context-engineering-progress.md` - Updated progress tracking
-
-**Files Created in Phase 2:**
-1. **Project Overview** (`project-overview.md`)
-   - Quick navigation for AI collaborators
-   - Architecture overview with ASCII diagrams
-   - Key context files reference
-   - AI collaboration notes and coding standards
-   - Current status and migration progress
-   - Quick reference commands and troubleshooting
-
-2. **Directory Structure:**
-   ```
-   /docs/context/
-   ├── project-overview.md ✅ (Master navigation)
-   ├── architecture/
-   │   └── decisions/       ✅ (Ready for ADRs)
-   ├── components/          ✅ (Ready for component docs)
-   └── workflows/           ✅ (Ready for workflow docs)
-   ```
-
-**Next Steps:**
-- Create ADR-001: API Gateway Consolidation Strategy
-- Create component documentation files
-- Document MCP workflow
+**Important:** live VPS truth still needs runtime confirmation. This file reflects repo state, not deployed state.
 
 ---
 
-## 📊 Current Status Summary
+## Completed Phases
+
+### Phase 1 - Discovery & Planning ✅ Completed (2026-04-30)
+
+**Objectives**
+- analyze codebase structure
+- identify major components and integration boundaries
+- review existing documentation and plans
+- define the context documentation structure
+
+**Key Discoveries**
+- gateway consolidation is already heavily planned in `docs/architecture/`
+- route truth is centered on `ROUTE_MAP.yaml`
+- migration is not hypothetical: runtime gateway code already contains part of the foundation
+- trust-boundary docs and parity tests were still missing
+
+**Outputs**
+- `docs/context/` structure created
+- initial progress tracker created
+
+### Phase 2 - Core Documentation ✅ Completed (2026-04-30)
+
+**Objectives**
+- create master navigation
+- surface existing ADRs
+- establish durable context entrypoints for AI collaborators
+
+**Outputs**
+- `docs/context/project-overview.md`
+- `docs/context/CONTEXT-ENGINEERING-SUMMARY.md`
+- `docs/context/PHASE2-COMPLETION.md`
+- `docs/context/context-engineering-progress-appendix.md`
+
+### Phase 3 - Integration & Workflows ✅ Completed (2026-04-30)
+
+**Objectives**
+- extend ADR coverage
+- add first component docs
+- make the context system usable without additional setup
+
+**Outputs**
+- `docs/context/architecture/decisions/adr-003-centralized-cors-rate-limiting.md`
+- `docs/context/components/central-gateway.md`
+- `docs/context/components/mcp-server.md`
+- `docs/context/PHASE3-COMPLETION.md`
+
+---
+
+## Current Status Summary
 
 ### Architecture Status
-- **Phase 0** (Route Inventory): ✅ Complete - `ROUTE_MAP.yaml`, `MAAS_ADAPTERS.md` created
-- **Phase 1** (Nginx Foundation): ⏳ Planned - Gateway config, snippets, health checks
-- **Phase 2** (Auth Unification): ⏳ Planned - OAuth2 flows, rate limiting
-- **Phase 3** (MaaS Integration): ⏳ Planned - Memory/Intelligence routing
-- **Phase 4** (MCP Protocol): ⏳ Planned - WebSocket/SSE support
-- **Phase 5** (Cutover): ⏳ Planned - Production cutover, cleanup
+- **Phase 0 - Route Inventory:** ✅ complete
+  - `ROUTE_MAP.yaml` and `MAAS_ADAPTERS.md` exist
+- **Phase 1 - Gateway Foundation:** ⚠️ partial
+  - reference `gateway.conf` exists
+  - runtime unified gateway already has CORS, rate limiting, request IDs, route policy, and `/health`
+- **Phase 2 - Auth Unification:** ⚠️ partial
+  - auth delegation and verification flows exist
+  - trust-boundary cleanup and final docs remain
+- **Phase 3 - MaaS Integration:** ⚠️ partial
+  - Supabase edge adapter exists
+  - memory/intelligence adapters exist
+  - parity suite is still missing
+- **Phase 4 - MCP Protocol:** ⚠️ partial
+  - repo contains WS/SSE endpoints and reference proxy config
+  - deployment status is still unverified
+- **Phase 5 - Cutover:** ⏳ planned
+  - Netlify still owns many public routes
 
 ### Documentation Status
-- **Architecture Decisions (ADRs):** ⚠️ Missing - Need to document gateway consolidation decisions
-- **Component Context:** ⚠️ Missing - No individual component documentation
-- **Development Workflows:** ⏳ Partial - Some workflows in `docs/plans/`
-- **Integration Guides:** ✅ Good - `INTEGRATION_GUIDE.md`, `INTEGRATION_INTELLIGENCE_PROVIDER_ELIGIBILITY_FRAMEWORK.md`
+- **ADRs:** ✅ present
+  - ADR-001, ADR-002, ADR-003 exist
+- **Component Context:** ⚠️ partial
+  - `central-gateway.md` and `mcp-server.md` exist
+  - auth and MaaS component docs are still missing
+- **Workflow Docs:** ⏳ optional/partial
+  - folder exists, dedicated workflow docs still pending
+- **Integration Guides:** ✅ good
+  - existing architecture and plan docs remain useful
+
+### Repo-Reality Notes
+- `docs/architecture/nginx/gateway.conf` exists in-repo as a reference config
+- `unified_gateway.js` already implements more foundation work than early summaries credited
+- MaaS adapter work exists, but not in the originally planned `services/maas/` layout
+- unified `/health/full` and `/api/v1/status` are still missing
+- `TRUST_BOUNDARIES.md` and `GATEWAY_ROLLOUT.md` are still missing
 
 ---
 
-## 🎯 Next Steps (Priority Order)
+## Next Steps
 
-### ✅ PHASE 3 COMPLETE - Documentation System Ready!
+### Phase 3 Complete - Documentation System Ready
 
-All core documentation has been created:
-- ✅ **3 ADRs** documenting architecture decisions
-- ✅ **2 Component docs** covering main gateway services
-- ✅ **Project overview** with quick navigation
-- ✅ **Progress tracking** for multi-chat continuity
+Core context coverage now exists:
+- ✅ 3 ADRs documenting major architecture decisions
+- ✅ 2 component docs covering central gateway and MCP server
+- ✅ project overview for AI onboarding
+- ✅ progress tracking for multi-chat continuity
+- ✅ repo-reality alignment started across context and architecture docs
 
 ### Optional Future Work (Only if explicitly needed)
 
-1. **Development Workflows** (`docs/context/workflows/`)
-   - Local development setup
-   - Testing workflow
-   - CI/CD pipeline
-   - Deployment workflow
+1. **Workflow docs**
+   - development workflow
+   - testing workflow
+   - deployment workflow
+   - CI/CD notes
 
-2. **Additional Components** (if needed)
-   - Auth Gateway component documentation
-   - MaaS Adapters documentation
-   - Supabase adapter documentation
+2. **Additional component docs**
+   - auth gateway
+   - MaaS adapters
+   - Supabase edge adapter
 
-3. **Integration Patterns**
+3. **Trust and rollout docs**
+   - `TRUST_BOUNDARIES.md`
+   - `GATEWAY_ROLLOUT.md`
+   - explicit expectations for `/health/full` and `/api/v1/status`
+
+4. **Integration patterns**
+   - auth bridge patterns
    - MCP protocol integration
-   - Auth bridge patterns
-   - Adapter execution patterns
+   - adapter execution patterns
 
-**Note:** No automatic progression to Phase 4 - we wait for your specific needs!
+**No automatic progression to Phase 4** - continue only as needed for specific implementation or documentation tasks.
 
 ---
 
-## 📂 File Locations
+## File Locations
 
 All context documentation is stored in:
+
 ```
 /docs/context/
-├── project-overview.md           # Master navigation (TO BE CREATED)
+├── project-overview.md
+├── CONTEXT-ENGINEERING-SUMMARY.md
+├── PHASE2-COMPLETION.md
+├── PHASE3-COMPLETION.md
+├── context-engineering-progress.md
+├── context-engineering-progress-appendix.md
 ├── architecture/
-│   ├── adr-001-*.md             # Architecture Decision Records (TO BE CREATED)
-│   ├── adr-002-*.md             # Architecture Decision Records (TO BE CREATED)
-│   └── system-design.md         # Overall architecture (TO BE CREATED)
-├── components/                  # Component documentation (TO BE CREATED)
-│   ├── central-gateway.md       # unified_gateway.js
-│   ├── auth-gateway.md          # JWT/OAuth2 gateway
-│   ├── mcp-server.md            # MCP protocol server
-│   └── maas-adapters.md         # MaaS adapter layer
-├── workflows/                   # Development workflows (TO BE CREATED)
-│   ├── development.md           # Development process
-│   └── deployment.md            # Deployment process
-└── context-engineering-progress.md  # This file
+│   └── decisions/
+│       ├── adr-001-auth-architecture.md
+│       ├── adr-002-api-gateway-consolidation.md
+│       └── adr-003-centralized-cors-rate-limiting.md
+├── components/
+│   ├── central-gateway.md
+│   └── mcp-server.md
+└── workflows/
+    ├── development.md        # planned
+    └── deployment.md         # planned
 ```
 
 ---
 
-## 🔧 Documentation Templates
+## Documentation Templates
 
 ### ADR Template
+
 ```markdown
 # ADR-[N]: [Decision Title]
 
@@ -245,6 +263,7 @@ Positive and negative outcomes of this decision.
 ```
 
 ### Component Template
+
 ```markdown
 # [Component Name] Context
 
@@ -269,27 +288,28 @@ High-level description of what this component does.
 
 ---
 
-## 🎨 Quality Standards
+## Quality Standards
 
 ### Context Engineering Requirements
-- ✅ AI-optimized structure for maximum comprehension
-- ✅ Technical focus without business value discussions
-- ✅ Living documentation that stays current with code
-- ✅ Concise, actionable information over lengthy explanations
+- AI-optimized structure for quick comprehension
+- technical focus without business-value padding
+- living docs that track the repo
+- concise and actionable content
 
 ### Documentation Standards
-- ✅ Consistency: Use standardized templates across all context files
-- ✅ Clarity: Technical information accessible to developers and AI
-- ✅ Currency: Regular updates to match codebase changes
-- ✅ Completeness: Cover architectural decisions, patterns, and constraints
+- consistency across context files
+- clarity for both developers and AI
+- regular updates as repo reality changes
+- coverage of decisions, patterns, and constraints
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### For New AI Collaborators
 
 **First command:**
+
 ```
 Begin context engineering. Read context-engineering-progress.md for project settings and current status, then continue with the next phase of documentation work.
 ```
@@ -297,34 +317,27 @@ Begin context engineering. Read context-engineering-progress.md for project sett
 ### For Continuation
 
 **After new chat or break:**
+
 ```
 Continue context engineering - please read context-engineering-progress.md to understand our methodology and where we left off, then help me with [your specific task].
 ```
 
-### For Specific Tasks
-
-**Examples:**
-```
-Create ADR for API gateway consolidation strategy based on the documentation in docs/architecture/API-GATEWAY-CONSOLIDATION-PLAN.md
-```
-
 ### Current Status
-- ✅ **Phase 3 Complete** - All core documentation created
-- ✅ **AI collaboration enabled** - Start using immediately
-- ⏳ **Optional workflows** - Only if you need development workflow docs
-- ⏳ **Additional components** - Only if you need more component docs
-
-**No automatic progression to Phase 4** - we wait for your specific needs!
+- ✅ **Phase 3 complete** - core context system is in place
+- ✅ **AI collaboration enabled** - context entrypoints are usable now
+- ⏳ **Optional workflows** - only if you need workflow docs
+- ⏳ **Additional components** - only if you need deeper component coverage
 
 ---
 
-## 📈 Success Metrics
+## Success Metrics
 
-- ✅ AI provides accurate, project-aware responses without re-explaining architecture
-- ✅ New developers understand system quickly using the documentation
-- ✅ Architecture decisions are clearly documented and traceable
-- ✅ Component context helps AI suggest fitting changes
+- AI provides accurate, project-aware responses without re-explaining architecture
+- new developers understand the system more quickly
+- architecture decisions are traceable
+- component context improves implementation quality and consistency
 
 ---
 
-**Status:** Phase 3 Complete | **Documentation System:** READY
+**Status:** Phase 3 Complete | **Documentation System:** READY  
+**Ready to Continue:** Yes | **Priority:** trust boundaries, workflow docs, and remaining component docs

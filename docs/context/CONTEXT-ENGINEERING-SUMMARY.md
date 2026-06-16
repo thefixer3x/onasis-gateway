@@ -2,7 +2,7 @@
 
 **Generated:** 2026-04-30  
 **Status:** Phase 2 Complete ✅  
-**Next Phase:** Phase 3 - Component Documentation
+**Next Phase:** Phase 3 - Component Documentation and Workflow Capture
 
 ---
 
@@ -44,16 +44,18 @@ This is the **first file AI collaborators should read**. Contains:
 /docs/context/
 ├── project-overview.md              ✅ Master navigation (337 lines)
 ├── context-engineering-progress.md  ✅ Progress tracking (updated)
+├── CONTEXT-ENGINEERING-SUMMARY.md   ✅ Summary document
+├── PHASE2-COMPLETION.md             ✅ Phase 2 notes
+├── context-engineering-progress-appendix.md ✅ Appendix
 ├── architecture/
-│   └── decisions/                   ✅ Ready for ADRs
+│   └── decisions/                   ✅ ADRs present
 ├── components/                      ✅ Ready for component docs
 └── workflows/                       ✅ Ready for workflow docs
 ```
 
 **Next files to create:**
-- `adr-001-api-gateway-consolidation.md`
-- `adr-002-centralized-cors-rate-limiting.md`
 - `adr-003-maas-adapter-architecture.md`
+- `trust-boundaries.md`
 - `central-gateway.md` (component)
 - `auth-gateway.md` (component)
 - `mcp-server.md` (component)
@@ -127,14 +129,14 @@ Create ADR for [topic] based on the existing documentation patterns in docs/cont
 
 ### Migration Progress
 ```
-Overall Progress: 15% complete ████████░░░░░░░░░░░░░
+Repo Reality Snapshot
 
-✅ Phase 0: Route Inventory (COMPLETE) - ROUTE_MAP.yaml created
-⚠️ Phase 1: Nginx Foundation (0/12 tasks) - Gateway config, health checks
-⚠️ Phase 2: Auth Unification (0/8 tasks) - OAuth2 flows, rate limiting
-⚠️ Phase 3: MaaS Integration (1/7 tasks) - Memory aliases added
-⚠️ Phase 4: MCP Protocol (0/7 tasks) - WebSocket/SSE support
-⚠️ Phase 5: Cutover (0/8 tasks) - Production deployment
+✅ Phase 0: Route inventory complete
+⚠️ Phase 1: Partial - gateway foundation exists in runtime code and reference Nginx config
+⚠️ Phase 2: Partial - auth delegation exists; trust-boundary cleanup remains
+⚠️ Phase 3: Partial - MaaS adapter work exists; parity suite is missing
+⚠️ Phase 4: Partial - WS/SSE config exists in repo; live deployment still needs confirmation
+⏳ Phase 5: Planned - cutover and cleanup remain outstanding
 ```
 
 ### Documentation Progress
@@ -148,8 +150,9 @@ Context Engineering Progress: 40% complete ██████░░░░░░�
 Files Created:
 ✅ project-overview.md (337 lines)
 ✅ context-engineering-progress.md (updated)
+✅ CONTEXT-ENGINEERING-SUMMARY.md
 ✅ Directory structure for ADRs, components, workflows
-⏳ ADR documentation (pending)
+✅ ADR-001 and ADR-002 already present in repo
 ⏳ Component documentation (pending)
 ⏳ Workflow documentation (pending)
 ```
@@ -178,10 +181,11 @@ Files Created:
    - Preserves PKCE cookie flows
 
 ### Known Gaps to Address
-- ⚠️ No ADR documentation exists
 - ⚠️ No component-level context files
-- ⚠️ Port documentation conflicts in `centralisation-tasks.md`
 - ⚠️ No `TRUST_BOUNDARIES.md` document
+- ⚠️ No `GATEWAY_ROLLOUT.md` document
+- ⚠️ Unified gateway still lacks `/health/full` and `/api/v1/status`
+- ⚠️ Dedicated gateway-vs-direct parity suite is still missing
 - ⚠️ Missing MCP workflow documentation
 
 ---
@@ -251,20 +255,19 @@ High-level description of what this component does.
 ## 🚀 Next Actions
 
 ### Immediate (Next Session)
-1. **Create ADR-001: API Gateway Consolidation Strategy**
-   - Document why Nginx gateway was chosen
-   - Explain 5-phase migration approach
-   - List alternatives considered and rejected
+1. **Create ADR-003: MaaS Adapter Architecture**
+   - Document adapter generation strategy
+   - Explain Supabase edge adapter vs planned `services/maas/` layout
+   - Capture route-map ownership and parity expectations
 
-2. **Create ADR-002: Centralized CORS & Rate Limiting**
-   - Explain security benefits of centralized approach
-   - Document origin whitelist strategy
-   - Detail rate limiting zone configuration
+2. **Document Trust Boundaries**
+   - Auth gateway as source of truth
+   - Supabase JWT fallback rules
+   - Trusted header issuance and acceptance
 
-3. **Create Component Docs**
-   - Central Gateway (`unified_gateway.js`)
+3. **Complete Remaining Component Docs**
    - Auth Gateway (JWT/OAuth2)
-   - MCP Server (HTTP/WS/SSE)
+   - MaaS adapters / Supabase edge adapter
 
 ### Medium Priority
 4. **Create Development Workflows**
