@@ -194,3 +194,217 @@ describe('VersionManager deprecation lifecycle', () => {
     });
   });
 });
+const VersionManager = require('../../core/versioning/version-manager');
+
+describe('VersionManager', () => {
+  let vm;
+
+  beforeEach(() => {
+    vm = new VersionManager();
+  });
+
+  describe('registerVersion', () => {
+    test('registers a valid version successfully', () => {
+      const config = {
+        endpoints: [],
+        baseUrl_changed: 'https://api.example.com/v1',
+        authentication: { type: 'bearer' }
+      };
+      
+      const key = vm.registerVersion('test-service', '1.0.0', config);
+      
+      expect(key).toBe('test-service:1.0.0');
+      expect(vm.getServiceVersion('test-service', '1.0.0')).toBeDefined();
+    });
+
+    test('throws error for invalid semver format', () => {
+      expect(() => {
+        vm.registerVersion('test-service', 'invalid', {});
+      }).toThrow('Invalid version format: invalid');
+    });
+  });
+
+  describe('getLatestVersion', () => {
+    test('returns the highest semver version', () => {
+      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
+      
+      vm.registerVersion('test-service', '1.0.0', config);
+      vm.registerVersion('test-service', '2.0.0', config);
+      vm.registerVersion('test-service', '1.5.0', config);
+      
+      const latest = vm.getLatestVersion('test-service');
+      
+      expect(latest.version).toBe('2.0.0');
+    });
+
+    test('throws error when no versions registered', () => {
+      expect(() => {
+        vm.getLatestVersion('nonexistent');
+      }).toThrow('No versions found for service nonexistent');
+    });
+  });
+
+  describe('analyzeCompatibility', () => {
+    test('detects baseUrl_changed breaking change', () => {
+      const oldConfig = { 
+        endpoints: [], 
+        baseUrl_changed: 'https://old.example.com',
+        authentication: { type: 'bearer' }
+      };
+      const newConfig = { 
+        endpoints: [], 
+        baseUrl_changed: 'https://new.example.com',
+        authentication: { type: 'bearer' }
+      };
+      
+      const result = vm.analyzeCompatibility(newConfig, oldConfig);
+      
+      expect(result.compatible).toBe(false);
+      expect(result.breakingChanges).toContainEqual(
+        expect.objectContaining({ type: 'baseUrl_changed' })
+      );
+    });
+  });
+
+  describe('executeMigration', () => {
+    test('executes migration successfully', async () => {
+      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
+      vm.registerVersion('test-service', '1.0.0', config);
+      vm.registerVersion('test-service', '2.0.0', config);
+      
+      vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async (data) => {
+        return { ...data, migrated: true };
+      });
+      
+      const result = await vm.executeMigration('test-service', '1.0.0', '2.0.0', { test: true });
+      
+      expect(result.migrated).toBe(true);
+    });
+
+    test('creates snapshot before migration', async () => {
+      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
+      vm.registerVersion('test-service', '1.0.0', config);
+      vm.registerVersion('test-service', '2.0.0', config);
+      
+      vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async (data) => {
+        return data;
+      });
+      
+      await vm.executeMigration('test-service', '1.0.0', '2.0.0', { original: true });
+      
+      const snapshot = vm.getSnapshot('test-service', '1.0.0', '2.0.0');
+      
+      expect(snapshot).toBeDefined();
+      expect(snapshot.originalData.original).toBe(true);
+    });
+
+    test('throws when no migration handler found', async () => {
+      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
+      vm.registerVersion('test-service', '1.0.0', config);
+      
+      await expect(
+        vm.executeMigration('test-service', '1.0.0', '2.0.0', {})
+      ).rejects.toThrow('No migration handler found');
+    });
+
+    test('emits migration:completed event', async () => {
+      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
+      vm.registerVersion('test-service', '1.0.0', config);
+      vm.registerVersion('test-service', '2.0.0', config);
+      
+      vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async (data) => data);
+      
+      const eventListener = jest.fn();
+      vm.on('migration:completed', eventListener);
+      
+      await vm.executeMigration('test-service', '1.0.0', '2.0.0', {});
+      
+      expect(eventListener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serviceId: 'test-service',
+          fromVersion: '1.0.0',
+          toVersion: '2.0.0'
+        })
+      );
+    });
+  });
+
+  describe('rollback functionality', () => {
+    test('registers rollback handler', () => {
+      const handler = jest.fn();
+      vm.registerRollbackHandler('test-service', '1.0.0', '2.0.0', handler);
+      
+      // Handler should be registered (no error thrown)
+      expect(true).toBe(true);
+    });
+
+    test('restores snapshot on rollback', async () => {
+      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
+      vm.registerVersion('test-service', '1.0.0', config);
+      vm.registerVersion('test-service', '2.0.0', config);
+      
+      vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async () => {
+        throw new Error('Migration failed');
+      });
+      
+      const rollbackListener = jest.fn();
+      vm.on('migration:rolled_back', rollbackListener);
+      
+      await expect(
+        vm.executeMigration('test-service', '1.0.0', '2.0.0', { preserved: true })
+      ).rejects.toThrow('Migration failed');
+      
+      expect(rollbackListener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serviceId: 'test-service',
+          rolledBackData: { preserved: true }
+        })
+      );
+    });
+
+    test('emits migration:rolled_back event on success', async () => {
+      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
+      vm.registerVersion('test-service', '1.0.0', config);
+      vm.registerVersion('test-service', '2.0.0', config);
+      
+      const rollbackHandler = jest.fn().mockResolvedValue({ rolled: true });
+      vm.registerRollbackHandler('test-service', '1.0.0', '2.0.0', rollbackHandler);
+      
+      vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async () => {
+        throw new Error('Fail');
+      });
+      
+      const rolledBackListener = jest.fn();
+      const failedListener = jest.fn();
+      
+      vm.on('migration:rolled_back', rolledBackListener);
+      vm.on('migration:rollback_failed', failedListener);
+      
+      await vm.executeMigration('test-service', '1.0.0', '2.0.0', {});
+      
+      expect(rolledBackListener).toHaveBeenCalled();
+    });
+
+    test('emits migration:rollback_failed when no rollback available', async () => {
+      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
+      vm.registerVersion('test-service', '1.0.0', config);
+      vm.registerVersion('test-service', '2.0.0', config);
+      
+      // No rollback handler registered
+      vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async () => {
+        throw new Error('Fail');
+      });
+      
+      const failedListener = jest.fn();
+      vm.on('migration:rollback_failed', failedListener);
+      
+      await vm.executeMigration('test-service', '1.0.0', '2.0.0', {});
+      
+      expect(failedListener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reason: 'No rollback handler or snapshot available'
+        })
+      );
+    });
+  });
+});

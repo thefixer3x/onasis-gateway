@@ -58,20 +58,19 @@
 ## 🎯 Next Actions
 
 ### Immediate (Next Session)
-1. **Create ADR-002: API Gateway Consolidation Strategy**
-   - Document why Nginx gateway was chosen
-   - Explain 5-phase migration approach
-   - List alternatives considered and rejected
+1. **Create ADR-003: MaaS Adapter Architecture**
+   - Document adapter generation strategy
+   - Explain the current Supabase edge adapter shape
+   - Capture parity-testing expectations
 
-2. **Create ADR-003: Centralized CORS & Rate Limiting**
-   - Explain security benefits of centralized approach
-   - Document origin whitelist strategy
-   - Detail rate limiting zone configuration
+2. **Document Trust Boundaries**
+   - Auth gateway as source of truth
+   - Trusted header rules
+   - Supabase fallback rules
 
-3. **Create Component Docs**
-   - Central Gateway (`unified_gateway.js`)
-   - Auth Gateway (JWT/OAuth2)
-   - MCP Server (HTTP/WS/SSE)
+3. **Create Remaining Component Docs**
+   - Auth Gateway (`JWT` / `OAuth2`)
+   - MaaS adapters / Supabase edge adapter
 
 ### Medium Priority
 4. **Create Development Workflows**
