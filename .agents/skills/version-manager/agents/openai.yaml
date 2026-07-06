@@ -1,0 +1,4 @@
+interface:
+  display_name: "Version Manager Guardian"
+  short_description: "Guardrails for version manager edits"
+  default_prompt: "Preserve semver, migrations, and deprecation rules when changing Version Manager."

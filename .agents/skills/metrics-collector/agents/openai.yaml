@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metrics Collector Guardian"
+  short_description: "Guardrails for metrics collector edits"
+  default_prompt: "Preserve Prometheus metric names, labels, and cardinality when updating metrics collector logic."

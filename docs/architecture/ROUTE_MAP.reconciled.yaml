@@ -1,0 +1,467 @@
+# ROUTE_MAP.reconciled.yaml
+# Reconciled route map for onasis-gateway
+# Replaces: docs/architecture/ROUTE_MAP.yaml (2026-01-29 — stale)
+# Reconcile source: lan-onasis-monorepo/.devops/.../netlify-to-vps-migration-plan.md (Rev 2, 2026-04-30)
+# Date: 2026-05-11
+# Author: L-Zero
+
+meta:
+  version: "2.0"
+  supersedes: "2026-01-29 ROUTE_MAP.yaml"
+  source: "monorepo plan Rev 2 + live VPS state reconciliation"
+  migration_target: "api.lanonasis.com — Netlify → VPS Nginx"
+
+# =============================================================================
+# PORTS — Canonical (live on ssh lanonasis-main)
+# =============================================================================
+
+ports:
+  canonical:
+    3000:
+      service: unified-gateway
+      status: live
+      health: "http://localhost:3000/health → {\"status\":\"healthy\",\"api\":{\"services\":5},\"mcp\":{\"adapters\":27,\"tools\":979}}"
+      nginx_domain: gateway.lanonasis.com
+      notes: "Main API gateway — integrates 85 Supabase Edge Functions"
+    3001:
+      service: enterprise-mcp
+      status: live
+      health: "via mcp1.lanonasis.com (not direct)"
+      nginx_domain: mcp1.lanonasis.com
+      notes: "MCP cluster, enterprise tools"
+    3104:
+      service: Lanonasis MCP Server
+      status: live
+      health: "http://localhost:3104/health → {\"status\":\"healthy\",\"service\":\"Lanonasis MCP Server\"}"
+      nginx_domain: api.lanonasis.com → /mcp
+      notes: "REST + MCP, WS/SSE long-lived connections. WS/SSE routes go HERE."
+    4000:
+      service: auth-gateway
+      status: live
+      health: "http://localhost:4000/health → {\"status\":\"ok\",\"service\":\"auth-gateway\",\"outbox\":{\"pending\":2017}}"
+      nginx_domain: auth.connectionpoint.tech
+      notes: "Auth, sessions, PostgreSQL (local), Redis disabled"
+    5001:
+      service: vortex-mcp
+      status: live
+      access: localhost_only
+      notes: "Internal only — NOT in Nginx"
+    18789:
+      service: openclaw-gateway
+      status: live
+      nginx_domain: control-room.connectionpoint.tech
+      notes: "Serves control-room.connectionpoint.tech only"
+
+  retired:
+    # DO NOT REUSE — these were placeholders never stood up
+    3002:
+      was: mcp_core_ws
+      reason: "Placeholder from ROUTE_MAP.yaml 2026-01-29. Never stood up. WS/SSE routes go to :3104."
+    3003:
+      was: mcp_core_sse
+      reason: "Placeholder from ROUTE_MAP.yaml 2026-01-29. Never stood up. WS/SSE routes go to :3104."
+
+# =============================================================================
+# NGINX ROUTING — api.lanonasis.com (TO BE CREATED on ssh lanonasis-main)
+# =============================================================================
+
+nginx_routing:
+  api.lanonasis.com:
+    ssl_cert: "/etc/letsencrypt/live/api.lanonasis.com/fullchain.pem"
+    ssl_key: "/etc/letsencrypt/live/api.lanonasis.com/privkey.pem"
+
+    locations:
+
+      # --- EXACT MATCHES (order critical) ---
+
+      - name: "well-known-onasis-json"
+        path: "/.well-known/onasis.json"
+        type: "exact"
+        backend: "nginx_static"
+        config:
+          alias: "/opt/lanonasis/lan-onasis-monorepo/apps/onasis-core/public/.well-known/onasis.json"
+          content_type: "application/json"
+          cache: "public, max-age=300"
+          access_log: "off"
+
+      - name: "health"
+        path: "/health"
+        type: "exact"
+        backend: "unified-gateway"
+        config:
+          upstream: "localhost:3000"
+          access_log: "off"
+
+      - name: "auth-status-exact"
+        path: "/api/v1/auth/status"
+        type: "exact"
+        backend: "supabase"
+        config:
+          supabase_project: "mxtsdgkwzjzlttpotole.supabase.co"
+          edge_function: "auth-status"
+          proxy_ssl_sni: "on"
+          rate_limit: "api_limit:20burst"
+          notes: "MUST come before wildcard auth/* block. Direct to Supabase, NOT auth-gateway."
+
+      # --- REGEX ROUTES ---
+
+      - name: "auth-wildcard"
+        path: "/api/v1/auth/"
+        type: "regex"
+        pattern: "^/api/v1/auth/"
+        backend: "auth-gateway"
+        config:
+          upstream: "localhost:4000"
+          rate_limit: "auth_limit:10burst"
+          notes: "Covers login, register, refresh, api-keys, oauth, CLI"
+
+      - name: "auth-legacy"
+        path: "/(auth|oauth)/"
+        type: "regex"
+        pattern: "^/(auth|oauth)/"
+        backend: "auth-gateway"
+        config:
+          upstream: "localhost:4000"
+          rate_limit: "auth_limit:10burst"
+          notes: "Legacy paths: cli-login, verify, PKCE flows"
+
+      - name: "intelligence"
+        path: "/api/v1/intelligence/"
+        type: "regex"
+        pattern: "^/api/v1/intelligence/(.+)$"
+        backend: "supabase"
+        config:
+          supabase_project: "mxtsdgkwzjzlttpotole.supabase.co"
+          rewrite: "/functions/v1/intelligence-$1"
+          rate_limit: "api_limit:10burst"
+          proxy_ssl_sni: "on"
+          notes: "Direct nginx → Supabase Edge Functions. NOT through unified-gateway."
+
+      - name: "profiles"
+        path: "/api/v1/profiles/"
+        type: "regex"
+        pattern: "^/api/v1/profiles/(.+)$"
+        backend: "supabase"
+        config:
+          supabase_project: "mxtsdgkwzjzlttpotole.supabase.co"
+          rewrite: "/functions/v1/intelligence-profiles/$1"
+          rate_limit: "api_limit:10burst"
+          proxy_ssl_sni: "on"
+          notes: "Phase 2. Single EF parses path suffix to determine operation."
+
+      - name: "memory-main-api"
+        path: "/api/v1/(memories|memory|keys|projects|organizations|organization|config|behavior|embeddings)"
+        type: "regex"
+        pattern: "^/api/v1/(memories|memory|keys|projects|organizations|organization|config|behavior|embeddings)(/|$)"
+        backend: "unified-gateway"
+        config:
+          upstream: "localhost:3000"
+          rate_limit: "memory_limit:50burst"
+          notes: "unified-gateway internally proxies to Supabase Edge Functions"
+
+      - name: "vendor-keys"
+        path: "/v1/keys/"
+        type: "regex"
+        pattern: "^/v1/keys/"
+        backend: "unified-gateway"
+        config:
+          upstream: "localhost:3000"
+          rate_limit: "auth_limit:5burst"
+          notes: "Vendor API key management. Was Netlify key-manager.js. NOT /api/v1/keys/*."
+
+      - name: "api-v1-catchall"
+        path: "/api/v1/"
+        type: "prefix"
+        backend: "unified-gateway"
+        config:
+          upstream: "localhost:3000"
+          rate_limit: "api_limit:20burst"
+          notes: "Catch-all for any unlisted /api/v1/* routes"
+
+      - name: "mcp-ws-sse"
+        path: "/mcp"
+        type: "prefix"
+        backend: "lanonasis-mcp-server"
+        config:
+          upstream: "localhost:3104"
+          upgrade_header: "$http_upgrade"
+          connection_header: "upgrade"
+          read_timeout: "86400s"
+          send_timeout: "86400s"
+          buffering: "off"
+          notes: "WS/SSE long-lived. Goes to port 3104 (Lanonasis MCP Server), NOT 3002/3003."
+
+      - name: "metrics"
+        path: "/metrics"
+        type: "prefix"
+        backend: "unified-gateway"
+        config:
+          upstream: "localhost:3000"
+          allow: ["127.0.0.1", "10.0.0.0/8"]
+          deny: "all"
+          access_log: "off"
+          notes: "Internal only — not publicly accessible"
+
+      - name: "auth-web-ui"
+        path: "/(auth/web|login|signup)"
+        type: "regex"
+        pattern: "^/(auth/web|login|signup)"
+        backend: "nginx_static"
+        config:
+          try_files: "/auth.html =404"
+          notes: "Web UI only — returns auth.html. API auth routes are above."
+
+      - name: "static-assets"
+        path: "/*.(css|js|svg|ico|png|jpg|jpeg|webp|woff|woff2|ttf|eot)"
+        type: "regex"
+        backend: "nginx_static"
+        config:
+          expires: "1y"
+          cache_control: "public, max-age=31536000, immutable"
+          access_log: "off"
+
+      - name: "root-spa"
+        path: "/"
+        type: "prefix"
+        backend: "nginx_static"
+        config:
+          try_files: "$uri $uri/ /index.html"
+          notes: "Landing page SPA fallback"
+
+# =============================================================================
+# DOMAIN MAP
+# =============================================================================
+
+domains:
+  api.lanonasis.com:
+    current: "Netlify CDN + _redirects → Netlify Functions"
+    target: "VPS Nginx (ssh lanonasis-main) → backends"
+    status: "MIGRATION_TARGET"
+    notes: "No Nginx config yet. No SSL cert yet. All routing via Netlify."
+
+  gateway.lanonasis.com:
+    current: "VPS Nginx → unified-gateway :3000"
+    target: "No change"
+    status: "✅ Already on VPS"
+
+  mcp1.lanonasis.com:
+    current: "VPS Nginx → enterprise-mcp :3001"
+    target: "No change"
+    status: "✅ Already on VPS"
+
+  mcp.lanonasis.com:
+    current: "Unknown — no Nginx config"
+    target: "VPS Nginx → Lanonasis MCP Server :3104"
+    status: "⚠️ Needs Nginx config + DNS confirmation"
+
+  auth.connectionpoint.tech:
+    current: "VPS Nginx → auth-gateway :4000"
+    target: "No change"
+    status: "✅ Already on VPS"
+
+  auth.lanonasis.com:
+    current: "Not active — no Nginx config, no DNS"
+    target: "Future: VPS Nginx → auth-gateway :4000"
+    status: "📋 Planned — not this migration"
+
+  docs.lanonasis.com:
+    current: "VPS Nginx static (docs.lanonasis.com nginx.conf)"
+    target: "No change"
+    status: "✅ Already on VPS"
+
+  dashboard.lanonasis.com:
+    current: "Netlify SPA"
+    target: "Out of scope — not this migration"
+    status: "⛔ Out of scope"
+
+# =============================================================================
+# SUPABASE WIRING
+# =============================================================================
+
+supabase:
+  project_ref: "mxtsdgkwzjzlttpotole.supabase.co"
+  vanity_alias: "lanonasis.supabase.co"
+
+  direct_proxy_routes:
+    # These routes go DIRECT from Nginx to Supabase Edge Functions
+    # They do NOT go through unified-gateway
+    - path_pattern: "/api/v1/auth/status"
+      edge_function: "auth-status"
+      method: "GET"
+    - path_pattern: "/api/v1/intelligence/*"
+      edge_function: "intelligence-$1"
+      methods: ["GET", "POST"]
+    - path_pattern: "/api/v1/profiles/*"
+      edge_function: "intelligence-profiles"
+      methods: ["GET", "POST"]
+
+  unified_gateway_routes:
+    # These routes go through unified-gateway :3000
+    # unified-gateway internally proxies to Supabase Edge Functions
+    - path_pattern: "/api/v1/memory*"
+      note: "unified-gw handles internally"
+    - path_pattern: "/api/v1/memories*"
+      note: "unified-gw handles internally"
+    - path_pattern: "/api/v1/keys*"
+      note: "user keys — unified-gw handles"
+    - path_pattern: "/api/v1/projects*"
+      note: "unified-gw handles"
+    - path_pattern: "/api/v1/organizations*"
+      note: "unified-gw handles"
+    - path_pattern: "/api/v1/config*"
+      note: "unified-gw handles"
+    - path_pattern: "/api/v1/behavior*"
+      note: "unified-gw handles"
+    - path_pattern: "/api/v1/embeddings*"
+      note: "unified-gw handles"
+
+# =============================================================================
+# NETLIFY MIGRATION ROUTE HANDOFF
+# =============================================================================
+
+netlify_handoff:
+  rules_file: "apps/onasis-core/_redirects"
+  netlify_toml: "apps/onasis-core/netlify.toml"
+  netlify_functions_dir: "apps/onasis-core/netlify/"
+
+  deprecated_rules:
+    - netlify_path: "/.well-known/onasis.json"
+      target: "static file"
+      new_backend: "nginx_static"
+
+    - netlify_path: "/api/v1/auth/status"
+      netlify_function: "auth-api → Supabase"
+      new_backend: "Supabase direct auth-status"
+      migration_note: "CRITICAL — was routing through auth-api function. Corrected in Rev 2 to go direct to Supabase auth-status EF."
+
+    - netlify_path: "/api/v1/auth/*"
+      netlify_function: "auth-api"
+      new_backend: "auth-gateway :4000"
+
+    - netlify_path: "/auth/cli-login"
+      netlify_function: "cli-auth"
+      new_backend: "auth-gateway :4000"
+
+    - netlify_path: "/auth/verify"
+      netlify_function: "auth-verify"
+      new_backend: "auth-gateway :4000"
+
+    - netlify_path: "/oauth/*"
+      netlify_function: "auth-api"
+      new_backend: "auth-gateway :4000"
+
+    - netlify_path: "/api/v1/memory*"
+      netlify_function: "memory-proxy"
+      new_backend: "unified-gateway :3000"
+
+    - netlify_path: "/api/v1/memories*"
+      netlify_function: "memory-proxy"
+      new_backend: "unified-gateway :3000"
+
+    - netlify_path: "/api/v1/keys/*"
+      netlify_function: "maas-api"
+      new_backend: "unified-gateway :3000"
+
+    - netlify_path: "/api/v1/projects/*"
+      netlify_function: "maas-api"
+      new_backend: "unified-gateway :3000"
+
+    - netlify_path: "/api/v1/intelligence/*"
+      netlify_function: "api-new"
+      new_backend: "Supabase direct intelligence-$1"
+      migration_note: "Was going through api-new function. Rev 2 corrected to direct nginx → Supabase."
+
+    - netlify_path: "/api/v1/profiles/*"
+      netlify_function: "(Phase 2 — not previously in netlify.toml)"
+      new_backend: "Supabase direct intelligence-profiles"
+      migration_note: "New in migration plan — Phase 2 profile routes."
+
+    - netlify_path: "/v1/keys/*"
+      netlify_function: "key-manager (vendor API keys)"
+      new_backend: "unified-gateway :3000"
+      migration_note: "Was key-manager.js on Netlify. Critical — was missed in Rev 1 of migration plan."
+
+    - netlify_path: "/mcp*"
+      netlify_function: "mcp-sse, mcp-message"
+      new_backend: "Lanonasis MCP Server :3104"
+      migration_note: "WS/SSE routes go to :3104 (NOT 3002/3003)."
+
+    - netlify_path: "/api/v1/*"
+      netlify_function: "maas-api"
+      new_backend: "unified-gateway :3000"
+
+    - netlify_path: "/metrics"
+      netlify_function: "(none)"
+      new_backend: "unified-gateway :3000 (internal only)"
+      migration_note: "Not publicly accessible — allow 127.0.0.1 + 10.0.0.0/8 only."
+
+    - netlify_path: "/* (SPA fallback)"
+      netlify_function: "index.html"
+      new_backend: "nginx static /index.html"
+
+# =============================================================================
+# DISCREPANCIES vs OLD ROUTE_MAP.yaml (2026-01-29)
+# =============================================================================
+
+discrepancies_vs_old_route_map:
+  - item: "Port 3002 (mcp_core_ws)"
+    old_map: "upstream defined as mcp_core_ws : 3002"
+    actual: "Port 3002 not listening. WS/SSE goes to :3104."
+    classification: "D — documentation stale"
+    resolution: "Remove from canonical map. Retire 3002."
+
+  - item: "Port 3003 (mcp_core_sse)"
+    old_map: "upstream defined as mcp_core_sse : 3003"
+    actual: "Port 3003 not listening. WS/SSE goes to :3104."
+    classification: "D — documentation stale"
+    resolution: "Remove from canonical map. Retire 3003."
+
+  - item: "/health/full routing"
+    old_map: "gateway.conf: location /health/full → 127.0.0.1:3000"
+    actual: "Unified-gateway :3000 has /health/full. api.lanonasis.com.conf will route it to :3000."
+    classification: "B — VPS confirmed vs old local config unclear"
+    resolution: "Confirmed — /health/full → unified-gateway :3000 is correct."
+
+  - item: "Auth routes in gateway.conf"
+    old_map: "gateway.conf routes /auth/* to 127.0.0.1:4000"
+    actual: "auth-gateway is on localhost:4000 on same server. Confirmed correct."
+    classification: "B — VPS confirmed vs old local config unclear"
+    resolution: "Confirmed — auth routes to localhost:4000."
+
+  - item: "/api/v1/auth/status"
+    old_map: "gateway.conf routes health only, not auth/status"
+    actual: "New api.lanonasis.com.conf must use exact location = for auth/status → Supabase direct"
+    classification: "D — documentation stale + new requirement"
+    resolution: "Exact location = /api/v1/auth/status → Supabase auth-status EF (per Rev 2)."
+
+  - item: "Intelligence routes"
+    old_map: "not in gateway.conf"
+    actual: "New api.lanonasis.com.conf must route intelligence/* → Supabase direct"
+    classification: "C — live differs from both"
+    resolution: "Add regex location ~ ^/api/v1/intelligence/(.+)$ → Supabase direct."
+
+  - item: "mcp.lanonasis.com"
+    old_map: "not in local gateway.conf"
+    actual: "No Nginx config exists for mcp.lanonasis.com"
+    classification: "D — documentation stale"
+    resolution: "Verify DNS, add Nginx config → :3104 (Lanonasis MCP Server)."
+
+# =============================================================================
+# CORS CONFIGURATION
+# =============================================================================
+
+cors:
+  validated_origins:
+    - "https://dashboard.lanonasis.com"
+    - "https://mcp.lanonasis.com"
+    - "https://api.lanonasis.com"
+    - "https://docs.lanonasis.com"
+    - "https://lanonasis.com"
+    - "http://localhost:3000"
+    - "http://localhost:3001"
+    - "http://localhost:5173"
+
+  security_note: >
+    CORS uses validated whitelist map in nginx — NOT $http_origin reflection.
+    Empty string in map = no Access-Control-Allow-Origin header = blocked.
+    This prevents CORS poisoning attacks.
