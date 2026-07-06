@@ -1,0 +1,4 @@
+interface:
+  display_name: "Base Client Guardian"
+  short_description: "Guardrails for base client edits"
+  default_prompt: "Protect auth, retries, circuit breaker, and events when modifying Base Client."
