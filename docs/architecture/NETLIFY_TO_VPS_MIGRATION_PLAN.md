@@ -19,7 +19,7 @@
 | SSL | Netlify auto-provisioned | Let's Encrypt via Netlify |
 | `_redirects` | `lan-onasis-monorepo/apps/onasis-core/_redirects` | Detailed route table (monorepo — authoritative for `/api/v1/*` mappings) |
 
-### What's Already on VPS (Hostinger)
+### What's Already on VPS (lanonasis-main, 138.199.231.0)
 
 | Service | Port | PM2 Name | Status |
 |---------|------|----------|--------|
@@ -31,7 +31,10 @@
 | Nginx | 80/443 | systemd | Config deployed, needs validation |
 | SSL | Let's Encrypt | certbot | Needs verification for gateway.lanonasis.com |
 
-**VPS access:** 168.231.74.29 (Hostinger), SSH: `ghost-vps`
+**VPS access:** 138.199.231.0 (`lanonasis-main`), SSH: `ssh lanonasis-main`
+
+> Note: plan-doc IP drift fix in `IP-DRIFT-FIX.md`. Earlier revisions referenced
+> `168.231.74.29` (Hostinger `ghost-vps`); current live host is `lanonasis-main`.
 
 ---
 
@@ -39,7 +42,8 @@
 
 ```
                           ┌──────────────────────────┐
-                          │    Hostinger VPS          │
+                          │  VPS (lanonasis-main)    │
+                          │  138.199.231.0           │
                           │                           │
   Internet ──────────────▶│  Nginx :80/:443           │
                           │  (gateway.lanonasis.com)  │
@@ -101,14 +105,14 @@ Netlify: decommissioned (archived, not deleted — 30-day rollback window)
 
 #### Strategy
 
-1. Add `gateway.lanonasis.com` DNS record pointing to VPS IP (168.231.74.29) if not already present
+1. Add `gateway.lanonasis.com` DNS record pointing to VPS IP (138.199.231.0) if not already present
 2. Deploy `gateway.conf` to VPS with all upstreams and routing
 3. Run a comparison script that sends identical requests to both Netlify and gateway, flagging differences
 4. Monitor gateway logs for errors, latency spikes, or routing failures
 
 #### Tasks
 
-- [ ] Create `gateway.lanonasis.com` A record → 168.231.74.29
+- [ ] Create `gateway.lanonasis.com` A record → 138.199.231.0
 - [ ] Deploy `docs/architecture/nginx/gateway.conf` to `/etc/nginx/sites-available/gateway.conf`
 - [ ] Symlink: `ln -s /etc/nginx/sites-available/gateway.conf /etc/nginx/sites-enabled/`
 - [ ] Reload Nginx: `sudo nginx -t && sudo systemctl reload nginx`
@@ -260,11 +264,11 @@ Keep Netlify auth redirects active. If gateway auth fails:
 ```
 Before cutover:
   api.lanonasis.com    → Netlify (current)
-  gateway.lanonasis.com → VPS 168.231.74.29 (shadow)
+  gateway.lanonasis.com → VPS 138.199.231.0 (shadow)
 
 After cutover:
-  api.lanonasis.com    → VPS 168.231.74.29 (CNAME or A record)
-  gateway.lanonasis.com → VPS 168.231.74.29 (unchanged)
+  api.lanonasis.com    → VPS 138.199.231.0 (CNAME or A record)
+  gateway.lanonasis.com → VPS 138.199.231.0 (unchanged)
 ```
 
 #### Cutover Procedure (Scheduled Maintenance Window)
@@ -284,7 +288,7 @@ After cutover:
 
 - [ ] Schedule maintenance window with stakeholders
 - [ ] Prepare cutover runbook (this section)
-- [ ] Update `api.lanonasis.com` DNS A record → 168.231.74.29
+- [ ] Update `api.lanonasis.com` DNS A record → 138.199.231.0
 - [ ] Add `api.lanonasis.com` to Nginx `server_name` directive
 - [ ] Regenerate SSL cert to include `api.lanonasis.com`: `certbot --nginx -d api.lanonasis.com -d gateway.lanonasis.com`
 - [ ] Run full integration test suite

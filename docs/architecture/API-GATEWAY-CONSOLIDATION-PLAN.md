@@ -4,7 +4,7 @@
 
 **Feature Branch:** `feature/centralized-api-gateway`
 **Target Domain:** `gateway.lanonasis.com` (future cutover: `api.landonnet.com`)
-**VPS:** Hostinger (see credentials vault for access details)
+**VPS:** `lanonasis-main` (138.199.231.0) — see `~/Docs/GATEWAY-ARCHITECTURE.md` for current topology. Earlier revisions referenced Hostinger; that hostname is no longer the live host.
 
 ---
 
