@@ -1,6 +1,19 @@
-version: 1
-updated: 2026-01-29
+version: 2
+updated: 2026-07-04
 owner: onasis-gateway
+issue: SDK-17
+
+# === PORT AUTHORITY ===
+# These ports are the AUTHORITATIVE values confirmed by:
+#   - ecosystem.config.js (central-gateway:3000)
+#   - ecosystem.unified.config.js (unified-gateway:3000)
+#   - gateway.conf nginx upstreams
+#
+# NOTE: API-GATEWAY-CONSOLIDATION-PLAN.md contains OLD port mappings
+# (auth:3003, api:3001, mcp:4000-4001). Those are superseded by this file.
+# The plan doc is being updated separately.
+#
+# To verify running ports on VPS: pm2 list
 
 domains:
   primary:
@@ -12,12 +25,15 @@ upstreams:
   central_gateway:
     host: 127.0.0.1
     port: 3000
+    source: ecosystem.config.js (central-gateway, PORT=3000)
   auth_gateway:
     host: 127.0.0.1
     port: 4000
+    source: ecosystem.config.js (HEALTH_AUTH_URL=127.0.0.1:4000)
   enterprise_mcp:
     host: 127.0.0.1
     port: 3001
+    source: ecosystem.config.js (HEALTH_ENTERPRISE_MCP_URL=127.0.0.1:3001)
   mcp_core_http:
     host: 127.0.0.1
     port: 3001
@@ -50,12 +66,13 @@ route_groups:
       - path: /auth/cli-login
 
   central_gateway_root:
-    description: Central gateway root + health + adapters
+    description: Central gateway root + health + adapters + route policy
     upstream: central_gateway
     routes:
       - path: /
       - path: /health
       - path: /health/full
+      - path: /api/v1/gateway/route-policy
       - path: /api/adapters/*
       - path: /api/tools/*
       - path: /api/services/*
@@ -213,3 +230,7 @@ route_groups:
 notes:
   - The MaaS route list is derived from SUPABASE_REST_API_OPENAPI.yaml and DIRECT_API_ROUTES.md.
   - Additional edge functions exist but are not exposed in this plan until explicitly added.
+  - Ports confirmed against ecosystem.config.js (2026-07-04). See PORT AUTHORITY section above.
+  - Trust boundaries defined in TRUST_BOUNDARIES.md — only auth-gateway mints X-User-* headers.
+  - Netlify cutover plan: NETLIFY_TO_VPS_MIGRATION_PLAN.md
+  - Route policy visibility: GET /api/v1/gateway/route-policy (non-negotiable guardrail per consolidation plan)
