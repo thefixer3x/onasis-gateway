@@ -727,6 +727,88 @@ class UnifiedGateway {
         return headers;
     }
 
+    resolveSupabasePublicRouteUrl(edgeKind = 'default') {
+        if (edgeKind === 'intelligence') {
+            const intelligenceUrl = process.env.SUPABASE_INTEL_EDGE_URL
+                || process.env.SUPABASE_INTELLIGENCE_EDGE_URL
+                || process.env.SUPABASE_INTELLIGENCE_URL
+                || '';
+            if (intelligenceUrl) {
+                return intelligenceUrl.replace(/\/+$/, '');
+            }
+        }
+        return this.resolveSupabaseUrl();
+    }
+
+    async proxyPublicSupabaseFunction(req, res, functionName, options = {}) {
+        await this.ensureAdaptersReady();
+
+        if (!this.isValidFunctionSlug(functionName)) {
+            return res.status(400).json({
+                error: 'Invalid function name',
+                requestId: req.id
+            });
+        }
+
+        const supabaseUrl = this.resolveSupabasePublicRouteUrl(options.edgeKind || 'default');
+        if (!supabaseUrl) {
+            return res.status(503).json({
+                error: 'SUPABASE_URL is not configured',
+                requestId: req.id
+            });
+        }
+
+        const targetUrl = new URL(`${supabaseUrl}/functions/v1/${functionName}`);
+        for (const [key, value] of Object.entries(req.query || {})) {
+            if (Array.isArray(value)) {
+                for (const item of value) targetUrl.searchParams.append(key, `${item}`);
+            } else if (value !== undefined && value !== null) {
+                targetUrl.searchParams.set(key, `${value}`);
+            }
+        }
+
+        const method = (req.method || 'GET').toUpperCase();
+        const requestHeaders = {
+            ...this.getForwardHeadersForSupabaseProxy(req),
+            'Content-Type': getHeaderValue(req.headers, 'content-type') || 'application/json'
+        };
+        if (getHeaderValue(req.headers, 'accept')) {
+            requestHeaders.Accept = getHeaderValue(req.headers, 'accept');
+        }
+
+        const shouldSendBody = !['GET', 'HEAD'].includes(method);
+        const hasBody = req.body !== undefined && req.body !== null && Object.keys(req.body || {}).length > 0;
+
+        try {
+            const fetchOptions = {
+                method,
+                headers: requestHeaders
+            };
+            if (shouldSendBody && hasBody) {
+                fetchOptions.body = JSON.stringify(req.body);
+            }
+
+            const upstreamResponse = await fetchWithTimeout(targetUrl.toString(), fetchOptions, options.timeoutMs || 30000);
+
+            const contentType = upstreamResponse.headers.get('content-type') || 'application/json';
+            const text = await upstreamResponse.text();
+
+            res.setHeader('X-Gateway-Route', 'central-public-supabase-proxy');
+            res.setHeader('X-Upstream-Target', 'supabase-edge-function');
+            res.setHeader('X-Upstream-Function', functionName);
+            res.setHeader('Content-Type', contentType);
+
+            return res.status(upstreamResponse.status).send(text);
+        } catch (error) {
+            return res.status(502).json({
+                error: 'Supabase function proxy failed',
+                message: error.message,
+                function: functionName,
+                requestId: req.id
+            });
+        }
+    }
+
     async verifyRequestIdentity(req) {
         if (!this.enforceIdentityVerification) {
             return { ok: true, method: 'disabled' };
@@ -1156,6 +1238,29 @@ class UnifiedGateway {
         // Supabase /functions/v1 directly. This keeps central controls in-path.
         this.app.all('/functions/v1/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
         this.app.all('/api/v1/functions/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
+
+        // Public read-only MaaS health/status routes used by the Netlify→VPS
+        // shadow parity gate. These endpoints intentionally do not require
+        // caller credentials; the gateway injects the configured Supabase anon
+        // key exactly like the existing api.lanonasis.com Nginx bridge.
+        this.app.get('/api/v1/auth/status', async (req, res) => (
+            this.proxyPublicSupabaseFunction(req, res, 'auth-status')
+        ));
+        this.app.get('/api/v1/memory/health', async (req, res) => (
+            this.proxyPublicSupabaseFunction(req, res, 'system-health')
+        ));
+        this.app.get('/api/v1/intelligence/health-check', async (req, res) => (
+            this.proxyPublicSupabaseFunction(req, res, 'intelligence-health-check', {
+                edgeKind: 'intelligence',
+                timeoutMs: 120000
+            })
+        ));
+        this.app.get('/api/v1/intelligence/health', async (req, res) => (
+            this.proxyPublicSupabaseFunction(req, res, 'intelligence-health-check', {
+                edgeKind: 'intelligence',
+                timeoutMs: 120000
+            })
+        ));
 
         // ==================== API GATEWAY ROUTES ====================
 
