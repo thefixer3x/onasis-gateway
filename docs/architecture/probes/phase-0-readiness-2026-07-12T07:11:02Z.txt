@@ -1,0 +1,41 @@
+=== onasis-gateway VPS-side readiness probe (post-deploy @ b178a2b) ===
+host: lanonasis-main  ip: 138.199.231.0
+probe time: 2026-07-12T07:11:02Z
+
+=== VPS HEAD ===
+b178a2b1a52c5b6b2ab3a84a5743813aa0ce35b8
+=== compare-responses.sh ===
+=== response parity: netlify vs gateway ===
+netlify=https://api.lanonasis.com  gateway=https://gateway.lanonasis.com
+
+  [  OK   ] /health                                  200
+  [  OK   ] /api/v1/auth/status                      200
+  [  OK   ] /api/v1/memory/health                    200
+  [  OK   ] /api/v1/intelligence/health-check        401
+  [  OK   ] /api/adapters                            404
+
+summary: 5/5 matched
+exit=0
+
+=== gateway-health.sh ===
+=== onasis-gateway health check ===
+gateway host: 127.0.0.1
+central :3000  auth :4000  enterprise-mcp :3001  mcp-http :3001
+
+  [ OK ] central-gateway      http://127.0.0.1:3000/health -> 200
+  [ OK ] auth-gateway         http://127.0.0.1:4000/health -> 200
+  [ OK ] enterprise-mcp       http://127.0.0.1:3001/health -> 200
+  [ OK ] mcp-core-http        http://127.0.0.1:3001/health -> 200
+
+=== Nginx routing sanity ===
+  nginx (Host: gateway.lanonasis.com) -> 200 (follow-redirects)
+
+RESULT: all checks passed
+exit=0
+
+=== pm2 summary ===
+  vortex-mcp status=online pid=722789 restarts=0
+  auth-gateway status=online pid=1059255 restarts=1
+  unified-gateway status=online pid=1112171 restarts=1
+  enterprise-mcp status=online pid=722802 restarts=0
+  pm2-logrotate status=online pid=722893 restarts=0
