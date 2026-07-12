@@ -1,0 +1,14 @@
+=== onasis-gateway health check ===
+gateway host: 127.0.0.1
+central :3000  auth :4000  enterprise-mcp :3001  mcp-http :3001
+
+  [ OK ] central-gateway      http://127.0.0.1:3000/health -> 200
+  [ OK ] auth-gateway         http://127.0.0.1:4000/health -> 200
+  [ OK ] enterprise-mcp       http://127.0.0.1:3001/health -> 200
+  [ OK ] mcp-core-http        http://127.0.0.1:3001/health -> 200
+
+=== Nginx routing sanity ===
+  nginx (Host: gateway.lanonasis.com) -> 200 (follow-redirects)
+
+RESULT: all checks passed
+EXIT=0
