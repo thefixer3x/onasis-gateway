@@ -64,6 +64,10 @@ route_groups:
       - path: /admin/*
       - path: /mcp/*
       - path: /auth/cli-login
+    exceptions:
+      - path: /api/v1/auth/status
+        owner: maas_supabase_edge
+        reason: Public auth-status compatibility route used by Netlify/VPS shadow parity.
 
   central_gateway_root:
     description: Central gateway root + health + adapters + route policy
