@@ -1,7 +1,33 @@
 version: 2
-updated: 2026-07-04
+updated: 2026-07-12
 owner: onasis-gateway
 issue: SDK-17
+
+# === PHASE 1 SHADOW PARITY (deployed 2026-07-12) ===
+# /opt/lanonasis/onasis-gateway on lanonasis-main is on branch
+# SDK-17-gateway-stability-and-consolidation @ 5098ad5 + .gitattributes LF
+# hardening (will be the merge that flips this anchor). Live probe result
+# (./scripts/compare-responses.sh) is 5/5 matched, 0.00% divergence. Phase 2
+# (DNS cutover of api.lanonasis.com) remains blocked on board approval.
+phase_1_shadow_parity:
+  deployed_at: 2026-07-12T07:03Z
+  deployed_branch: SDK-17-gateway-stability-and-consolidation
+  deployed_head: 5098ad5
+  live_probe:
+    netlify_base: https://api.lanonasis.com
+    gateway_base: https://gateway.lanonasis.com
+    matched: 5
+    total: 5
+    divergence_pct: 0.00
+    gate_pct: 1.00
+    gate_status: green
+    probe_artifact: docs/architecture/probes/gateway-health-2026-07-12T07:05:22Z.txt
+  vps_health:
+    central_gateway: 200
+    auth_gateway: 200
+    enterprise_mcp: 200
+    mcp_core_http: 200
+    nginx_routing: 200
 
 # === PORT AUTHORITY ===
 # These ports are the AUTHORITATIVE values confirmed by:

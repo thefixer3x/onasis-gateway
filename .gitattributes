@@ -1,0 +1,7 @@
+# .gitattributes — keep shell scripts LF on checkout regardless of
+# the deployer's core.autocrlf setting (the VPS uses autocrlf=true).
+# Without this, scripts/*.sh are re-checked out with CRLF on the
+# Hostinger box and `set -euo pipefail` parses as a syntax error.
+*.sh            text eol=lf
+*.bash          text eol=lf
+scripts/*.sh    text eol=lf
