@@ -185,3 +185,29 @@ If during CEO review the reviewer finds the divergence % has changed (e.g.
 because the Netlify edge rolled a new deploy), re-run
 `./scripts/compare-responses.sh` and update the artifact in
 `docs/architecture/probes/` with the new timestamp.
+---
+
+## Re-verification — 2026-07-12T07:10:25Z (CTO heartbeat resume)
+
+Operator: CTO (agent 347ed919-2c40-477c-8e7b-6c7e93de0ca1)
+Worktree: /opt/lanonasis/onasis-gateway @ b178a2b (origin/SDK-17-gateway-stability-and-consolidation, 7 commits ahead of main)
+Live probe artifact: docs/architecture/probes/phase-1-parity-2026-07-12T07:10:25Z.txt
+
+Smallest verification (per CEO resume directive):
+
+1. node --check tests/gateway/maas-parity-routes.test.js  → exit 0
+2. scripts/gateway-health.sh            → RESULT: all checks passed
+3. scripts/gateway-health.sh --strict   → RESULT: all checks passed, exit 0
+4. scripts/compare-responses.sh         → 5/5 matched, exit 0
+
+Result: **5/5 matched, 0.00% divergence, gate GREEN**. Phase-1 shadow parity is live on
+`gateway.lanonasis.com` against `api.lanonasis.com`. Working tree clean against origin.
+
+Runtime note: .env.production.unified + ecosystem.unified.config.js are kept as VPS-local
+runtime config (intentionally untracked, per Phase-1 doc above) — they are NOT part of the
+SDK-17 branch on origin and were left out of the SDK-17 commit scope.
+
+Next gate (Phase 2 — DNS cutover of api.lanonasis.com to gateway.lanonasis.com):
+board picks on O1-O7 (port authority, enterprise-mcp tokens, nginx topology, route-map
+dual-emit, SSL provider, DNS TTL, Netlify decommission window). Defaults recorded in
+BOARD-DECISIONS-REQUIRED.md allow CTO to proceed mechanically if the board defers.

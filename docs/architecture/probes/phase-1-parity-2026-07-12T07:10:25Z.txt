@@ -1,0 +1,52 @@
+=== Phase-1 Shadow Parity re-verification (CTO heartbeat 2026-07-12T07:10:25Z) ===
+worktree: /opt/lanonasis/onasis-gateway
+branch + HEAD:
+SDK-17-gateway-stability-and-consolidation
+b178a2b1a52c5b6b2ab3a84a5743813aa0ce35b8
+
+--- 1) node --check tests/gateway/maas-parity-routes.test.js ---
+node_check_exit=0
+
+--- 2) scripts/gateway-health.sh (default) ---
+=== onasis-gateway health check ===
+gateway host: 127.0.0.1
+central :3000  auth :4000  enterprise-mcp :3001  mcp-http :3001
+
+  [ OK ] central-gateway      http://127.0.0.1:3000/health -> 200
+  [ OK ] auth-gateway         http://127.0.0.1:4000/health -> 200
+  [ OK ] enterprise-mcp       http://127.0.0.1:3001/health -> 200
+  [ OK ] mcp-core-http        http://127.0.0.1:3001/health -> 200
+
+=== Nginx routing sanity ===
+  nginx (Host: gateway.lanonasis.com) -> 200 (follow-redirects)
+
+RESULT: all checks passed
+
+--- 3) scripts/gateway-health.sh --strict ---
+=== onasis-gateway health check ===
+gateway host: 127.0.0.1
+central :3000  auth :4000  enterprise-mcp :3001  mcp-http :3001
+
+  [ OK ] central-gateway      http://127.0.0.1:3000/health -> 200
+  [ OK ] auth-gateway         http://127.0.0.1:4000/health -> 200
+  [ OK ] enterprise-mcp       http://127.0.0.1:3001/health -> 200
+  [ OK ] mcp-core-http        http://127.0.0.1:3001/health -> 200
+
+=== Nginx routing sanity ===
+  nginx (Host: gateway.lanonasis.com) -> 200 (follow-redirects)
+
+RESULT: all checks passed
+strict_exit=0
+
+--- 4) scripts/compare-responses.sh ---
+=== response parity: netlify vs gateway ===
+netlify=https://api.lanonasis.com  gateway=https://gateway.lanonasis.com
+
+  [  OK   ] /health                                  200
+  [  OK   ] /api/v1/auth/status                      200
+  [  OK   ] /api/v1/memory/health                    200
+  [  OK   ] /api/v1/intelligence/health-check        401
+  [  OK   ] /api/adapters                            404
+
+summary: 5/5 matched
+compare_exit=0
