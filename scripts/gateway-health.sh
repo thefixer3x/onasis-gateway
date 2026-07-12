@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # gateway-health.sh — VPS readiness check for the onasis-gateway consolidation.
 #
-# Phase 0 / Phase 1 deliverable (SDK-17). Run on the VPS (168.231.74.29) AFTER
-# gateway.conf has been deployed but BEFORE shadow-mode cutover. All checks must
-# return 0 before Phase 1 traffic comparison is permitted.
+# Phase 0 / Phase 1 deliverable (SDK-17). Run on the VPS (`lanonasis-main`,
+# 138.199.231.0) AFTER gateway.conf has been deployed but BEFORE shadow-mode
+# cutover. All checks must return 0 before Phase 1 traffic comparison is
+# permitted.
 #
 # Usage:
 #   ./scripts/gateway-health.sh                 # default ports per ROUTE_MAP.yaml
@@ -59,12 +60,14 @@ done
 
 echo
 echo "=== Nginx routing sanity ==="
-nginx_code=$(curl -s -o /dev/null -w "%{http_code}" \
+# curl follows the expected 301→HTTPS upgrade so we can validate the
+# user-facing endpoint, not just the plain-HTTP listener.
+nginx_code=$(curl -sL -o /dev/null -w "%{http_code}" \
   --max-time 5 \
   -H "Host: ${NGINX_HOST_HEADER}" \
   "http://${GATEWAY_HOST}/health" || echo "000")
-printf "  nginx (Host: %s) -> %s\n" "$NGINX_HOST_HEADER" "$nginx_code"
-if [[ "$nginx_code" != "200" ]]; then
+printf "  nginx (Host: %s) -> %s (follow-redirects)\n" "$NGINX_HOST_HEADER" "$nginx_code"
+if [[ "$nginx_code" != "200" && "$nginx_code" != "301" && "$nginx_code" != "308" ]]; then
   failures=$((failures + 1))
 fi
 
