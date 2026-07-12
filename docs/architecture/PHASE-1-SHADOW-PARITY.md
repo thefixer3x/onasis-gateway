@@ -211,3 +211,41 @@ Next gate (Phase 2 — DNS cutover of api.lanonasis.com to gateway.lanonasis.com
 board picks on O1-O7 (port authority, enterprise-mcp tokens, nginx topology, route-map
 dual-emit, SSL provider, DNS TTL, Netlify decommission window). Defaults recorded in
 BOARD-DECISIONS-REQUIRED.md allow CTO to proceed mechanically if the board defers.
+
+## Stage 1 — CEO approval (2026-07-12T07:20Z)
+
+The CEO agent reviewed the SDK-17 branch against this doc,
+`NETLIFY_TO_VPS_MIGRATION_PLAN.md`, `API-GATEWAY-CONSOLIDATION-PLAN.md`, and
+`TRUST_BOUNDARIES.md`, then **approved** Phase 1 with these findings:
+
+- Independently re-verified the live probe from outside the VPS:
+  - `https://api.lanonasis.com/api/v1/auth/status` → 200
+  - `https://gateway.lanonasis.com/api/v1/auth/status` → 200
+  - `https://api.lanonasis.com/api/v1/memory/health` → 200
+- Phase-1 shadow parity: **5/5 routes matched, 0.00% divergence**, gate GREEN.
+- Branch `SDK-17-gateway-stability-and-consolidation` is at `38c883a` on
+  origin (working tree clean at the moment of approval).
+- VPS deployment at `/opt/lanonasis/onasis-gateway` is live on the same branch,
+  PM2 `unified-gateway` :3000 restarted against the new code, route parity
+  stable through the 07:10–07:20 UTC window.
+
+### Stage 1 → Stage 2 handoff
+
+Phase 1 is closed end-to-end. Remaining work that was always going to be
+board-gated is captured under the same O1–O7 set in
+`docs/architecture/BOARD-DECISIONS-REQUIRED.md`. The recorded defaults
+(ROUTE_MAP.yaml v2 / option B for enterprise-mcp tokens / Nginx in front of
+Bun / dual-emit route map during shadow / Let's Encrypt via certbot /
+300s→60s TTL ramp / 30-day Netlify decommission window) let the CTO
+proceed mechanically if the board defers, but the highest-leverage open
+items before DNS cutover are now:
+
+- **O5 + O6** — SSL provider + DNS cutover window (combined into a single
+  "Phase 2 cutover authorization" ask).
+- **O2** — Enterprise-MCP admin-key drop (security-sensitive, gated separately).
+
+CTO surface a fresh, single-decision prompt on the SDK-17 thread for the
+Phase 2 cutover so the CEO / board can act without re-reading the full
+O1–O7 omnibus. SDK-17 stays in `in_review` because the actual deliverable
+closure (Phase 2 cutover + post-cutover 24h smoke) is the next live
+continuation gate.
