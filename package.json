@@ -68,7 +68,7 @@
     "ws": "^8.19.0"
   },
   "devDependencies": {
-    "@dotenvx/dotenvx": "^1.55.1",
+    "@dotenvx/dotenvx": "^1.75.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.2.3",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
