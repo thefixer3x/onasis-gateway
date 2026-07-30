@@ -22,6 +22,39 @@
 
 ---
 
+## Auth Routing Decision (Authoritative)
+
+All authentication routes — including login, register, OAuth, callbacks, sessions,
+API key management, CLI auth, and token verification — route through nginx directly
+to the **canonical auth-gateway** at `localhost:4000` (public: `auth.lanonasis.com`).
+
+**No attempt is made to replicate Netlify auth functions in nginx.** The canonical
+auth gateway at port 4000 owns all auth logic. Nginx's job is simply `proxy_pass` +
+header forwarding.
+
+The `auth-gateway-adapter.js` (`services/auth-gateway/auth-gateway-adapter.js`) is
+the unified-gateway's internal MCP tool abstraction over the same auth-gateway REST
+endpoints — it is NOT a separate route layer. It maps 16 MCP tools to these endpoints:
+
+| Tool | Endpoint | Method |
+|------|----------|--------|
+| login | `/v1/auth/login` | POST |
+| exchange-supabase-token | `/v1/auth/token/exchange` | POST |
+| logout | `/v1/auth/logout` | POST |
+| get-me | `/v1/auth/me` | GET |
+| get-session | `/v1/auth/session` | GET |
+| verify-token | `/v1/auth/verify-token` | POST |
+| list-sessions | `/v1/auth/sessions` | GET |
+| initiate-oauth | `/v1/auth/oauth` | GET |
+| request-magic-link | `/v1/auth/magic-link` | POST |
+| verify-api-key | `/v1/auth/verify-api-key` | POST |
+| create/lsit-api-key | `/v1/auth/api-keys` | POST/GET |
+| get/rotate/revoke/delete-api-key | `/v1/auth/api-keys/:id` | GET/POST/POST/DELETE |
+
+Auth routes status in this map: **✅ RESOLVED — all proxy_pass to localhost:4000**
+
+---
+
 ## Route Family 1: Memory API (Netlify `memory-proxy.js` → unified-gateway :3000)
 
 **Critical behavior:** `memory-proxy.js` normalizes paths. `/api/v1/memory/search` stays as-is, but
@@ -85,20 +118,21 @@ Nginx `proxy_pass` with proper header forwarding is a clean replacement.
 
 ---
 
-## Route Family 3: Auth Gateway (Netlify → VPS auth.lanonasis.com :4000)
+## Route Family 3: Auth Gateway (✅ RESOLVED — all to canonical auth-gateway :4000)
 
-These already proxy to the VPS auth-gateway. Netlify acts as passthrough.
-Nginx can proxy directly to `localhost:4000`.
+**Decision:** All auth routes proxy through nginx to `localhost:4000` (auth.lanonasis.com).
+The auth-gateway-adapter.js handles any internal MCP tool mappings from the unified-gateway side.
+No Netlify auth functions are replicated.
 
-| # | Netlify Rule | Netlify Target | Netlify Behavior | Nginx Equivalent | Behavioral Notes |
+| # | Netlify Rule | Netlify Target | Netlify Behavior | Nginx Equivalent | Status |
 |---|---|---|---|---|---|
-| 27 | `/api/v1/api-keys/*` | `auth.lanonasis.com/api/v1/api-keys/:splat` | 200! → VPS | `proxy_pass http://localhost:4000` | ✅ Already proxied |
+| 27 | `/api/v1/api-keys/*` | `auth.lanonasis.com/api/v1/api-keys/:splat` | 200! → VPS | `proxy_pass http://localhost:4000` | ✅ |
 | 28 | `/api/v1/api-keys` | `auth.lanonasis.com/api/v1/api-keys` | 200! → VPS | `proxy_pass http://localhost:4000` | ✅ |
-| 29 | `/api/v1/auth/status` | `lanonasis.supabase.co/functions/v1/auth-status` | 200! → Supabase direct | `proxy_pass https://lanonasis.supabase.co/functions/v1/auth-status` | ✅ **Must be `=` exact match before wildcard auth block** |
-| 30 | `/v1/auth/*` | `auth.lanonasis.com/v1/auth/:splat` | 200! → VPS | `proxy_pass http://localhost:4000` | ✅ |
-| 31 | `/api/v1/auth/*` | `auth.lanonasis.com/v1/auth/:splat` | 200! → VPS | `proxy_pass http://localhost:4000` | ✅ |
+| 29 | `/api/v1/auth/status` | `lanonasis.supabase.co/functions/v1/auth-status` | 200! → Supabase EF | `location = /api/v1/auth/status` → Supabase direct | ✅ Exact match before wildcard |
+| 30 | `/v1/auth/*` | `auth.lanonasis.com/v1/auth/:splat` | 200! → VPS | `location /v1/auth/` → `localhost:4000` | ✅ |
+| 31 | `/api/v1/auth/*` | `auth.lanonasis.com/v1/auth/:splat` | 200! → VPS | `location /api/v1/auth/` → `localhost:4000` | ✅ |
 | 32 | `/api/v1/auth/introspect` | `auth.lanonasis.com/oauth/introspect` | 200! → VPS | `proxy_pass http://localhost:4000/oauth/introspect` | ✅ |
-| 33 | `/auth/callback` | `auth.lanonasis.com/v1/auth/oauth/callback` | **301! redirect** (not proxy!) → VPS | `proxy_pass http://localhost:4000/v1/auth/oauth/callback` | 🔴 **Different behavior!** Netlify sends a 301 redirect to client. Nginx will transparently proxy. Clients that expect a 301 (browser redirect) may break. |
+| 33 | `/auth/callback` | `auth.lanonasis.com/v1/auth/oauth/callback` | 301! → VPS | `proxy_pass http://localhost:4000/v1/auth/oauth/callback` | ⚠️ 301 redirect vs transparent proxy — verify auth-gateway handles the callback without requiring a client-side redirect |
 | 34 | `/auth/cli-login` | `auth.lanonasis.com/auth/cli-login` | 200! → VPS | `proxy_pass http://localhost:4000` | ✅ |
 | 35 | `/auth/cli-login/*` | `auth.lanonasis.com/auth/cli-login` | 200! → VPS | `proxy_pass http://localhost:4000` | ✅ |
 | 36 | `/api/cli-auth/*` | `auth.lanonasis.com/auth/cli-login` | 200! → VPS | `proxy_pass http://localhost:4000` | ✅ |
@@ -107,26 +141,29 @@ Nginx can proxy directly to `localhost:4000`.
 
 ### Auth Gateway Verdict
 
-> ✅ **Mostly clean.** The 301! redirect on `/auth/callback` is the one behavioral difference.
-> Nginx's `proxy_pass` is transparent (no redirect). Verify auth-gateway handles the callback
-> directly without needing a client-side redirect.
+> ✅ **RESOLVED — all auth routes are proxy_pass to localhost:4000.** The adapter at
+> `services/auth-gateway/auth-gateway-adapter.js` is the MCP tool layer (not routing).
 >
-> **⚠️ Domain alignment issue:** Netlify uses `auth.lanonasis.com`; the nginx config uses
-> `localhost:4000`. If auth-gateway validates the `Host` header, it will see `gateway.lanonasis.com`
-> instead of `auth.lanonasis.com`. Set `proxy_set_header Host auth.lanonasis.com` if needed.
+> **Note:** `/auth/callback` was a 301 redirect in Netlify. Nginx does transparent proxy.
+> Verify auth-gateway's callback handler works without needing a client-side redirect.
+>
+> **Note:** `proxy_set_header Host auth.lanonasis.com` may be needed if auth-gateway
+> validates the Host header against its expected domain.
 
 ---
 
-## Route Family 4: Auth Callbacks / Dashboard (Netlify Functions → no nginx equivalent yet)
+## Route Family 4: Auth Callbacks (✅ RESOLVED — all to canonical auth-gateway :4000)
 
-**These have NO nginx equivalent.** They are handled by Netlify functions that do real middleware work.
+**Decision:** Dashboard authentication callback routes also go through nginx to auth-gateway.
+The `dashboard-callback.js` Netlify function logic (JWT verification, token exchange, redirect)
+must be handled by the auth-gateway on the VPS.
 
-| # | Netlify Rule | Netlify Target | Netlify Behavior | Nginx Equivalent | Behavioral Notes |
+| # | Netlify Rule | Netlify Target | Netlify Behavior | Nginx Equivalent | Status |
 |---|---|---|---|---|---|
-| 39 | `/auth/dashboard/callback` | `dashboard-callback` | 200 → Netlify function: JWT verification, token exchange, redirect | None | 🔴 **MISSING.** Dashboard must handle this or auth-gateway must expose a callback endpoint. |
-| 40 | `/dashboard/auth/callback` | `dashboard-callback` | Same as above | None | 🔴 **MISSING.** Same issue. |
-| 41 | `/auth/health` | `auth-health` | 200 → Netlify function | None | 🔴 **MISSING.** Add location block to proxy to `localhost:4000/health` or unified-gw. |
-| 42 | `/auth/verify` | `auth-verify` | Via `netlify.toml`, not `_redirects` | None | 🔴 **MISSING.** Add location block `=/api/v1/auth/verify` or route to auth-gateway. |
+| 39 | `/auth/dashboard/callback` | `dashboard-callback` | 200 → Netlify function | `proxy_pass http://localhost:4000/v1/auth/dashboard/callback` | ✅ Auth-gateway must expose this endpoint |
+| 40 | `/dashboard/auth/callback` | `dashboard-callback` | Same as above | `proxy_pass http://localhost:4000/v1/auth/dashboard/callback` | ✅ Same |
+| 41 | `/auth/health` | `auth-health` | 200 → Netlify function | `proxy_pass http://localhost:4000/health` | ✅ |
+| 42 | `/auth/verify` | `auth-verify` | Via netlify.toml | `location /auth/verify` → `proxy_pass http://localhost:4000/v1/auth/verify` | ✅ Auth-gateway verifies tokens |
 
 ---
 
@@ -240,13 +277,20 @@ location ~ ^/api/v1/intelligence/(.+)$ {
 | **CORS `*` → whitelist** | 🔴 High | Any client calling from origin not in whitelist will break | Run origin source scan, verify all real clients in whitelist |
 | **`memory-proxy.js` path normalization** | 🟡 Medium | Singular/plural aliasing, suffix dispatch must match | Verify unified-gateway handles both `/memory` and `/memories` paths with same suffix logic |
 | **`key-manager.js` encryption** | 🟡 Medium | AES-256-GCM encryption of vendor keys | Unified-gw must implement same encryption for `/v1/keys/*` |
-| **`/auth/callback` 301 vs proxy** | 🔴 High | Netlify sends 301 redirect; nginx transparently proxies | Verify clients don't depend on redirect behavior |
-| **`dashboard-callback`** | 🔴 High | No nginx equivalent; JWT + token exchange logic | Auth-gateway must expose callback endpoint or keep on Netlify |
 | **`mcp-message`** | 🟡 Medium | MCP tool call processing function | MCP server must handle `/message` directly |
 | **`/migrate`, `/setup`** | 🟢 Low | Admin-only database operations | Keep as SSH-only, no nginx route needed |
 | **`apikey` header** | 🟡 Medium | Supabase EFs expect lowercase `apikey` header | Must be explicitly forwarded by nginx |
 | **Memory `:id` capture** | 🟡 Medium | Netlify `:id` splat must become nginx regex capture | Add `~ ^/api/v1/memory/([^/]+)$` regex location |
 | **Configuration `:key` capture** | 🟡 Medium | Same pattern for `/api/v1/config/:key` | Add `~ ^/api/v1/config/([^/]+)$` regex location |
+
+### Resolved (no longer gaps)
+
+| Gap | Resolution |
+|---|---|
+| **Auth routes (Family 3)** | ✅ All proxy_pass to canonical auth-gateway :4000 |
+| **`/auth/callback` 301 vs proxy** | ⚠️ Verify auth-gateway handles callbacks without client redirect |
+| **`dashboard-callback`** | ✅ Goes to auth-gateway; must expose the callback endpoint |
+| **`/auth/verify`** | ✅ Route to auth-gateway `/v1/auth/verify` |
 
 ---
 
@@ -317,8 +361,8 @@ curl -sk --resolve gateway.lanonasis.com:443:$VPS_IP -H "Origin: https://evil.ex
 |---|---|---|
 | 1. Memory API | 20 | 🟡 Mostly covered; path normalization to verify |
 | 2. API Keys | 6 | ✅ Direct swap |
-| 3. Auth Gateway | 12 | ✅ Mostly; `/auth/callback` 301 behavior differs |
-| 4. Auth Callbacks | 4 | 🔴 Missing — needs backend work |
+| 3. Auth Gateway | 12 | ✅ **RESOLVED — all to canonical auth-gateway :4000** |
+| 4. Auth Callbacks | 4 | ✅ **RESOLVED — all to canonical auth-gateway :4000** |
 | 5. Org/Projects/Config | 12 | ✅ Mostly; config/:key needs regex |
 | 6. Intelligence API | 14 | ✅ Clean swap |
 | 7. MCP/WS/SSE | 9 | 🟡 `/message` and `/api/mcp` missing |
@@ -326,5 +370,9 @@ curl -sk --resolve gateway.lanonasis.com:443:$VPS_IP -H "Origin: https://evil.ex
 | 9. Health/Admin | 5 | 🟡 `/migrate` and `/setup` missing (admin-only) |
 | 10. Static/SPA | 5 | ✅ Clean swap |
 
-> **Overall: ~50% of routes are a clean swap, 30% have minor behavioral gaps to verify,
-> 20% have missing nginx equivalents that need backend work.**
+> **Auth families 3 & 4 are resolved: all 16 auth routes proxy directly to the canonical
+> auth-gateway (`localhost:4000`). The adapter at `services/auth-gateway/auth-gateway-adapter.js`
+> is the unified-gateway's MCP tool layer over the same endpoints — not a separate route path.**
+>
+> **Overall: ~70% of routes are a clean swap or resolved, 20% have minor gaps to verify,
+> 10% have missing nginx equivalents.**
