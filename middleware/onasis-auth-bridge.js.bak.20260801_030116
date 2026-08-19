@@ -21,21 +21,12 @@ class OnasisAuthBridge {
       apiKeyPath: config.apiKeyPath || process.env.ONASIS_AUTH_APIKEY_PATH || '/verify-api-key',
       projectScope: config.projectScope || 'lanonasis-maas',
       timeout: config.timeout || 10000,
-      retries: config.retries !== undefined ? config.retries : 1,
-      apiKeyCacheTimeout: config.apiKeyCacheTimeout !== undefined
-        ? config.apiKeyCacheTimeout
-        : (process.env.AUTH_APIKEY_CACHE_TTL_MS
-          ? parseInt(process.env.AUTH_APIKEY_CACHE_TTL_MS, 10)
-          : 60000)
+      retries: config.retries || 2
     };
 
     // Cache for session validation
     this.sessionCache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
-
-    // PATCH: API key validation cache (default 60s TTL).
-    // Keyed by sha256(apiKey).slice(0,16) — raw key is never stored.
-    this.apiKeyCache = new Map();
   }
 
   normalizeAuthApiUrl(value) {
@@ -240,22 +231,6 @@ class OnasisAuthBridge {
    * Validate API key (for service-to-service calls)
    */
   async validateAPIKey(apiKey) {
-    if (!apiKey || typeof apiKey !== 'string') {
-      return {
-        authenticated: false,
-        user: null,
-        method: 'api_key_missing',
-        error: 'API key not provided'
-      };
-    }
-
-    // PATCH: hash-keyed cache lookup. Failures are NOT cached.
-    const cacheKey = this._hashApiKey(apiKey);
-    const cached = this.apiKeyCache.get(cacheKey);
-    if (cached && Date.now() < cached.expires) {
-      return { ...cached.data };
-    }
-
     try {
       const response = await this.makeAuthRequest(this.config.apiKeyPath, {
         method: 'POST',
@@ -270,17 +245,12 @@ class OnasisAuthBridge {
 
       if (response.ok) {
         const data = await response.json();
-        const result = {
+        return {
           authenticated: true,
           user: data.user || null,
           method: 'api_key',
           key_prefix: apiKey.substring(0, 8) + '...'
         };
-        this.apiKeyCache.set(cacheKey, {
-          data: { ...result },  // clone so caller mutations don't poison cache
-          expires: Date.now() + this.config.apiKeyCacheTimeout
-        });
-        return result;
       }
 
       return {
@@ -299,15 +269,6 @@ class OnasisAuthBridge {
         error: error.message
       };
     }
-  }
-
-  /**
-   * PATCH: hash an API key for cache lookup. Uses Node built-in crypto;
-   * the raw key is never used as a Map key or logged.
-   */
-  _hashApiKey(apiKey) {
-    const crypto = require('crypto');
-    return crypto.createHash('sha256').update(apiKey).digest('hex').slice(0, 16);
   }
 
   /**
@@ -516,7 +477,6 @@ class OnasisAuthBridge {
    */
   clearCache() {
     this.sessionCache.clear();
-    this.apiKeyCache.clear();
   }
 }
 
