@@ -295,7 +295,7 @@ describe('VersionManager', () => {
       const snapshot = vm.getSnapshot('test-service', '1.0.0', '2.0.0');
       
       expect(snapshot).toBeDefined();
-      expect(snapshot.originalData.original).toBe(true);
+      expect(snapshot.data.original).toBe(true);
     });
 
     test('throws when no migration handler found', async () => {
@@ -314,7 +314,7 @@ describe('VersionManager', () => {
       
       vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async (data) => data);
       
-      const eventListener = jest.fn();
+      const eventListener = vi.fn();
       vm.on('migration:completed', eventListener);
       
       await vm.executeMigration('test-service', '1.0.0', '2.0.0', {});
@@ -331,7 +331,7 @@ describe('VersionManager', () => {
 
   describe('rollback functionality', () => {
     test('registers rollback handler', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       vm.registerRollbackHandler('test-service', '1.0.0', '2.0.0', handler);
       
       // Handler should be registered (no error thrown)
@@ -347,7 +347,7 @@ describe('VersionManager', () => {
         throw new Error('Migration failed');
       });
       
-      const rollbackListener = jest.fn();
+      const rollbackListener = vi.fn();
       vm.on('migration:rolled_back', rollbackListener);
       
       await expect(
@@ -367,42 +367,56 @@ describe('VersionManager', () => {
       vm.registerVersion('test-service', '1.0.0', config);
       vm.registerVersion('test-service', '2.0.0', config);
       
-      const rollbackHandler = jest.fn().mockResolvedValue({ rolled: true });
+      const rollbackHandler = vi.fn().mockResolvedValue({ rolled: true });
       vm.registerRollbackHandler('test-service', '1.0.0', '2.0.0', rollbackHandler);
       
       vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async () => {
         throw new Error('Fail');
       });
       
-      const rolledBackListener = jest.fn();
-      const failedListener = jest.fn();
+      const rolledBackListener = vi.fn();
+      const failedListener = vi.fn();
       
       vm.on('migration:rolled_back', rolledBackListener);
       vm.on('migration:rollback_failed', failedListener);
       
-      await vm.executeMigration('test-service', '1.0.0', '2.0.0', {});
+      // executeMigration re-throws the migration error after rolling back (by design)
+      await expect(
+        vm.executeMigration('test-service', '1.0.0', '2.0.0', {})
+      ).rejects.toThrow('Fail');
       
       expect(rolledBackListener).toHaveBeenCalled();
     });
 
-    test('emits migration:rollback_failed when no rollback available', async () => {
+    test('emits migration:rollback_failed when the rollback handler throws', async () => {
       const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
       vm.registerVersion('test-service', '1.0.0', config);
       vm.registerVersion('test-service', '2.0.0', config);
       
-      // No rollback handler registered
+      // executeMigration always snapshots before migrating, so the snapshot-fallback
+      // path is taken when no rollback handler exists. rollback_failed fires when
+      // the explicit rollback handler itself throws.
+      vm.registerRollbackHandler('test-service', '1.0.0', '2.0.0', async () => {
+        throw new Error('Rollback exploded');
+      });
+      
       vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async () => {
         throw new Error('Fail');
       });
       
-      const failedListener = jest.fn();
+      const failedListener = vi.fn();
       vm.on('migration:rollback_failed', failedListener);
       
-      await vm.executeMigration('test-service', '1.0.0', '2.0.0', {});
+      await expect(
+        vm.executeMigration('test-service', '1.0.0', '2.0.0', {})
+      ).rejects.toThrow('Fail');
       
       expect(failedListener).toHaveBeenCalledWith(
         expect.objectContaining({
-          reason: 'No rollback handler or snapshot available'
+          serviceId: 'test-service',
+          fromVersion: '1.0.0',
+          toVersion: '2.0.0',
+          rollbackError: 'Rollback exploded'
         })
       );
     });
