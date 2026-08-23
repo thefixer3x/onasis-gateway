@@ -219,6 +219,7 @@ class UnifiedGateway {
         this.abstractedAPI = new AbstractedAPIEndpoints({
             getAdapterRegistry: () => this.adapterRegistry
         });
+        this.abstractedAPI.setGateway(this);
         this.authBridge = new OnasisAuthBridge({
             authApiUrl: process.env.AUTH_GATEWAY_URL
                 || process.env.ONASIS_AUTH_API_URL
@@ -825,7 +826,13 @@ class UnifiedGateway {
                 );
 
                 const data = await response.json().catch(() => ({}));
-                if (response.ok) {
+                // Some auth-gateway verify endpoints (e.g. /v1/auth/verify-token) report
+                // an invalid/expired credential as HTTP 200 with `valid: false` in the
+                // body rather than a non-2xx status. Checking response.ok alone treats
+                // any 2xx as success and lets a garbage bearer token through — require
+                // the body to not explicitly say invalid too.
+                const bodyRejected = data && data.valid === false;
+                if (response.ok && !bodyRejected) {
                     return {
                         ok: true,
                         method: candidate.source,
@@ -835,17 +842,19 @@ class UnifiedGateway {
 
                 lastFailure = {
                     ok: false,
-                    status: response.status || 401,
+                    status: bodyRejected ? 401 : (response.status || 401),
                     error: data.error || 'Unauthorized'
                 };
 
                 const errorText = typeof data.error === 'string' ? data.error.toLowerCase() : '';
                 const retryable =
-                    response.status === 404
-                    || response.status === 405
-                    || response.status >= 500
-                    || errorText.includes('no token provided')
-                    || errorText.includes('not implemented');
+                    !bodyRejected && (
+                        response.status === 404
+                        || response.status === 405
+                        || response.status >= 500
+                        || errorText.includes('no token provided')
+                        || errorText.includes('not implemented')
+                    );
 
                 if (!retryable) {
                     // Before giving up, try Supabase JWT verification as backward-compat fallback.
@@ -1129,6 +1138,115 @@ class UnifiedGateway {
                     }
                 },
                 version: '1.0.0'
+            });
+        });
+
+        // ==================== AGGREGATED UPSTREAM HEALTH ====================
+        this.app.get('/health/full', async (req, res) => {
+            await this.ensureAdaptersReady();
+            const selfUptime = Math.floor((Date.now() - this.startTime) / 1000);
+            const timeout = parseInt(process.env.HEALTH_TIMEOUT_MS || '4000', 10);
+
+            const upstreamTargets = [
+                { name: 'auth_gateway', url: process.env.HEALTH_AUTH_URL || 'http://127.0.0.1:4000/health', label: 'Auth Gateway' },
+                { name: 'mcp_core', url: process.env.HEALTH_MCP_CORE_URL || 'http://127.0.0.1:3001/health', label: 'MCP Core' },
+                { name: 'supabase_edge', url: null, label: 'Supabase Edge (cached)' }
+            ];
+
+            const upstreamResults = await Promise.allSettled(
+                upstreamTargets.map(async (target) => {
+                    if (!target.url) {
+                        return { name: target.name, label: target.label, status: 'healthy', latencyMs: 0, note: 'cached discovery' };
+                    }
+                    const start = Date.now();
+                    try {
+                        const controller = new AbortController();
+                        const timer = setTimeout(() => controller.abort(), timeout);
+                        const response = await fetch(target.url, {
+                            signal: controller.signal,
+                            headers: { 'User-Agent': 'gateway-health-check/1.0' }
+                        });
+                        clearTimeout(timer);
+                        const latencyMs = Date.now() - start;
+                        let body = {};
+                        try { body = await response.json(); } catch {}
+                        return {
+                            name: target.name,
+                            label: target.label,
+                            status: response.ok ? 'healthy' : 'degraded',
+                            httpStatus: response.status,
+                            latencyMs,
+                            detail: body.status || body
+                        };
+                    } catch (err) {
+                        return {
+                            name: target.name,
+                            label: target.label,
+                            status: 'unreachable',
+                            latencyMs: Date.now() - start,
+                            error: err.cause?.message || err.message
+                        };
+                    }
+                })
+            );
+
+            const upstreams = upstreamResults.map((r, i) =>
+                r.status === 'fulfilled' ? r.value : { name: upstreamTargets[i].name, label: upstreamTargets[i].label, status: 'error', error: String(r.reason) }
+            );
+
+            const allHealthy = upstreams.every(u => u.status === 'healthy' || u.name === 'supabase_edge');
+            const overallStatus = allHealthy ? 'healthy' : 'degraded';
+
+            res.status(allHealthy ? 200 : 503).json({
+                status: overallStatus,
+                timestamp: new Date().toISOString(),
+                uptime: selfUptime,
+                central_gateway: {
+                    status: 'healthy',
+                    uptime: selfUptime,
+                    adapters: this.adapters.size,
+                    tools: this.getTotalTools()
+                },
+                upstreams: upstreams.reduce((acc, u) => { acc[u.name] = u; return acc; }, {})
+            });
+        });
+
+        // ==================== GATEWAY STATUS ====================
+        this.app.get('/api/v1/status', async (req, res) => {
+            await this.ensureAdaptersReady();
+            const supabaseAdapter = this.adapters.get('supabase-edge-functions');
+            const uptime = Math.floor((Date.now() - this.startTime) / 1000);
+
+            let supabaseHealth = null;
+            if (supabaseAdapter && supabaseAdapter.getStatus) {
+                try { supabaseHealth = await supabaseAdapter.getStatus(); } catch {}
+            }
+
+            res.json({
+                gateway: 'central',
+                version: '1.0.0',
+                status: 'online',
+                uptime,
+                timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV || 'development',
+                services: {
+                    api: {
+                        status: 'online',
+                        serviceCount: this.services.size
+                    },
+                    mcp: {
+                        status: 'online',
+                        adapterCount: this.adapters.size,
+                        toolCount: this.getTotalTools()
+                    },
+                    supabase: supabaseHealth ? {
+                        status: supabaseHealth.healthy ? 'online' : 'degraded',
+                        functionCount: supabaseHealth.metadata?.toolCount || 0,
+                        lastDiscovery: supabaseHealth.metadata?.lastDiscovery || null
+                    } : { status: 'unknown' }
+                },
+                routePolicy: this.routePolicyMode,
+                centralGatewayBaseUrl: this.centralGatewayBaseUrl
             });
         });
 
@@ -1587,6 +1705,39 @@ class UnifiedGateway {
             });
         });
 
+        // ==================== MCP ADAPTER DISCOVERY ====================
+        // Mirrors /api/adapters and /api/tools in mcp_server.js (Netlify) for parity
+        this.app.get('/api/adapters', async (req, res) => {
+            await this.ensureAdaptersReady();
+            const adapterList = [];
+            for (const [name, adapter] of this.adapters.entries()) {
+                const toolCount = adapter.tools
+                    ? (Array.isArray(adapter.tools) ? adapter.tools.length : Object.keys(adapter.tools).length)
+                    : (adapter.toolCount || 0);
+                adapterList.push({
+                    name,
+                    tools: toolCount,
+                    authType: adapter.auth || adapter.authType || 'bearer',
+                    status: adapter._initialized !== false ? 'loaded' : 'unavailable'
+                });
+            }
+            res.json({ total: adapterList.length, adapters: adapterList });
+        });
+
+        this.app.get('/api/tools', async (req, res) => {
+            await this.ensureAdaptersReady();
+            let totalTools = 0;
+            const breakdown = {};
+            for (const [name, adapter] of this.adapters.entries()) {
+                const toolCount = adapter.tools
+                    ? (Array.isArray(adapter.tools) ? adapter.tools.length : Object.keys(adapter.tools).length)
+                    : (adapter.toolCount || 0);
+                totalTools += toolCount;
+                breakdown[name] = { tools: toolCount, auth: adapter.auth || adapter.authType || 'bearer' };
+            }
+            res.json({ total: totalTools, adapters: this.adapters.size, breakdown });
+        });
+
         // Add abstracted API routes (from existing MCP server).
         // /api/v1/ai/chat also exists in this router, but acts as fallback only
         // because the direct route above was mounted earlier in this file.
@@ -1929,8 +2080,7 @@ class UnifiedGateway {
     getAdapterToolCount(adapter) {
         if (!adapter) return 0;
         if (Array.isArray(adapter.tools)) return adapter.tools.length;
-        if (typeof adapter.tools === 'number') return adapter.tools;
-        if (typeof adapter.toolCount === 'number') return adapter.toolCount;
+        if (adapter.tools && typeof adapter.tools === 'object') return Object.keys(adapter.tools).length;
         return 0;
     }
 
