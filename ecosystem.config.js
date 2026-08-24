@@ -4,11 +4,15 @@
 // Start command: npx dotenvx run -f .env.production -- pm2-runtime start ecosystem.config.js
 // Or use: npm run start:pm2
 //
+// NOTE: the production entry is unified_gateway.js (see ecosystem.unified.config.js,
+// which drives the live PM2 app `unified-gateway`). This file used to point at a
+// nonexistent server.js; corrected to the real entry.
+//
 module.exports = {
   apps: [
     {
       name: 'central-gateway',
-      script: 'server.js',
+      script: 'unified_gateway.js',
       instances: 1,
       exec_mode: 'cluster',
       // Non-secret runtime defaults only — all secrets injected by dotenvx at startup
