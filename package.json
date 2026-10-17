@@ -117,17 +117,19 @@
   "homepage": "https://github.com/your-org/api-service-warehouse#readme",
   "jest": {
     "testEnvironment": "node",
-    "collectCoverageFrom": [
-      "**/*.js",
-      "!node_modules/**",
-      "!coverage/**",
-      "!jest.config.js"
+    "testMatch": [
+      "**/tests/**/*.{js,ts}"
     ],
-    "coverageDirectory": "coverage",
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "html"
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "node"
+    ],
+    "collectCoverageFrom": [
+      "src/adapters/**/*.js",
+      "unified_gateway.js",
+      "api_server.js"
     ]
-  }
+  },
+  "type": "module"
 }
