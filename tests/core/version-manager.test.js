@@ -329,14 +329,7 @@ describe('VersionManager', () => {
   });
 
   describe('rollback functionality', () => {
-<<<<<<< HEAD
     test('registers rollback handler', () => {
-||||||| parent of d3d31e1 (chore: update configuration and migration documentation)
-    test('registers rollback handler', () => {
-      const handler = jest.fn();
-=======
-    it('registers rollback handler', () => {
->>>>>>> d3d31e1 (chore: update configuration and migration documentation)
       const handler = vi.fn();
       vm.registerRollbackHandler('test-service', '1.0.0', '2.0.0', handler);
       
@@ -372,34 +365,27 @@ describe('VersionManager', () => {
       const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
       vm.registerVersion('test-service', '1.0.0', config);
       vm.registerVersion('test-service', '2.0.0', config);
-      
-<<<<<<< HEAD
-      const rollbackHandler = vi.fn().mockResolvedValue({ rolled: true });
-      vm.registerRollbackHandler('test-service', '1.0.0', '2.0.0', rollbackHandler);
-||||||| parent of d3d31e1 (chore: update configuration and migration documentation)
-      const rollbackHandler = jest.fn().mockResolvedValue({ rolled: true });
-      vm.registerRollbackHandler('test-service', '1.0.0', '2.0.0', rollbackHandler);
-=======
+
+      // No explicit rollback handler on this path: executeRollback must fall
+      // back to the pre-migration snapshot, so rolledBackData is the snapshot
+      // payload passed into executeMigration.
       const rolledBackListener = vi.fn();
+      const failedListener = vi.fn();
       vm.on('migration:rolled_back', rolledBackListener);
->>>>>>> d3d31e1 (chore: update configuration and migration documentation)
-      
+      vm.on('migration:rollback_failed', failedListener);
+
       vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async () => {
         throw new Error('Fail');
       });
-      
-<<<<<<< HEAD
-      const rolledBackListener = vi.fn();
-      const failedListener = vi.fn();
-||||||| parent of d3d31e1 (chore: update configuration and migration documentation)
-      const rolledBackListener = jest.fn();
-      const failedListener = jest.fn();
-=======
-      try { await vm.executeMigration('test-service', '1.0.0', '2.0.0', { preserved: true }); } catch {}
->>>>>>> d3d31e1 (chore: update configuration and migration documentation)
-      
+
+      // executeMigration re-throws the migration error after rolling back (by design)
+      await expect(
+        vm.executeMigration('test-service', '1.0.0', '2.0.0', { preserved: true })
+      ).rejects.toThrow('Fail');
+
       expect(rolledBackListener).toHaveBeenCalled();
       expect(rolledBackListener.mock.calls[0][0].rolledBackData).toEqual({ preserved: true });
+      expect(failedListener).not.toHaveBeenCalled();
     });
 
     it('handles failed migration without rollback handler', async () => {
@@ -414,20 +400,13 @@ describe('VersionManager', () => {
       const rolledBackListener = vi.fn();
       vm.on('migration:rolled_back', rolledBackListener);
       
-<<<<<<< HEAD
       // executeMigration re-throws the migration error after rolling back (by design)
       await expect(
         vm.executeMigration('test-service', '1.0.0', '2.0.0', {})
       ).rejects.toThrow('Fail');
-||||||| parent of d3d31e1 (chore: update configuration and migration documentation)
-      await vm.executeMigration('test-service', '1.0.0', '2.0.0', {});
-=======
-      try { await vm.executeMigration('test-service', '1.0.0', '2.0.0', { data: 'test' }); } catch {}
->>>>>>> d3d31e1 (chore: update configuration and migration documentation)
       
       expect(rolledBackListener).toHaveBeenCalled();
     });
-<<<<<<< HEAD
 
     test('emits migration:rollback_failed when the rollback handler throws', async () => {
       const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
@@ -461,30 +440,5 @@ describe('VersionManager', () => {
         })
       );
     });
-||||||| parent of d3d31e1 (chore: update configuration and migration documentation)
-
-    test('emits migration:rollback_failed when no rollback available', async () => {
-      const config = { endpoints: [], baseUrl_changed: 'https://api.example.com' };
-      vm.registerVersion('test-service', '1.0.0', config);
-      vm.registerVersion('test-service', '2.0.0', config);
-      
-      // No rollback handler registered
-      vm.registerMigrationHandler('test-service', '1.0.0', '2.0.0', async () => {
-        throw new Error('Fail');
-      });
-      
-      const failedListener = jest.fn();
-      vm.on('migration:rollback_failed', failedListener);
-      
-      await vm.executeMigration('test-service', '1.0.0', '2.0.0', {});
-      
-      expect(failedListener).toHaveBeenCalledWith(
-        expect.objectContaining({
-          reason: 'No rollback handler or snapshot available'
-        })
-      );
-    });
-=======
->>>>>>> d3d31e1 (chore: update configuration and migration documentation)
   });
 });
