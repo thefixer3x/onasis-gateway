@@ -332,9 +332,29 @@ class UnifiedGateway {
         this.app.use('/api/', apiLimiter);
         this.app.use('/mcp', mcpLimiter);
 
-        // Request logging
+        // Request logging — single line per request, includes real client IP,
+        // status code, duration, and UA. Designed for human scan + grep.
         this.app.use((req, res, next) => {
-            console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+            const start = Date.now();
+            const clientIp =
+                req.ip ||
+                (typeof req.headers['x-forwarded-for'] === 'string'
+                    ? req.headers['x-forwarded-for'].split(',')[0].trim()
+                    : req.socket?.remoteAddress) ||
+                '-';
+            const ua = (req.headers['user-agent'] || '-').toString().slice(0, 80);
+
+            res.on('finish', () => {
+                const duration = Date.now() - start;
+                // pad method column for tail -f readability
+                const method = (req.method || '?').padEnd(6);
+                const status = String(res.statusCode);
+                console.log(
+                    `${new Date().toISOString()} ${method} ${req.path} ` +
+                    `ip=${clientIp} status=${status} dur=${duration}ms ua="${ua}"`
+                );
+            });
+
             next();
         });
 

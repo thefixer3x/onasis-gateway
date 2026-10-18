@@ -408,9 +408,20 @@ class OnasisAuthBridge {
         ...req.headers
       };
 
-      // Remove host headers to avoid conflicts
-      delete headers.host;
-      delete headers['content-length'];
+      // Strip hop-by-hop headers (RFC 7230 6.1) before forwarding.
+      //
+      // Only `host` and `content-length` were removed here before. undici
+      // rejects `connection` outright with
+      //   InvalidArgumentError: invalid connection header
+      // so every proxied request from an HTTP/1.1 client sending
+      // `Connection: keep-alive` failed both attempts and returned
+      // 500 AUTH_PROXY_ERROR. Observed since 2026-08-15, 10 occurrences on
+      // 2026-09-11 alone.
+      for (const h of ['host', 'content-length', 'connection', 'keep-alive',
+                       'proxy-authenticate', 'proxy-authorization', 'te',
+                       'trailer', 'transfer-encoding', 'upgrade']) {
+        delete headers[h];
+      }
 
       const response = await this.makeAuthRequest(path, {
         method,
