@@ -1,0 +1,43 @@
+=== onasis-gateway Phase 0 readiness probe ===
+captured_at: 2026-07-12T06:22:36Z
+issue: SDK-17
+operator: vortexcore@lanonasis-main
+
+--- host ---
+hostname: lanonasis-main
+uptime: up 1 week, 1 day, 1 hour, 31 minutes
+kernel: 6.8.0-134-generic
+disk: 58% used (83G/150G)
+load: 0.72, 0.72, 0.61
+
+--- PM2 processes ---
+  vortex-mcp         pid=722789  status=online
+  auth-gateway       pid=1059255  status=online
+  unified-gateway    pid=722801  status=online
+  enterprise-mcp     pid=722802  status=online
+  pm2-logrotate      pid=722893  status=online
+
+--- Upstream /health probes (loopback) ---
+  127.0.0.1:3000/health -> 200 (19ms)
+  127.0.0.1:4000/health -> 200 (51ms)
+  127.0.0.1:3001/health -> 200 (26ms)
+
+--- Nginx config validation ---
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+--- Nginx Host-based routing sanity ---
+  Host: gateway.lanonasis.com          /health -> 301
+  Host: api.lanonasis.com              /health -> 200
+  Host: gateway.connectionpoint.tech   /health -> 301
+  Host: mcp1.lanonasis.com             /health -> 301
+
+--- Nginx sites-enabled ---
+api.lanonasis.com.conf
+auth.connectionpoint.dev.conf
+control-room.connectionpoint.tech.conf
+default
+gateway.connectionpoint.tech.conf
+gateway.lanonasis.com.conf
+mcp.connectionpoint.tech
+mcp1.lanonasis.com.conf

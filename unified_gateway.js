@@ -332,9 +332,46 @@ class UnifiedGateway {
         this.app.use('/api/', apiLimiter);
         this.app.use('/mcp', mcpLimiter);
 
-        // Request logging
+        // Request logging — single line per request, includes real client IP,
+        // status code, duration, and UA. Designed for human scan + grep.
         this.app.use((req, res, next) => {
-            console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+            const start = Date.now();
+            const clientIp =
+                req.ip ||
+                (typeof req.headers['x-forwarded-for'] === 'string'
+                    ? req.headers['x-forwarded-for'].split(',')[0].trim()
+                    : req.socket?.remoteAddress) ||
+                '-';
+            const ua = (req.headers['user-agent'] || '-').toString().slice(0, 80);
+
+            // Escape user-supplied values before log interpolation: quotes,
+            // backslashes, and control characters can break log parsing or
+            // log-injection tools.
+            const escaped = (v) => {
+                const s = String(v);
+                return s
+                    .replace(/\\/g, '\\\\')
+                    .replace(/"/g, '\\"')
+                    .replace(/\n/g, '\\n')
+                    .replace(/\r/g, '\\r')
+                    .replace(/\t/g, '\\t')
+                    .replace(/[\x00-\x1f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+            };
+            const escapedUa = escaped(ua);
+            const escapedIp = escaped(clientIp);
+            const escapedPath = escaped(req.path);
+
+            res.on('finish', () => {
+                const duration = Date.now() - start;
+                // pad method column for tail -f readability
+                const method = (req.method || '?').padEnd(6);
+                const status = String(res.statusCode);
+                console.log(
+                    `${new Date().toISOString()} ${method} ${escapedPath} ` +
+                    `ip=${escapedIp} status=${status} dur=${duration}ms ua="${escapedUa}"`
+                );
+            });
+
             next();
         });
 

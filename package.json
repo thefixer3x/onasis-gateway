@@ -130,6 +130,5 @@
       "unified_gateway.js",
       "api_server.js"
     ]
-  },
-  "type": "module"
+  }
 }
