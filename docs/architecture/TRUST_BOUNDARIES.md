@@ -126,15 +126,25 @@ async function resolveUserContext(req: Request): Promise<UserContext | null> {
   if (!token) return null;
 
   // Delegate ALL validation to auth-gateway
-  const response = await fetch('http://127.0.0.1:4000/v1/auth/session', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  // AbortSignal ensures transport/timeout errors fail closed rather than hanging
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch('http://127.0.0.1:4000/v1/auth/session', {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
 
-  if (!response.ok) return null;
+    if (!response.ok) return null;
 
-  // Return ONLY what auth-gateway verified
-  const { user_id, email, role, scopes, session_id } = await response.json();
-  return { userId: user_id, email, role, scopes, sessionId: session_id };
+    // Return ONLY what auth-gateway verified
+    const { user_id, email, role, scopes, session_id } = await response.json();
+    return { userId: user_id, email, role, scopes, sessionId: session_id };
+  } catch (error) {
+    // Transport, timeout, or parse errors → fail closed (return null)
+    return null;
+  }
 }
 ```
 
@@ -201,12 +211,19 @@ proxy_set_header X-Session-Id "";
 ```typescript
 // Before forwarding to any internal service, strip external identity claims
 function sanitizeIncomingHeaders(headers: Headers): Headers {
+  // Normalize header names to lowercase for case-insensitive removal
+  // (HTTP header names are case-insensitive per RFC 7230 §3.2).
+  const sensitive = [
+    'x-user-id', 'x-user-email', 'x-user-role',
+    'x-scopes', 'x-session-id'
+  ];
+  
   const sanitized = new Headers(headers);
-  sanitized.delete('X-User-Id');
-  sanitized.delete('X-User-Email');
-  sanitized.delete('X-User-Role');
-  sanitized.delete('X-Scopes');
-  sanitized.delete('X-Session-Id');
+  for (const h of sanitized.keys()) {
+    if (sensitive.includes(h.toLowerCase())) {
+      sanitized.delete(h);
+    }
+  }
   return sanitized;
 }
 

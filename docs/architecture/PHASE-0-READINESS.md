@@ -33,12 +33,11 @@
 | 0.4 | Test upstream `/health` from within VPS | ✅ Pass | :3000 → 200 (19ms), :4000 → 200 (51ms), :3001 → 200 (26ms) |
 | 0.5 | Test Nginx Host-based routing | ✅ Pass (with note) | `Host: api.lanonasis.com /health` → 200; `Host: gateway.lanonasis.com /health` → 301 (correct HTTP→HTTPS redirect) |
 | 0.6 | Snippets (`proxy-headers.conf`, `cors.conf`) present | ⏸ Pending VPS verification | Reference copies exist in `docs/architecture/nginx/snippets/`; deploy target is `/etc/nginx/snippets/`. Verify they are actually deployed and included in the active Nginx configuration before marking pass. |
-| 0.7 | Log rotation configured | ✅ Pass | `pm2-logrotate` v3.0.0 online (PID 722893) |
+| 0.7 | Log rotation configured | ⏸ Pending VPS verification | Verify the applicable Nginx logrotate rule covers the required `/var/log/nginx/gateway_*.log` files; mark it passed only when that rule and its matching log paths are confirmed. |
 | 0.8 | Fail2ban jails for auth endpoints | ⏸ Deferred to Phase 2 | Tracked in centralisation-tasks.md; not a Phase 0 gate |
 | 0.9 | DNS TTL ≤ 300s for cutover domains | ⏸ Pre-cutover decision (O6) | Awaiting board pick on `BOARD-DECISIONS-REQUIRED.md` O6 |
 
-**Phase 0 gate result: ✅ All mechanical Phase 0 items pass.** Two items
-(fail2ban, DNS TTL) are explicitly board-gated and tracked separately.
+**Phase 0 gate result: ⏸ Pending.** Item 0.6 (VPS snippet deployment) and item 0.7 (Nginx logrotate) remain unresolved. Mark the gate passed only after VPS snippets, active Nginx includes, and log paths are verified. Two other items (fail2ban, DNS TTL) are explicitly board-gated and tracked separately.
 
 ---
 

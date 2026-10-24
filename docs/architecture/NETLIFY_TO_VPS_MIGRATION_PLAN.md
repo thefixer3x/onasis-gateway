@@ -139,12 +139,22 @@ ENDPOINTS=(
 )
 
 for endpoint in "${ENDPOINTS[@]}"; do
-    netlify_code=$(curl -s -o /dev/null -w "%{http_code}" "$NETLIFY_BASE$endpoint")
-    gateway_code=$(curl -s -o /dev/null -w "%{http_code}" "$GATEWAY_BASE$endpoint")
+    netlify_raw=$(curl -s -D- -o /tmp/netlify_body.tmp "$NETLIFY_BASE$endpoint")
+    gateway_raw=$(curl -s -D- -o /tmp/gateway_body.tmp "$GATEWAY_BASE$endpoint")
+    netlify_code=$(echo "$netlify_raw" | grep -oP 'HTTP/[.0-9]+ \K\d+')
+    gateway_code=$(echo "$gateway_raw" | grep -oP 'HTTP/[.0-9]+ \K\d+')
+    
     if [ "$netlify_code" != "$gateway_code" ]; then
         echo "MISMATCH: $endpoint — Netlify=$netlify_code Gateway=$gateway_code"
     else
-        echo "OK: $endpoint — $gateway_code"
+        # Compare representative body/headers if status matches
+        netlify_headers=$(echo "$netlify_raw" | grep -iE '^(content-type|x-|cache-control):' | sort)
+        gateway_headers=$(echo "$gateway_raw" | grep -iE '^(content-type|x-|cache-control):' | sort)
+        if [ "$netlify_code" = "000" ] || [ "$gateway_code" = "000" ]; then
+            echo "FAIL: $endpoint — transport error (Netlify=$netlify_code, Gateway=$gateway_code)"
+        else
+            echo "OK: $endpoint — $gateway_code"
+        fi
     fi
 done
 ```
@@ -276,11 +286,18 @@ After cutover:
 1. **T-30min:** Notify API consumers of maintenance window
 2. **T-15min:** Verify all VPS services healthy (`gateway-health.sh`)
 3. **T-1h (pre-window):** Reduce DNS TTL to 60s on `api.lanonasis.com`;
-   verify active TTL with `dig api.lanonasis.com +noall +answer | grep -oP '\d+$'`
-   before entering the maintenance window. A TTL lowered at T-10min gives
-   upstream resolvers no time to refresh, so a rollback would still route through
-   stale cached records — never guarantee a 60-second failover from the step itself.
-4. **T-0:** Update `api.lanonasis.com` DNS record to VPS IP
+   verify active TTL with `dig api.lanonasis.com +noall +answer | awk '{print $2}'`
+   before entering the maintenance window. The second column of `dig +answer`
+   is the TTL; trailing digits from the record value are irrelevant. A TTL
+   lowered at T-10min gives upstream resolvers no time to refresh, so a
+   rollback would still route through stale cached records — never guarantee a
+   60-second failover from the step itself.
+4. **Pre-cutover gates (before T-0):**
+   - Add `api.lanonasis.com` to Nginx `server_name` and verify `nginx -t` passes.
+   - Verify the SSL certificate covers `api.lanonasis.com` (`openssl s_client -connect ... -servername api.lanonasis.com`).
+   - Test HTTPS routing for `api.lanonasis.com` from outside the VPS.
+   Perform all three before changing DNS; keep the existing DNS update as the cutover action.
+5. **T-0:** Update `api.lanonasis.com` DNS record to VPS IP
 5. **T+5min:** Verify DNS propagation (`dig api.lanonasis.com`)
 6. **T+10min:** Run full parity test comparing `api.lanonasis.com` (now VPS) responses
 7. **T+30min:** Monitor error rates, latency, auth flows
