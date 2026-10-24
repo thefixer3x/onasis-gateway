@@ -158,8 +158,9 @@ unified intelligence route exists: PASS
 
 ## Phase 2 unblock gate
 
-The Phase 1 gate is now green at the live gateway. Phase 2 (DNS cutover of
-`api.lanonasis.com` from Netlify to the VPS) is **blocked on board
+The Phase 1 gate is now green at the live gateway. Phase 2 (auth-only DNS
+cutover: switch `api.lanonasis.com` from Netlify to the VPS **with Nginx
+proxying only `/api/v1/auth/*`**) is **blocked on board
 approval**, not on a code or deploy defect. The unblock gate is:
 
 1. CEO agent review of the SDK-17 branch against `NETLIFY_TO_VPS_MIGRATION_PLAN.md`,
@@ -167,10 +168,18 @@ approval**, not on a code or deploy defect. The unblock gate is:
    and `TRUST_BOUNDARIES.md`.
 2. `local-board` human approval of the SDK-17 executionPolicy stage
    (`review(by CEO) -> approval(by local-board)`).
+3. A recorded **human** approval decision (not a board default) before changing
+   any production traffic — board decisions inform the choice but do not
+   authorise it.
 
 Until both clear, the live `api.lanonasis.com` continues to serve from
 Netlify and `gateway.lanonasis.com` is the shadow. No production traffic
 is at risk from this state.
+
+Full DNS cutover of `api.lanonasis.com` (all routes, not just auth) is reserved
+for Phase 5 after the MaaS and MCP checks, because a premature full cutover
+would route database queries, MCP streams, and SSE connections through the VPS
+before they are production-ready.
 
 ---
 
@@ -207,10 +216,9 @@ Runtime note: .env.production.unified + ecosystem.unified.config.js are kept as 
 runtime config (intentionally untracked, per Phase-1 doc above) — they are NOT part of the
 SDK-17 branch on origin and were left out of the SDK-17 commit scope.
 
-Next gate (Phase 2 — DNS cutover of api.lanonasis.com to gateway.lanonasis.com):
-board picks on O1-O7 (port authority, enterprise-mcp tokens, nginx topology, route-map
-dual-emit, SSL provider, DNS TTL, Netlify decommission window). Defaults recorded in
-BOARD-DECISIONS-REQUIRED.md allow CTO to proceed mechanically if the board defers.
+Next gate (Phase 2 — auth-only DNS cutover of `api.lanonasis.com`):
+board picks on O1–O7. Board defaults inform the choice but **do not
+authorise cutover** — a recorded human approval is required.
 
 ## Stage 1 — CEO approval (2026-07-12T07:20Z)
 

@@ -249,7 +249,11 @@ For internal service-to-service calls (central-gateway → enterprise-mcp, centr
 1. **Network boundary**: All internal services listen on `127.0.0.1` only (not `0.0.0.0`)
 2. **Shared secret** (future): A rotating internal HMAC token passed as `X-Internal-Auth` for service identity verification
 
-Until shared secret is implemented, services trust requests from `127.0.0.1` that carry valid `X-User-*` headers set by central-gateway.
+Until shared secret is implemented, services MUST require a service credential
+or signed identity assertion (e.g. JWT, HMAC token) before trusting
+`127.0.0.1` or `X-User-*` headers. `127.0.0.1` alone, or `X-User-*` headers
+without verification, is not proof of identity and must not be used to authorise
+requests.
 
 ---
 

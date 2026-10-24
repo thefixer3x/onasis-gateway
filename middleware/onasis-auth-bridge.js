@@ -417,9 +417,23 @@ class OnasisAuthBridge {
       // `Connection: keep-alive` failed both attempts and returned
       // 500 AUTH_PROXY_ERROR. Observed since 2026-08-15, 10 occurrences on
       // 2026-09-11 alone.
-      for (const h of ['host', 'content-length', 'connection', 'keep-alive',
-                       'proxy-authenticate', 'proxy-authorization', 'te',
-                       'trailer', 'transfer-encoding', 'upgrade']) {
+      //
+      // Parse the Connection header's comma-separated values first, because
+      // Connection can list multiple headers to remove (e.g.
+      // "keep-alive, Upgrade"). Then delete each nominated header plus the
+      // fixed hop-by-hop set.
+      const hopByHop = new Set([
+        'host', 'content-length', 'connection', 'keep-alive',
+        'proxy-authenticate', 'proxy-authorization', 'te',
+        'trailer', 'transfer-encoding', 'upgrade'
+      ]);
+      const connectionValues = headers['connection'];
+      if (typeof connectionValues === 'string') {
+        for (const v of connectionValues.split(',').map(s => s.trim().toLowerCase())) {
+          if (v) hopByHop.add(v);
+        }
+      }
+      for (const h of hopByHop) {
         delete headers[h];
       }
 

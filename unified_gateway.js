@@ -344,14 +344,31 @@ class UnifiedGateway {
                 '-';
             const ua = (req.headers['user-agent'] || '-').toString().slice(0, 80);
 
+            // Escape user-supplied values before log interpolation: quotes,
+            // backslashes, and control characters can break log parsing or
+            // log-injection tools.
+            const escaped = (v) => {
+                const s = String(v);
+                return s
+                    .replace(/\\/g, '\\\\')
+                    .replace(/"/g, '\\"')
+                    .replace(/\n/g, '\\n')
+                    .replace(/\r/g, '\\r')
+                    .replace(/\t/g, '\\t')
+                    .replace(/[\x00-\x1f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+            };
+            const escapedUa = escaped(ua);
+            const escapedIp = escaped(clientIp);
+            const escapedPath = escaped(req.path);
+
             res.on('finish', () => {
                 const duration = Date.now() - start;
                 // pad method column for tail -f readability
                 const method = (req.method || '?').padEnd(6);
                 const status = String(res.statusCode);
                 console.log(
-                    `${new Date().toISOString()} ${method} ${req.path} ` +
-                    `ip=${clientIp} status=${status} dur=${duration}ms ua="${ua}"`
+                    `${new Date().toISOString()} ${method} ${escapedPath} ` +
+                    `ip=${escapedIp} status=${status} dur=${duration}ms ua="${escapedUa}"`
                 );
             });
 

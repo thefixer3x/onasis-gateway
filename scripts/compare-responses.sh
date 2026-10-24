@@ -30,6 +30,11 @@ fi
 
 # Read-only endpoints that must remain reachable during shadow mode.
 # Health/status endpoints only — never compare authenticated or mutating paths.
+#
+# NOTE: this is a limited smoke check (5 endpoints). It does NOT cover
+# authenticated routes, WebSocket handshakes, SSE streams, or adapter
+# response bodies. A separate all-route parity gate is required for
+# production cutover decisions. See BOARD-DECISIONS-REQUIRED.md O1.
 ENDPOINTS=(
   "/health"
   "/api/v1/auth/status"

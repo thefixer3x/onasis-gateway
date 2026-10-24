@@ -275,14 +275,18 @@ After cutover:
 
 1. **T-30min:** Notify API consumers of maintenance window
 2. **T-15min:** Verify all VPS services healthy (`gateway-health.sh`)
-3. **T-10min:** Reduce DNS TTL to 60s on `api.lanonasis.com`
+3. **T-1h (pre-window):** Reduce DNS TTL to 60s on `api.lanonasis.com`;
+   verify active TTL with `dig api.lanonasis.com +noall +answer | grep -oP '\d+$'`
+   before entering the maintenance window. A TTL lowered at T-10min gives
+   upstream resolvers no time to refresh, so a rollback would still route through
+   stale cached records — never guarantee a 60-second failover from the step itself.
 4. **T-0:** Update `api.lanonasis.com` DNS record to VPS IP
 5. **T+5min:** Verify DNS propagation (`dig api.lanonasis.com`)
 6. **T+10min:** Run full parity test comparing `api.lanonasis.com` (now VPS) responses
 7. **T+30min:** Monitor error rates, latency, auth flows
 8. **T+2h:** If stable, declare cutover complete
 9. **T+24h:** Archive Netlify configs (keep for 30 days)
-10. **T+7d:** If no issues, decommission Netlify project
+10. **T+35d:** If no issues since decommission, archive Netlify project
 
 #### Tasks
 

@@ -32,7 +32,7 @@
 | 0.3 | Verify SSL certs exist for `gateway.lanonasis.com` | ✅ Pass | `/etc/letsencrypt/live/gateway.lanonasis.com/` present (cert expires 2026-08-22) |
 | 0.4 | Test upstream `/health` from within VPS | ✅ Pass | :3000 → 200 (19ms), :4000 → 200 (51ms), :3001 → 200 (26ms) |
 | 0.5 | Test Nginx Host-based routing | ✅ Pass (with note) | `Host: api.lanonasis.com /health` → 200; `Host: gateway.lanonasis.com /health` → 301 (correct HTTP→HTTPS redirect) |
-| 0.6 | Snippets (`proxy-headers.conf`, `cors.conf`) present | ✅ Pass | `docs/architecture/nginx/snippets/{proxy-headers,cors}.conf` reference copies exist; deploy target is `/etc/nginx/snippets/` |
+| 0.6 | Snippets (`proxy-headers.conf`, `cors.conf`) present | ⏸ Pending VPS verification | Reference copies exist in `docs/architecture/nginx/snippets/`; deploy target is `/etc/nginx/snippets/`. Verify they are actually deployed and included in the active Nginx configuration before marking pass. |
 | 0.7 | Log rotation configured | ✅ Pass | `pm2-logrotate` v3.0.0 online (PID 722893) |
 | 0.8 | Fail2ban jails for auth endpoints | ⏸ Deferred to Phase 2 | Tracked in centralisation-tasks.md; not a Phase 0 gate |
 | 0.9 | DNS TTL ≤ 300s for cutover domains | ⏸ Pre-cutover decision (O6) | Awaiting board pick on `BOARD-DECISIONS-REQUIRED.md` O6 |
@@ -69,7 +69,11 @@ Re-run with:
 ```bash
 ssh lanonasis-main 'bash /root/scripts/gateway-health.sh' \
   || ssh lanonasis-main 'pm2 list && nginx -t && \
-     for p in 3000 4000 3001; do curl -s -o /dev/null -w ":%s -> %%{http_code}\n" -w "" --max-time 5 http://127.0.0.1:${p}/health; done'
+     for p in 3000 4000 3001; do \
+       code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:${p}/health 2>/dev/null); \
+       echo " :${p}/${code}"; \
+       [ "${code}" = "200" ] || exit 1; \
+     done'
 ```
 
 (Deployment of `gateway-health.sh` to VPS is a Phase 1 step that depends
