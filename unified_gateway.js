@@ -12,7 +12,15 @@
  * This allows both services to coexist on the same port without conflicts.
  */
 
-require('dotenv').config();
+// Load .env once in production. Skip in test runners — tests inject env explicitly
+// and would be undone if dotenv re-reads .env on every module reload.
+if (!process.env.__DOTENV_LOADED__) {
+    const isTest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
+    if (!isTest) {
+        require('dotenv').config();
+    }
+    process.env.__DOTENV_LOADED__ = 'true';
+}
 
 const decodeJwtPayload = (token) => {
     if (!token || typeof token !== 'string') return null;

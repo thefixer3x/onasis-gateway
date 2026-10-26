@@ -749,15 +749,12 @@ class AbstractedAPIEndpoints {
 
   async handleMemoryOperation(req, res) {
     try {
-<<<<<<< HEAD
-=======
       // Enforce authentication before processing memory operations
       const authorized = await this.enforceIdentity(req, res);
       if (!authorized) {
         return; // Response already sent with 401
       }
 
->>>>>>> origin/main
       const { operation } = req.params;
       const { ...input } = req.body;
       const context = this.buildContext(req);
@@ -795,12 +792,7 @@ class AbstractedAPIEndpoints {
         }
       });
     } catch (error) {
-<<<<<<< HEAD
       res.status(this.getStatusCode(error)).json({
-=======
-      const statusCode = this.getStatusCodeFromError(error);
-      res.status(statusCode).json({
->>>>>>> origin/main
         success: false,
         error: error.message,
         code: error.code,

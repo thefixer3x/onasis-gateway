@@ -1,0 +1,27 @@
+# gitleaks configuration, used by .github/workflows/gitleaks.yml.
+# Default gitleaks rules (incl. `jwt`) plus project-specific credential shapes.
+# Run locally:  gitleaks git . --config .gitleaks.toml --redact --log-opts="origin/main..HEAD"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret API key (sb_secret_...)"
+regex = '''\bsb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "lanonasis-api-key"
+description = "Lanonasis API key (lano_...)"
+regex = '''\blano_[A-Za-z0-9_-]{24,}'''
+keywords = ["lano_"]
+
+# Allowlist: ONLY known test fixtures whose values were checked to be fake
+# (placeholder strings such as test-*, pk_test_*, sk-test-*, 1234abcd...).
+# Do not add documentation, scripts, or .env files here; fix them instead.
+[[allowlists]]
+description = "Known fake test fixtures (path + fake value pattern)"
+paths = [
+  '''^test-auth-integration\.js$''',
+]
