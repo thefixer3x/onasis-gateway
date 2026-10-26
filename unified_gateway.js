@@ -1962,12 +1962,19 @@ class UnifiedGateway {
             }
 
             if (method === 'tools/call') {
-                const allowed = await this.enforceIdentity(req, res, {
-                    asJsonRpc: true,
-                    rpcId: req.body.id
-                });
-                if (!allowed) {
-                    return;
+                // Meta-tools (gateway-*) are discovery-only: allow without auth.
+                // Actual tool execution (via gateway-execute) requires auth.
+                const toolName = (params && params.name) || '';
+                const isMetaTool = toolName.startsWith('gateway-');
+
+                if (!isMetaTool) {
+                    const allowed = await this.enforceIdentity(req, res, {
+                        asJsonRpc: true,
+                        rpcId: req.body.id
+                    });
+                    if (!allowed) {
+                        return;
+                    }
                 }
             }
 
