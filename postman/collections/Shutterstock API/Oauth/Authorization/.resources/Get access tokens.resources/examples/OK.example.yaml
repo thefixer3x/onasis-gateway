@@ -6,7 +6,7 @@ request:
     type: urlencoded
     content:
       - key: client_id
-        value: 141024g14g28104gff1h
+        value: "[REMOVED_FOR_SECURITY - Use real client_id in Postman]"
         description: (Required) Client ID (Consumer Key) of your application
 response:
   statusCode: 200
