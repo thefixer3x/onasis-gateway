@@ -179,4 +179,4 @@ curl -X POST http://localhost:3001/api/execute/stripe-api/create-payment \
 
 - [Migration Handler Authoring Guide](./docs/upgrade/MIGRATION-HANDLER-AUTHORING.md) — how to write up/down migration handlers with rollback contracts
 - [Onasis Gateway docs](./docs/) — operating docs, architecture, Postman playbook
-- [Lan Onasis Monorepo](https://github.com/lanonasis/lan-onasis-monorepo) — shared packages, apps, and SDKs; see its [RELEASE.md](./docs/RELEASE.md) and [sync-security-packages-CONTRACT.md](./docs/sync-security-packages-CONTRACT.md) for the security-package sync contract
+- [Lan Onasis Monorepo](https://github.com/lanonasis/lan-onasis-monorepo) — shared packages, apps, and SDKs; see its [RELEASE.md](https://github.com/lanonasis/lan-onasis-monorepo/blob/main/docs/RELEASE.md) and [sync-security-packages-CONTRACT.md](https://github.com/lanonasis/lan-onasis-monorepo/blob/main/docs/sync-security-packages-CONTRACT.md) for the security-package sync contract

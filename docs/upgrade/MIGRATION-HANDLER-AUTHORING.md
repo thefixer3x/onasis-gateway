@@ -172,7 +172,9 @@ node -e "
 
 ## Cross-links
 
-- Onasis Gateway README → [README.md](../README.md)
-- Onasis Gateway CLAUDE.md → [CLAUDE.md](../CLAUDE.md)
-- Monorepo release docs → `/Users/seyederick/DevOps/projects/active/lan-onasis-monorepo/docs/RELEASE.md`
-- Monorepo migration runbooks → `/Users/seyederick/DevOps/projects/active/lan-onasis-monorepo/docs/migrations/`
+- Onasis Gateway README → [../../README.md](../../README.md)
+- Onasis Gateway CLAUDE.md → [../../CLAUDE.md](../../CLAUDE.md)
+- Monorepo release docs → [docs/RELEASE.md](../../../lan-onasis-monorepo/docs/RELEASE.md) — package publish flow
+- Monorepo sync contract → [docs/sync-security-packages-CONTRACT.md](../../../lan-onasis-monorepo/docs/sync-security-packages-CONTRACT.md) — bidirectional sync
+- Monorepo migration runbooks → [docs/migrations/](../../../lan-onasis-monorepo/docs/migrations/)
+- [Version Manager Migration Guide](../MIGRATION_HANDLER_AUTHORING.md) — runtime migration handlers

@@ -513,5 +513,5 @@ vm.registerMigrationHandler('test', '1.0.0', '2.0.0', async (data) => {
 ## Related Documentation
 
 - [Version Manager Hardening](./version-manager-hardening.md) — Extended Version Manager features
-- [Release Process](../../lan-onasis-monorepo/docs/RELEASE.md) — Publishing workflow
-- [Sync Script Contract](../../lan-onasis-monorepo/scripts/sync-security-packages.md) — Package synchronization
+- [Monorepo Release Process](../../lan-onasis-monorepo/docs/RELEASE.md) — Publishing workflow
+- [Sync Script Contract](../../lan-onasis-monorepo/docs/sync-security-packages-CONTRACT.md) — Package synchronization

@@ -1,0 +1,12 @@
+=== response parity: netlify vs gateway ===
+netlify=https://api.lanonasis.com  gateway=https://gateway.lanonasis.com
+probe time: 2026-07-12T07:05:22Z
+
+  [  OK   ] /health                                  200
+  [  OK   ] /api/v1/auth/status                      200
+  [  OK   ] /api/v1/memory/health                    200
+  [  OK   ] /api/v1/intelligence/health-check        401
+  [  OK   ] /api/adapters                            404
+
+summary: 5/5 matched
+divergence: 0.00% (gate: <1.0%)

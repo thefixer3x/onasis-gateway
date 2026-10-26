@@ -70,7 +70,7 @@ Message: new row for relation "users" violates check constraint "users_email_che
 
 **Service Role Key** (from `/opt/lanonasis/mcp-core/.env.production`):
 ```
-***REVOKED_SUPABASE_SERVICE_ROLE_c2dc9702c6b01ed1***
+[REMOVED FOR SECURITY - See .env.production]
 ```
 
 **Test Command**:

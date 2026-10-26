@@ -219,6 +219,7 @@ class UnifiedGateway {
         this.abstractedAPI = new AbstractedAPIEndpoints({
             getAdapterRegistry: () => this.adapterRegistry
         });
+        this.abstractedAPI.setGateway(this);
         this.authBridge = new OnasisAuthBridge({
             authApiUrl: process.env.AUTH_GATEWAY_URL
                 || process.env.ONASIS_AUTH_API_URL
@@ -331,9 +332,46 @@ class UnifiedGateway {
         this.app.use('/api/', apiLimiter);
         this.app.use('/mcp', mcpLimiter);
 
-        // Request logging
+        // Request logging — single line per request, includes real client IP,
+        // status code, duration, and UA. Designed for human scan + grep.
         this.app.use((req, res, next) => {
-            console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+            const start = Date.now();
+            const clientIp =
+                req.ip ||
+                (typeof req.headers['x-forwarded-for'] === 'string'
+                    ? req.headers['x-forwarded-for'].split(',')[0].trim()
+                    : req.socket?.remoteAddress) ||
+                '-';
+            const ua = (req.headers['user-agent'] || '-').toString().slice(0, 80);
+
+            // Escape user-supplied values before log interpolation: quotes,
+            // backslashes, and control characters can break log parsing or
+            // log-injection tools.
+            const escaped = (v) => {
+                const s = String(v);
+                return s
+                    .replace(/\\/g, '\\\\')
+                    .replace(/"/g, '\\"')
+                    .replace(/\n/g, '\\n')
+                    .replace(/\r/g, '\\r')
+                    .replace(/\t/g, '\\t')
+                    .replace(/[\x00-\x1f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+            };
+            const escapedUa = escaped(ua);
+            const escapedIp = escaped(clientIp);
+            const escapedPath = escaped(req.path);
+
+            res.on('finish', () => {
+                const duration = Date.now() - start;
+                // pad method column for tail -f readability
+                const method = (req.method || '?').padEnd(6);
+                const status = String(res.statusCode);
+                console.log(
+                    `${new Date().toISOString()} ${method} ${escapedPath} ` +
+                    `ip=${escapedIp} status=${status} dur=${duration}ms ua="${escapedUa}"`
+                );
+            });
+
             next();
         });
 
@@ -727,6 +765,88 @@ class UnifiedGateway {
         return headers;
     }
 
+    resolveSupabasePublicRouteUrl(edgeKind = 'default') {
+        if (edgeKind === 'intelligence') {
+            const intelligenceUrl = process.env.SUPABASE_INTEL_EDGE_URL
+                || process.env.SUPABASE_INTELLIGENCE_EDGE_URL
+                || process.env.SUPABASE_INTELLIGENCE_URL
+                || '';
+            if (intelligenceUrl) {
+                return intelligenceUrl.replace(/\/+$/, '');
+            }
+        }
+        return this.resolveSupabaseUrl();
+    }
+
+    async proxyPublicSupabaseFunction(req, res, functionName, options = {}) {
+        await this.ensureAdaptersReady();
+
+        if (!this.isValidFunctionSlug(functionName)) {
+            return res.status(400).json({
+                error: 'Invalid function name',
+                requestId: req.id
+            });
+        }
+
+        const supabaseUrl = this.resolveSupabasePublicRouteUrl(options.edgeKind || 'default');
+        if (!supabaseUrl) {
+            return res.status(503).json({
+                error: 'SUPABASE_URL is not configured',
+                requestId: req.id
+            });
+        }
+
+        const targetUrl = new URL(`${supabaseUrl}/functions/v1/${functionName}`);
+        for (const [key, value] of Object.entries(req.query || {})) {
+            if (Array.isArray(value)) {
+                for (const item of value) targetUrl.searchParams.append(key, `${item}`);
+            } else if (value !== undefined && value !== null) {
+                targetUrl.searchParams.set(key, `${value}`);
+            }
+        }
+
+        const method = (req.method || 'GET').toUpperCase();
+        const requestHeaders = {
+            ...this.getForwardHeadersForSupabaseProxy(req),
+            'Content-Type': getHeaderValue(req.headers, 'content-type') || 'application/json'
+        };
+        if (getHeaderValue(req.headers, 'accept')) {
+            requestHeaders.Accept = getHeaderValue(req.headers, 'accept');
+        }
+
+        const shouldSendBody = !['GET', 'HEAD'].includes(method);
+        const hasBody = req.body !== undefined && req.body !== null && Object.keys(req.body || {}).length > 0;
+
+        try {
+            const fetchOptions = {
+                method,
+                headers: requestHeaders
+            };
+            if (shouldSendBody && hasBody) {
+                fetchOptions.body = JSON.stringify(req.body);
+            }
+
+            const upstreamResponse = await fetchWithTimeout(targetUrl.toString(), fetchOptions, options.timeoutMs || 30000);
+
+            const contentType = upstreamResponse.headers.get('content-type') || 'application/json';
+            const text = await upstreamResponse.text();
+
+            res.setHeader('X-Gateway-Route', 'central-public-supabase-proxy');
+            res.setHeader('X-Upstream-Target', 'supabase-edge-function');
+            res.setHeader('X-Upstream-Function', functionName);
+            res.setHeader('Content-Type', contentType);
+
+            return res.status(upstreamResponse.status).send(text);
+        } catch (error) {
+            return res.status(502).json({
+                error: 'Supabase function proxy failed',
+                message: error.message,
+                function: functionName,
+                requestId: req.id
+            });
+        }
+    }
+
     async verifyRequestIdentity(req) {
         if (!this.enforceIdentityVerification) {
             return { ok: true, method: 'disabled' };
@@ -825,7 +945,13 @@ class UnifiedGateway {
                 );
 
                 const data = await response.json().catch(() => ({}));
-                if (response.ok) {
+                // Some auth-gateway verify endpoints (e.g. /v1/auth/verify-token) report
+                // an invalid/expired credential as HTTP 200 with `valid: false` in the
+                // body rather than a non-2xx status. Checking response.ok alone treats
+                // any 2xx as success and lets a garbage bearer token through — require
+                // the body to not explicitly say invalid too.
+                const bodyRejected = data && data.valid === false;
+                if (response.ok && !bodyRejected) {
                     return {
                         ok: true,
                         method: candidate.source,
@@ -835,17 +961,19 @@ class UnifiedGateway {
 
                 lastFailure = {
                     ok: false,
-                    status: response.status || 401,
+                    status: bodyRejected ? 401 : (response.status || 401),
                     error: data.error || 'Unauthorized'
                 };
 
                 const errorText = typeof data.error === 'string' ? data.error.toLowerCase() : '';
                 const retryable =
-                    response.status === 404
-                    || response.status === 405
-                    || response.status >= 500
-                    || errorText.includes('no token provided')
-                    || errorText.includes('not implemented');
+                    !bodyRejected && (
+                        response.status === 404
+                        || response.status === 405
+                        || response.status >= 500
+                        || errorText.includes('no token provided')
+                        || errorText.includes('not implemented')
+                    );
 
                 if (!retryable) {
                     // Before giving up, try Supabase JWT verification as backward-compat fallback.
@@ -1132,6 +1260,115 @@ class UnifiedGateway {
             });
         });
 
+        // ==================== AGGREGATED UPSTREAM HEALTH ====================
+        this.app.get('/health/full', async (req, res) => {
+            await this.ensureAdaptersReady();
+            const selfUptime = Math.floor((Date.now() - this.startTime) / 1000);
+            const timeout = parseInt(process.env.HEALTH_TIMEOUT_MS || '4000', 10);
+
+            const upstreamTargets = [
+                { name: 'auth_gateway', url: process.env.HEALTH_AUTH_URL || 'http://127.0.0.1:4000/health', label: 'Auth Gateway' },
+                { name: 'mcp_core', url: process.env.HEALTH_MCP_CORE_URL || 'http://127.0.0.1:3001/health', label: 'MCP Core' },
+                { name: 'supabase_edge', url: null, label: 'Supabase Edge (cached)' }
+            ];
+
+            const upstreamResults = await Promise.allSettled(
+                upstreamTargets.map(async (target) => {
+                    if (!target.url) {
+                        return { name: target.name, label: target.label, status: 'healthy', latencyMs: 0, note: 'cached discovery' };
+                    }
+                    const start = Date.now();
+                    try {
+                        const controller = new AbortController();
+                        const timer = setTimeout(() => controller.abort(), timeout);
+                        const response = await fetch(target.url, {
+                            signal: controller.signal,
+                            headers: { 'User-Agent': 'gateway-health-check/1.0' }
+                        });
+                        clearTimeout(timer);
+                        const latencyMs = Date.now() - start;
+                        let body = {};
+                        try { body = await response.json(); } catch {}
+                        return {
+                            name: target.name,
+                            label: target.label,
+                            status: response.ok ? 'healthy' : 'degraded',
+                            httpStatus: response.status,
+                            latencyMs,
+                            detail: body.status || body
+                        };
+                    } catch (err) {
+                        return {
+                            name: target.name,
+                            label: target.label,
+                            status: 'unreachable',
+                            latencyMs: Date.now() - start,
+                            error: err.cause?.message || err.message
+                        };
+                    }
+                })
+            );
+
+            const upstreams = upstreamResults.map((r, i) =>
+                r.status === 'fulfilled' ? r.value : { name: upstreamTargets[i].name, label: upstreamTargets[i].label, status: 'error', error: String(r.reason) }
+            );
+
+            const allHealthy = upstreams.every(u => u.status === 'healthy' || u.name === 'supabase_edge');
+            const overallStatus = allHealthy ? 'healthy' : 'degraded';
+
+            res.status(allHealthy ? 200 : 503).json({
+                status: overallStatus,
+                timestamp: new Date().toISOString(),
+                uptime: selfUptime,
+                central_gateway: {
+                    status: 'healthy',
+                    uptime: selfUptime,
+                    adapters: this.adapters.size,
+                    tools: this.getTotalTools()
+                },
+                upstreams: upstreams.reduce((acc, u) => { acc[u.name] = u; return acc; }, {})
+            });
+        });
+
+        // ==================== GATEWAY STATUS ====================
+        this.app.get('/api/v1/status', async (req, res) => {
+            await this.ensureAdaptersReady();
+            const supabaseAdapter = this.adapters.get('supabase-edge-functions');
+            const uptime = Math.floor((Date.now() - this.startTime) / 1000);
+
+            let supabaseHealth = null;
+            if (supabaseAdapter && supabaseAdapter.getStatus) {
+                try { supabaseHealth = await supabaseAdapter.getStatus(); } catch {}
+            }
+
+            res.json({
+                gateway: 'central',
+                version: '1.0.0',
+                status: 'online',
+                uptime,
+                timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV || 'development',
+                services: {
+                    api: {
+                        status: 'online',
+                        serviceCount: this.services.size
+                    },
+                    mcp: {
+                        status: 'online',
+                        adapterCount: this.adapters.size,
+                        toolCount: this.getTotalTools()
+                    },
+                    supabase: supabaseHealth ? {
+                        status: supabaseHealth.healthy ? 'online' : 'degraded',
+                        functionCount: supabaseHealth.metadata?.toolCount || 0,
+                        lastDiscovery: supabaseHealth.metadata?.lastDiscovery || null
+                    } : { status: 'unknown' }
+                },
+                routePolicy: this.routePolicyMode,
+                centralGatewayBaseUrl: this.centralGatewayBaseUrl
+            });
+        });
+
         // ==================== CENTRAL ROUTE POLICY ====================
         this.app.get('/api/v1/gateway/route-policy', async (req, res) => {
             await this.ensureAdaptersReady();
@@ -1156,6 +1393,29 @@ class UnifiedGateway {
         // Supabase /functions/v1 directly. This keeps central controls in-path.
         this.app.all('/functions/v1/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
         this.app.all('/api/v1/functions/:functionName', async (req, res) => this.proxySupabaseFunction(req, res));
+
+        // Public read-only MaaS health/status routes used by the Netlify→VPS
+        // shadow parity gate. These endpoints intentionally do not require
+        // caller credentials; the gateway injects the configured Supabase anon
+        // key exactly like the existing api.lanonasis.com Nginx bridge.
+        this.app.get('/api/v1/auth/status', async (req, res) => (
+            this.proxyPublicSupabaseFunction(req, res, 'auth-status')
+        ));
+        this.app.get('/api/v1/memory/health', async (req, res) => (
+            this.proxyPublicSupabaseFunction(req, res, 'system-health')
+        ));
+        this.app.get('/api/v1/intelligence/health-check', async (req, res) => (
+            this.proxyPublicSupabaseFunction(req, res, 'intelligence-health-check', {
+                edgeKind: 'intelligence',
+                timeoutMs: 120000
+            })
+        ));
+        this.app.get('/api/v1/intelligence/health', async (req, res) => (
+            this.proxyPublicSupabaseFunction(req, res, 'intelligence-health-check', {
+                edgeKind: 'intelligence',
+                timeoutMs: 120000
+            })
+        ));
 
         // ==================== API GATEWAY ROUTES ====================
 
@@ -1587,6 +1847,39 @@ class UnifiedGateway {
             });
         });
 
+        // ==================== MCP ADAPTER DISCOVERY ====================
+        // Mirrors /api/adapters and /api/tools in mcp_server.js (Netlify) for parity
+        this.app.get('/api/adapters', async (req, res) => {
+            await this.ensureAdaptersReady();
+            const adapterList = [];
+            for (const [name, adapter] of this.adapters.entries()) {
+                const toolCount = adapter.tools
+                    ? (Array.isArray(adapter.tools) ? adapter.tools.length : Object.keys(adapter.tools).length)
+                    : (adapter.toolCount || 0);
+                adapterList.push({
+                    name,
+                    tools: toolCount,
+                    authType: adapter.auth || adapter.authType || 'bearer',
+                    status: adapter._initialized !== false ? 'loaded' : 'unavailable'
+                });
+            }
+            res.json({ total: adapterList.length, adapters: adapterList });
+        });
+
+        this.app.get('/api/tools', async (req, res) => {
+            await this.ensureAdaptersReady();
+            let totalTools = 0;
+            const breakdown = {};
+            for (const [name, adapter] of this.adapters.entries()) {
+                const toolCount = adapter.tools
+                    ? (Array.isArray(adapter.tools) ? adapter.tools.length : Object.keys(adapter.tools).length)
+                    : (adapter.toolCount || 0);
+                totalTools += toolCount;
+                breakdown[name] = { tools: toolCount, auth: adapter.auth || adapter.authType || 'bearer' };
+            }
+            res.json({ total: totalTools, adapters: this.adapters.size, breakdown });
+        });
+
         // Add abstracted API routes (from existing MCP server).
         // /api/v1/ai/chat also exists in this router, but acts as fallback only
         // because the direct route above was mounted earlier in this file.
@@ -1929,8 +2222,7 @@ class UnifiedGateway {
     getAdapterToolCount(adapter) {
         if (!adapter) return 0;
         if (Array.isArray(adapter.tools)) return adapter.tools.length;
-        if (typeof adapter.tools === 'number') return adapter.tools;
-        if (typeof adapter.toolCount === 'number') return adapter.toolCount;
+        if (adapter.tools && typeof adapter.tools === 'object') return Object.keys(adapter.tools).length;
         return 0;
     }
 

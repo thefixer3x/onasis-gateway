@@ -21,12 +21,21 @@ class OnasisAuthBridge {
       apiKeyPath: config.apiKeyPath || process.env.ONASIS_AUTH_APIKEY_PATH || '/verify-api-key',
       projectScope: config.projectScope || 'lanonasis-maas',
       timeout: config.timeout || 10000,
-      retries: config.retries || 2
+      retries: config.retries !== undefined ? config.retries : 1,
+      apiKeyCacheTimeout: config.apiKeyCacheTimeout !== undefined
+        ? config.apiKeyCacheTimeout
+        : (process.env.AUTH_APIKEY_CACHE_TTL_MS
+          ? parseInt(process.env.AUTH_APIKEY_CACHE_TTL_MS, 10)
+          : 60000)
     };
 
     // Cache for session validation
     this.sessionCache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+
+    // PATCH: API key validation cache (default 60s TTL).
+    // Keyed by sha256(apiKey).slice(0,16) — raw key is never stored.
+    this.apiKeyCache = new Map();
   }
 
   normalizeAuthApiUrl(value) {
@@ -231,6 +240,22 @@ class OnasisAuthBridge {
    * Validate API key (for service-to-service calls)
    */
   async validateAPIKey(apiKey) {
+    if (!apiKey || typeof apiKey !== 'string') {
+      return {
+        authenticated: false,
+        user: null,
+        method: 'api_key_missing',
+        error: 'API key not provided'
+      };
+    }
+
+    // PATCH: hash-keyed cache lookup. Failures are NOT cached.
+    const cacheKey = this._hashApiKey(apiKey);
+    const cached = this.apiKeyCache.get(cacheKey);
+    if (cached && Date.now() < cached.expires) {
+      return { ...cached.data };
+    }
+
     try {
       const response = await this.makeAuthRequest(this.config.apiKeyPath, {
         method: 'POST',
@@ -245,12 +270,17 @@ class OnasisAuthBridge {
 
       if (response.ok) {
         const data = await response.json();
-        return {
+        const result = {
           authenticated: true,
           user: data.user || null,
           method: 'api_key',
           key_prefix: apiKey.substring(0, 8) + '...'
         };
+        this.apiKeyCache.set(cacheKey, {
+          data: { ...result },  // clone so caller mutations don't poison cache
+          expires: Date.now() + this.config.apiKeyCacheTimeout
+        });
+        return result;
       }
 
       return {
@@ -269,6 +299,15 @@ class OnasisAuthBridge {
         error: error.message
       };
     }
+  }
+
+  /**
+   * PATCH: hash an API key for cache lookup. Uses Node built-in crypto;
+   * the raw key is never used as a Map key or logged.
+   */
+  _hashApiKey(apiKey) {
+    const crypto = require('crypto');
+    return crypto.createHash('sha256').update(apiKey).digest('hex').slice(0, 16);
   }
 
   /**
@@ -369,9 +408,34 @@ class OnasisAuthBridge {
         ...req.headers
       };
 
-      // Remove host headers to avoid conflicts
-      delete headers.host;
-      delete headers['content-length'];
+      // Strip hop-by-hop headers (RFC 7230 6.1) before forwarding.
+      //
+      // Only `host` and `content-length` were removed here before. undici
+      // rejects `connection` outright with
+      //   InvalidArgumentError: invalid connection header
+      // so every proxied request from an HTTP/1.1 client sending
+      // `Connection: keep-alive` failed both attempts and returned
+      // 500 AUTH_PROXY_ERROR. Observed since 2026-08-15, 10 occurrences on
+      // 2026-09-11 alone.
+      //
+      // Parse the Connection header's comma-separated values first, because
+      // Connection can list multiple headers to remove (e.g.
+      // "keep-alive, Upgrade"). Then delete each nominated header plus the
+      // fixed hop-by-hop set.
+      const hopByHop = new Set([
+        'host', 'content-length', 'connection', 'keep-alive',
+        'proxy-authenticate', 'proxy-authorization', 'te',
+        'trailer', 'transfer-encoding', 'upgrade'
+      ]);
+      const connectionValues = headers['connection'];
+      if (typeof connectionValues === 'string') {
+        for (const v of connectionValues.split(',').map(s => s.trim().toLowerCase())) {
+          if (v) hopByHop.add(v);
+        }
+      }
+      for (const h of hopByHop) {
+        delete headers[h];
+      }
 
       const response = await this.makeAuthRequest(path, {
         method,
@@ -477,6 +541,7 @@ class OnasisAuthBridge {
    */
   clearCache() {
     this.sessionCache.clear();
+    this.apiKeyCache.clear();
   }
 }
 
